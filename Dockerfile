@@ -19,8 +19,9 @@ RUN composer install \
     --no-autoloader \
     --prefer-dist
 COPY . .
-RUN composer dump-autoload --no-dev --optimize
-
+RUN mkdir -p bootstrap/cache \
+    && chmod -R 775 bootstrap/cache \
+    && composer dump-autoload --no-dev --optimize
 FROM php:8.3-fpm-alpine AS runtime
 
 RUN apk add --no-cache \
