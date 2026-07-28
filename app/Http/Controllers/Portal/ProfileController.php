@@ -28,6 +28,9 @@ class ProfileController extends Controller
             'tax_id' => ['nullable', 'string', 'max:40'],
             'city' => ['nullable', 'string', 'max:120'],
             'address' => ['nullable', 'string', 'max:1000'],
+            'bank_name' => ['nullable', 'string', 'max:160'],
+            'bank_account_number' => ['nullable', 'string', 'max:64'],
+            'bank_account_name' => ['nullable', 'string', 'max:160'],
             'current_password' => ['nullable', 'string'],
             'password' => ['nullable', 'string', 'min:10', 'confirmed'],
         ]);

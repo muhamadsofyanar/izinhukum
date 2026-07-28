@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
+use App\Http\Controllers\Admin\AcademyController as AdminAcademyController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\InquiryController as AdminInquiryController;
@@ -18,6 +19,8 @@ use App\Http\Controllers\Partner\ActivationController as PartnerActivationContro
 use App\Http\Controllers\Partner\AuthController as PartnerAuthController;
 use App\Http\Controllers\Partner\DashboardController as PartnerDashboardController;
 use App\Http\Controllers\Partner\PriceController as PartnerPriceController;
+use App\Http\Controllers\Partner\LearningController as PartnerLearningController;
+use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PartnerApplicationController;
 use App\Http\Controllers\Portal\InvoiceController as PortalInvoiceController;
 use App\Http\Controllers\Portal\ProfileController as PortalProfileController;
@@ -60,6 +63,23 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::post('/mitra/permohonan/{application}/setujui', [AdminPartnerController::class, 'approve'])->name('partners.approve');
         Route::post('/mitra/permohonan/{application}/tolak', [AdminPartnerController::class, 'reject'])->name('partners.reject');
         Route::put('/mitra/{partner}/status', [AdminPartnerController::class, 'toggle'])->name('partners.toggle');
+        Route::put('/mitra/{partner}', [AdminPartnerController::class, 'update'])->name('partners.update');
+        Route::get('/akademi', [AdminAcademyController::class, 'index'])->name('academy.index');
+        Route::get('/akademi/laporan', [AdminAcademyController::class, 'report'])->name('academy.report');
+        Route::get('/akademi/buat', [AdminAcademyController::class, 'create'])->name('academy.create');
+        Route::post('/akademi', [AdminAcademyController::class, 'store'])->name('academy.store');
+        Route::get('/akademi/{course}/ubah', [AdminAcademyController::class, 'edit'])->name('academy.edit');
+        Route::put('/akademi/{course}', [AdminAcademyController::class, 'update'])->name('academy.update');
+        Route::delete('/akademi/{course}', [AdminAcademyController::class, 'destroy'])->name('academy.destroy');
+        Route::post('/akademi-kategori', [AdminAcademyController::class, 'storeCategory'])->name('academy.categories.store');
+        Route::post('/akademi/{course}/bab', [AdminAcademyController::class, 'storeSection'])->name('academy.sections.store');
+        Route::post('/akademi/bab/{section}/materi', [AdminAcademyController::class, 'storeLesson'])->name('academy.lessons.store');
+        Route::delete('/akademi/materi/{lesson}', [AdminAcademyController::class, 'destroyLesson'])->name('academy.lessons.destroy');
+        Route::post('/akademi/{course}/peserta', [AdminAcademyController::class, 'assign'])->name('academy.assign');
+        Route::get('/operasional/{module}', [OperationsController::class, 'index'])->name('operations.index');
+        Route::post('/operasional/{module}', [OperationsController::class, 'store'])->name('operations.store');
+        Route::put('/tiket/{ticket}', [OperationsController::class, 'updateTicket'])->name('tickets.update');
+        Route::put('/komisi/{commission}', [OperationsController::class, 'updateCommission'])->name('commissions.update');
         Route::get('/invoice', [PortalInvoiceController::class, 'index'])->name('invoices.index');
         Route::get('/invoice/buat', [PortalInvoiceController::class, 'create'])->name('invoices.create');
         Route::post('/invoice', [PortalInvoiceController::class, 'store'])->name('invoices.store');
@@ -97,6 +117,11 @@ Route::prefix('mitra')->name('partner.')->group(function (): void {
     Route::middleware('partner')->group(function (): void {
         Route::get('/', PartnerDashboardController::class)->name('dashboard');
         Route::get('/harga', [PartnerPriceController::class, 'index'])->name('prices.index');
+        Route::get('/akademi', [PartnerLearningController::class, 'index'])->name('learning.index');
+        Route::get('/akademi/{course}', [PartnerLearningController::class, 'show'])->name('learning.show');
+        Route::post('/akademi/{course}/materi/{lesson}/selesai', [PartnerLearningController::class, 'complete'])->name('learning.complete');
+        Route::get('/operasional/{module}', [OperationsController::class, 'index'])->name('operations.index');
+        Route::post('/operasional/{module}', [OperationsController::class, 'store'])->name('operations.store');
         Route::get('/invoice', [PortalInvoiceController::class, 'index'])->name('invoices.index');
         Route::get('/invoice/buat', [PortalInvoiceController::class, 'create'])->name('invoices.create');
         Route::post('/invoice', [PortalInvoiceController::class, 'store'])->name('invoices.store');

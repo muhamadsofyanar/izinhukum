@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\PartnerActivationMail;
 use App\Models\PartnerApplication;
 use App\Models\User;
+use App\Models\AuditLog;
 use App\Services\MailConfigurator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -104,6 +105,28 @@ class PartnerController extends Controller
         $partner->update(['is_active' => ! $partner->is_active]);
 
         return back()->with('success', 'Status akun mitra diperbarui.');
+    }
+
+    public function update(Request $request, User $partner): RedirectResponse
+    {
+        abort_unless($partner->role === 'partner', 404);
+        $data = $request->validate([
+            'partner_level' => ['required', 'in:starter,professional,priority'],
+            'account_status' => ['required', 'in:pending,active,suspended,inactive'],
+        ]);
+        $partner->update([
+            ...$data,
+            'is_active' => $data['account_status'] === 'active',
+        ]);
+        AuditLog::create([
+            'user_id' => $request->attributes->get('currentUser')->id,
+            'action' => 'partner.updated',
+            'subject_type' => User::class,
+            'subject_id' => $partner->id,
+            'metadata' => $data,
+            'ip_address' => $request->ip(),
+        ]);
+        return back()->with('success', 'Level dan status mitra diperbarui.');
     }
 
     private function createPartner(array $data): array

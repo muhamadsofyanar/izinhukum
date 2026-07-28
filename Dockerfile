@@ -27,11 +27,13 @@ RUN apk add --no-cache \
         curl \
         nginx \
         oniguruma-dev \
+        sqlite-dev \
         supervisor \
     && docker-php-ext-install -j"$(nproc)" \
         bcmath \
         mbstring \
         opcache \
+        pdo_sqlite \
         pdo_mysql \
     && rm -rf /tmp/* /var/cache/apk/*
 

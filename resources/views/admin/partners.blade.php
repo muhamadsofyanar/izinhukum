@@ -53,7 +53,7 @@
     <div class="admin-panel-head"><h2>Daftar akun mitra</h2></div>
     <div class="table-responsive">
         <table class="table admin-table">
-            <thead><tr><th>Kode</th><th>Mitra</th><th>Kontak</th><th>Aktivasi</th><th>Status</th></tr></thead>
+            <thead><tr><th>Kode</th><th>Mitra</th><th>Kontak</th><th>Aktivasi</th><th>Level & status</th></tr></thead>
             <tbody>
             @forelse($partners as $partner)
                 <tr>
@@ -62,8 +62,10 @@
                     <td><a href="mailto:{{ $partner->email }}">{{ $partner->email }}</a><small>{{ $partner->phone }}</small></td>
                     <td>{{ $partner->email_verified_at ? 'Aktif '.$partner->email_verified_at->format('d/m/Y') : 'Menunggu aktivasi' }}</td>
                     <td>
-                        <form action="{{ route('admin.partners.toggle', $partner) }}" method="post">@csrf @method('PUT')
-                            <button class="btn btn-sm {{ $partner->is_active ? 'btn-outline-danger' : 'btn-primary' }}" type="submit">{{ $partner->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
+                        <form action="{{ route('admin.partners.update', $partner) }}" method="post" class="stack-form">@csrf @method('PUT')
+                            <select class="form-select form-select-sm" name="partner_level">@foreach(['starter','professional','priority'] as $level)<option @selected($partner->partner_level===$level)>{{ $level }}</option>@endforeach</select>
+                            <select class="form-select form-select-sm" name="account_status">@foreach(['pending','active','suspended','inactive'] as $status)<option @selected($partner->account_status===$status)>{{ $status }}</option>@endforeach</select>
+                            <button class="btn btn-sm btn-secondary" type="submit">Simpan</button>
                         </form>
                     </td>
                 </tr>

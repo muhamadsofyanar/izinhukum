@@ -22,6 +22,16 @@
             </div>
         </div>
     </section>
+    @if($user->isPartner())
+    <section class="admin-panel portal-section mt-3">
+        <div class="admin-panel-head"><h2>Rekening komisi</h2></div>
+        <div class="p-4 row g-3">
+            <div class="col-md-4"><label class="form-label">Nama bank</label><input class="form-control" name="bank_name" value="{{ old('bank_name',$user->bank_name) }}"></div>
+            <div class="col-md-4"><label class="form-label">Nomor rekening</label><input class="form-control" name="bank_account_number" value="{{ old('bank_account_number',$user->bank_account_number) }}"></div>
+            <div class="col-md-4"><label class="form-label">Nama pemilik rekening</label><input class="form-control" name="bank_account_name" value="{{ old('bank_account_name',$user->bank_account_name) }}"></div>
+        </div>
+    </section>
+    @endif
     <section class="admin-panel portal-section mt-3">
         <div class="admin-panel-head"><h2>Ubah kata sandi (opsional)</h2></div>
         <div class="p-4">

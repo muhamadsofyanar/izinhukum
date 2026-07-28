@@ -13,6 +13,7 @@ class User extends Model
     protected $fillable = [
         'role',
         'partner_code',
+        'partner_level',
         'name',
         'email',
         'password',
@@ -22,6 +23,10 @@ class User extends Model
         'city',
         'address',
         'is_active',
+        'account_status',
+        'bank_name',
+        'bank_account_number',
+        'bank_account_name',
         'must_change_password',
         'activation_token',
         'activation_expires_at',
@@ -54,6 +59,11 @@ class User extends Model
     public function partnerInvoices(): HasMany
     {
         return $this->hasMany(Invoice::class, 'partner_id');
+    }
+
+    public function courseEnrollments(): HasMany
+    {
+        return $this->hasMany(CourseEnrollment::class);
     }
 
     public function isAdmin(): bool

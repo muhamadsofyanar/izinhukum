@@ -28,13 +28,25 @@
                 <a class="{{ request()->routeIs('admin.inquiries.*') ? 'active' : '' }}" href="{{ route('admin.inquiries.index') }}">Permintaan masuk</a>
                 <a class="{{ request()->routeIs('admin.packages.*') ? 'active' : '' }}" href="{{ route('admin.packages.index') }}">Harga & paket</a>
                 <a class="{{ request()->routeIs('admin.partners.*') ? 'active' : '' }}" href="{{ route('admin.partners.index') }}">Mitra</a>
+                <a class="{{ request()->routeIs('admin.academy.*') ? 'active' : '' }}" href="{{ route('admin.academy.index') }}">LMS Akademi</a>
             @else
                 <a class="{{ request()->routeIs('partner.prices.*') ? 'active' : '' }}" href="{{ route('partner.prices.index') }}">Harga mitra</a>
+                <a class="{{ request()->routeIs('partner.learning.*') ? 'active' : '' }}" href="{{ route('partner.learning.index') }}">Kelas saya</a>
             @endif
             <a class="{{ request()->routeIs($prefix.'.invoices.*') ? 'active' : '' }}" href="{{ route($prefix.'.invoices.index') }}">Invoice</a>
             @if($isAdmin)
                 <a class="{{ request()->routeIs('admin.articles.*') ? 'active' : '' }}" href="{{ route('admin.articles.index') }}">Artikel</a>
+                <a href="{{ route('admin.operations.index', 'announcements') }}">Pengumuman</a>
+                <a href="{{ route('admin.operations.index', 'materials') }}">Materi pemasaran</a>
+                <a href="{{ route('admin.operations.index', 'tickets') }}">Tiket bantuan</a>
+                <a href="{{ route('admin.operations.index', 'commissions') }}">Komisi mitra</a>
+                <a href="{{ route('admin.operations.index', 'audit') }}">Audit log</a>
                 <a class="{{ request()->routeIs('admin.mail.*') ? 'active' : '' }}" href="{{ route('admin.mail.edit') }}">Email & SMTP</a>
+            @else
+                <a href="{{ route('partner.operations.index', 'announcements') }}">Pengumuman</a>
+                <a href="{{ route('partner.operations.index', 'materials') }}">Materi pemasaran</a>
+                <a href="{{ route('partner.operations.index', 'tickets') }}">Bantuan</a>
+                <a href="{{ route('partner.operations.index', 'commissions') }}">Komisi saya</a>
             @endif
             <a class="{{ request()->routeIs($prefix.'.profile.*') ? 'active' : '' }}" href="{{ route($prefix.'.profile.edit') }}">Profil</a>
             <a href="{{ route('home') }}" target="_blank">Lihat website ↗</a>
