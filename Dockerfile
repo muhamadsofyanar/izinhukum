@@ -47,6 +47,8 @@ COPY --from=vendor --chown=www-data:www-data /app .
 COPY --from=assets --chown=www-data:www-data /app/public/build ./public/build
 
 RUN chmod +x /usr/local/bin/izinhukum-entrypoint \
+    && mkdir -p /opt/izinhukum-database \
+    && cp -R database/migrations database/seeders database/data /opt/izinhukum-database/ \
     && mkdir -p \
         storage/app/private \
         storage/app/public \

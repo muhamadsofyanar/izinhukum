@@ -3,6 +3,15 @@ set -eu
 
 cd /var/www/html
 
+# A persistent volume may be mounted on /var/www/html/database. Docker only
+# populates a named volume on its first creation, so later image deployments
+# would otherwise keep stale migration/seeder files. Refresh application-owned
+# database code while preserving the persistent database.sqlite file.
+mkdir -p database/migrations database/seeders database/data
+cp -R /opt/izinhukum-database/migrations/. database/migrations/
+cp -R /opt/izinhukum-database/seeders/. database/seeders/
+cp -R /opt/izinhukum-database/data/. database/data/
+
 mkdir -p \
     storage/app/private \
     storage/app/public \
@@ -12,7 +21,7 @@ mkdir -p \
     storage/logs \
     bootstrap/cache
 
-chown -R www-data:www-data storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache database
 
 if [ -z "${APP_KEY:-}" ]; then
     echo "ERROR: APP_KEY wajib diisi. Buat dengan: printf 'base64:%s\\n' \"\$(openssl rand -base64 32)\""
