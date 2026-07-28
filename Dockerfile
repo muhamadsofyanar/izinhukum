@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
 FROM node:24-alpine AS assets
 WORKDIR /app
 COPY package.json package-lock.json ./

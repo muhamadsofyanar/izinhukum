@@ -49,7 +49,15 @@ class InvoiceController extends Controller
             ? User::where('role', 'partner')->where('is_active', true)->orderBy('name')->get()
             : collect();
 
-        return view('portal.invoices.create', compact('user', 'packages', 'partners'));
+        $packageOptions = $packages->map(fn (ServicePackage $package): array => [
+            'id' => $package->id,
+            'name' => $package->name,
+            'website' => $package->price,
+            'minimum' => $package->minimum_end_user_price ?? 0,
+            'partner' => $package->partner_price ?? 0,
+        ])->values()->all();
+
+        return view('portal.invoices.create', compact('user', 'packages', 'partners', 'packageOptions'));
     }
 
     public function store(Request $request): RedirectResponse

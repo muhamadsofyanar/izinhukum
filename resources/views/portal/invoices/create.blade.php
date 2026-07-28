@@ -115,13 +115,7 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const packages = @json($packages->map(fn ($package) => [
-        'id' => $package->id,
-        'name' => $package->name,
-        'website' => $package->price,
-        'minimum' => $package->minimum_end_user_price,
-        'partner' => $package->partner_price,
-    ])->values());
+    const packages = @json($packageOptions);
     const packageMap = Object.fromEntries(packages.map(item => [String(item.id), item]));
     const tbody = document.getElementById('invoice-items');
     const recipientType = document.getElementById('recipient_type');
