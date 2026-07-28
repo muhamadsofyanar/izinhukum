@@ -14,6 +14,7 @@ class PartnerApplication extends Model
         'reference',
         'name',
         'email',
+        'password',
         'phone',
         'company_name',
         'tax_id',
@@ -29,9 +30,12 @@ class PartnerApplication extends Model
     protected function casts(): array
     {
         return [
+            'password' => 'hashed',
             'reviewed_at' => 'datetime',
         ];
     }
+
+    protected $hidden = ['password'];
 
     public function reviewer(): BelongsTo
     {

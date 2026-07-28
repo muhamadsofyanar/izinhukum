@@ -14,7 +14,9 @@
             <div class="col-md-2"><label class="form-label">WhatsApp *</label><input class="form-control" name="phone" required></div>
             <div class="col-md-2"><label class="form-label">Perusahaan</label><input class="form-control" name="company_name"></div>
             <div class="col-md-2"><label class="form-label">Kota</label><input class="form-control" name="city"></div>
-            <div class="col-12"><button class="btn btn-primary" type="submit">Buat akun & tautan aktivasi</button></div>
+            <div class="col-md-3"><label class="form-label">Password (opsional)</label><input class="form-control" name="password" type="password" minlength="10" autocomplete="new-password"></div>
+            <div class="col-md-3"><label class="form-label">Ulangi password</label><input class="form-control" name="password_confirmation" type="password" minlength="10" autocomplete="new-password"></div>
+            <div class="col-12"><button class="btn btn-primary" type="submit">Buat akun mitra</button></div>
         </div>
     </form>
 </section>
@@ -53,7 +55,7 @@
     <div class="admin-panel-head"><h2>Daftar akun mitra</h2></div>
     <div class="table-responsive">
         <table class="table admin-table">
-            <thead><tr><th>Kode</th><th>Mitra</th><th>Kontak</th><th>Aktivasi</th><th>Level & status</th></tr></thead>
+            <thead><tr><th>Kode</th><th>Mitra</th><th>Kontak</th><th>Aktivasi</th><th>Level & status</th><th>Atur password</th></tr></thead>
             <tbody>
             @forelse($partners as $partner)
                 <tr>
@@ -68,9 +70,16 @@
                             <button class="btn btn-sm btn-secondary" type="submit">Simpan</button>
                         </form>
                     </td>
+                    <td>
+                        <form action="{{ route('admin.partners.password', $partner) }}" method="post" class="stack-form">@csrf @method('PUT')
+                            <input class="form-control form-control-sm" name="password" type="password" minlength="10" placeholder="Password baru" required>
+                            <input class="form-control form-control-sm" name="password_confirmation" type="password" minlength="10" placeholder="Ulangi password" required>
+                            <button class="btn btn-sm btn-outline-primary" type="submit">Simpan password</button>
+                        </form>
+                    </td>
                 </tr>
             @empty
-                <tr><td colspan="5" class="text-center py-5">Belum ada akun mitra.</td></tr>
+                <tr><td colspan="6" class="text-center py-5">Belum ada akun mitra.</td></tr>
             @endforelse
             </tbody>
         </table>

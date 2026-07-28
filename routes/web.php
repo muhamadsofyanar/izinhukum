@@ -64,6 +64,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::post('/mitra/permohonan/{application}/tolak', [AdminPartnerController::class, 'reject'])->name('partners.reject');
         Route::put('/mitra/{partner}/status', [AdminPartnerController::class, 'toggle'])->name('partners.toggle');
         Route::put('/mitra/{partner}', [AdminPartnerController::class, 'update'])->name('partners.update');
+        Route::put('/mitra/{partner}/password', [AdminPartnerController::class, 'updatePassword'])->name('partners.password');
         Route::get('/akademi', [AdminAcademyController::class, 'index'])->name('academy.index');
         Route::get('/akademi/laporan', [AdminAcademyController::class, 'report'])->name('academy.report');
         Route::get('/akademi/buat', [AdminAcademyController::class, 'create'])->name('academy.create');

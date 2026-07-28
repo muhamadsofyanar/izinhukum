@@ -33,6 +33,7 @@ class PartnerController extends Controller
             'phone' => ['required', 'string', 'max:32'],
             'company_name' => ['nullable', 'string', 'max:160'],
             'city' => ['nullable', 'string', 'max:120'],
+            'password' => ['nullable', 'string', 'min:10', 'confirmed'],
         ]);
 
         [$partner, $activationUrl] = $this->createPartner($validated);
@@ -60,6 +61,7 @@ class PartnerController extends Controller
             [$partner, $activationUrl] = $this->createPartner([
                 'name' => $application->name,
                 'email' => $application->email,
+                'password' => $application->password,
                 'phone' => $application->phone,
                 'company_name' => $application->company_name,
                 'tax_id' => $application->tax_id,
@@ -129,17 +131,37 @@ class PartnerController extends Controller
         return back()->with('success', 'Level dan status mitra diperbarui.');
     }
 
+    public function updatePassword(Request $request, User $partner): RedirectResponse
+    {
+        abort_unless($partner->role === 'partner', 404);
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:10', 'confirmed'],
+        ]);
+        $partner->update([
+            'password' => $validated['password'],
+            'is_active' => true,
+            'account_status' => 'active',
+            'email_verified_at' => $partner->email_verified_at ?? now(),
+            'activation_token' => null,
+            'activation_expires_at' => null,
+        ]);
+
+        return back()->with('success', 'Password mitra berhasil diperbarui dan akun diaktifkan.');
+    }
+
     private function createPartner(array $data): array
     {
         $token = Str::random(48);
+        $chosenPassword = $data['password'] ?? null;
         $partner = User::create([
             ...$data,
             'email' => mb_strtolower($data['email']),
             'role' => 'partner',
             'partner_code' => $this->nextPartnerCode(),
-            'password' => Str::random(40),
+            'password' => $chosenPassword ?: Str::random(40),
             'activation_token' => hash('sha256', $token),
             'activation_expires_at' => now()->addDays(7),
+            'email_verified_at' => $chosenPassword ? now() : null,
             'is_active' => true,
         ]);
 

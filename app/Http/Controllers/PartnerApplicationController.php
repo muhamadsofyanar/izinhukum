@@ -20,6 +20,7 @@ class PartnerApplicationController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:160'],
             'email' => ['required', 'email', 'max:160'],
+            'password' => ['required', 'string', 'min:10', 'confirmed'],
             'phone' => ['required', 'string', 'max:32'],
             'company_name' => ['nullable', 'string', 'max:160'],
             'tax_id' => ['nullable', 'string', 'max:40'],
@@ -30,6 +31,7 @@ class PartnerApplicationController extends Controller
         ]);
 
         unset($validated['privacy_consent']);
+        unset($validated['password_confirmation']);
         $validated['email'] = mb_strtolower($validated['email']);
         $validated['reference'] = 'MIT-'.now()->format('ymd').'-'.Str::upper(Str::random(5));
         $application = PartnerApplication::create($validated);
