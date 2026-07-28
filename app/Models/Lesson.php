@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Lesson extends Model
 {
     protected $fillable = [
-        'course_section_id', 'title', 'type', 'content', 'resource_url',
+        'course_section_id', 'title', 'type', 'content', 'resource_url', 'file_path', 'original_filename',
         'duration_minutes', 'sort_order', 'is_preview',
     ];
     protected function casts(): array { return ['is_preview' => 'boolean']; }

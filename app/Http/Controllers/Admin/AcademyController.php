@@ -13,6 +13,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -110,10 +111,15 @@ class AcademyController extends Controller
             'type' => ['required', 'in:text,video,pdf,link,assignment,quiz'],
             'content' => ['nullable', 'string'],
             'resource_url' => ['nullable', 'url', 'max:2048'],
+            'material_file' => ['nullable', 'file', 'mimes:pdf', 'max:25600'],
             'duration_minutes' => ['nullable', 'integer', 'min:0', 'max:10000'],
         ]);
+        $file = $request->file('material_file');
+        unset($data['material_file']);
         $section->lessons()->create([
             ...$data,
+            'file_path' => $file?->store('academy/materials', 'public'),
+            'original_filename' => $file?->getClientOriginalName(),
             'sort_order' => ((int) $section->lessons()->max('sort_order')) + 1,
         ]);
         return back()->with('success', 'Materi ditambahkan.');
@@ -121,6 +127,9 @@ class AcademyController extends Controller
 
     public function destroyLesson(Lesson $lesson): RedirectResponse
     {
+        if ($lesson->file_path) {
+            Storage::disk('public')->delete($lesson->file_path);
+        }
         $lesson->delete();
         return back()->with('success', 'Materi dihapus.');
     }

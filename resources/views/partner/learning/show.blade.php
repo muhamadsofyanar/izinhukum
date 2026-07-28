@@ -8,5 +8,6 @@
 @foreach($section->lessons as $lesson)<article class="learning-lesson @if($completed->contains($lesson->id)) completed @endif"><div><small>{{ strtoupper($lesson->type) }} · {{ $lesson->duration_minutes }} menit</small><h3>{{ $lesson->title }}</h3>
 @if($lesson->content)<div class="lesson-content">{!! nl2br(e($lesson->content)) !!}</div>@endif
 @if($lesson->resource_url)<a href="{{ $lesson->resource_url }}" target="_blank" rel="noopener">Buka materi ↗</a>@endif</div>
+@if($lesson->file_path)<div class="pdf-material"><a class="btn btn-outline-primary" href="{{ asset('storage/'.$lesson->file_path) }}" target="_blank">Buka / unduh {{ $lesson->original_filename ?: 'PDF' }}</a><iframe title="{{ $lesson->title }}" src="{{ asset('storage/'.$lesson->file_path) }}"></iframe></div>@endif
 @if($completed->contains($lesson->id))<span class="completion-mark">Selesai ✓</span>@else<form method="post" action="{{ route('partner.learning.complete',[$course,$lesson]) }}">@csrf<button class="btn btn-primary">Tandai selesai</button></form>@endif</article>@endforeach</section>@endforeach
 @endsection

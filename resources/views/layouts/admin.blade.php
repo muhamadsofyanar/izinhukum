@@ -15,8 +15,8 @@
 <div class="admin-shell">
     <aside class="admin-sidebar">
         <a class="brand brand-light" href="{{ route($prefix.'.dashboard') }}">
-            <span class="brand-mark">IH</span>
-            <span class="brand-copy"><strong>IzinHukum</strong><small>{{ $isAdmin ? 'Administrator' : 'Mitra LegaOne' }}</small></span>
+            @if($platformBrandLogo)<img class="brand-logo-image" src="{{ asset('storage/'.$platformBrandLogo) }}" alt="{{ $platformBrandName }}">@else<span class="brand-mark">IH</span>@endif
+            <span class="brand-copy"><strong>{{ $platformBrandName }}</strong><small>{{ $isAdmin ? 'Administrator' : 'Mitra LegaOne' }}</small></span>
         </a>
         <div class="portal-identity">
             <strong>{{ $currentUser->name }}</strong>
@@ -33,6 +33,8 @@
                 <a class="{{ request()->routeIs('partner.prices.*') ? 'active' : '' }}" href="{{ route('partner.prices.index') }}">Harga mitra</a>
                 <a class="{{ request()->routeIs('partner.learning.*') ? 'active' : '' }}" href="{{ route('partner.learning.index') }}">Kelas saya</a>
             @endif
+            <a class="{{ request()->routeIs($prefix.'.community.*') ? 'active' : '' }}" href="{{ route($prefix.'.community.index') }}">Community</a>
+            <a class="{{ request()->routeIs($prefix.'.inbox.*') ? 'active' : '' }}" href="{{ route($prefix.'.inbox.index') }}">Inbox</a>
             <a class="{{ request()->routeIs($prefix.'.invoices.*') ? 'active' : '' }}" href="{{ route($prefix.'.invoices.index') }}">Invoice</a>
             @if($isAdmin)
                 <a class="{{ request()->routeIs('admin.articles.*') ? 'active' : '' }}" href="{{ route('admin.articles.index') }}">Artikel</a>
@@ -42,6 +44,7 @@
                 <a href="{{ route('admin.operations.index', 'commissions') }}">Komisi mitra</a>
                 <a href="{{ route('admin.operations.index', 'audit') }}">Audit log</a>
                 <a class="{{ request()->routeIs('admin.mail.*') ? 'active' : '' }}" href="{{ route('admin.mail.edit') }}">Email & SMTP</a>
+                <a class="{{ request()->routeIs('admin.branding.*') ? 'active' : '' }}" href="{{ route('admin.branding.edit') }}">Logo & branding</a>
             @else
                 <a href="{{ route('partner.operations.index', 'announcements') }}">Pengumuman</a>
                 <a href="{{ route('partner.operations.index', 'materials') }}">Materi pemasaran</a>

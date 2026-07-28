@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
+use App\Http\Controllers\Admin\BrandingController as AdminBrandingController;
 use App\Http\Controllers\Admin\AcademyController as AdminAcademyController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -24,6 +25,8 @@ use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\PartnerApplicationController;
 use App\Http\Controllers\Portal\InvoiceController as PortalInvoiceController;
 use App\Http\Controllers\Portal\ProfileController as PortalProfileController;
+use App\Http\Controllers\Portal\CommunityController;
+use App\Http\Controllers\Portal\InboxController;
 use App\Http\Controllers\PublicInvoiceController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SitemapController;
@@ -105,6 +108,13 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::put('/pengaturan-email/sender/{sender}', [AdminMailSettingController::class, 'updateSender'])->name('mail.senders.update');
         Route::get('/profil', [PortalProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profil', [PortalProfileController::class, 'update'])->name('profile.update');
+        Route::get('/komunitas', [CommunityController::class, 'index'])->name('community.index');
+        Route::post('/komunitas', [CommunityController::class, 'store'])->name('community.store');
+        Route::post('/komunitas/{post}/komentar', [CommunityController::class, 'comment'])->name('community.comment');
+        Route::get('/inbox', [InboxController::class, 'index'])->name('inbox.index');
+        Route::post('/inbox', [InboxController::class, 'store'])->name('inbox.store');
+        Route::get('/branding', [AdminBrandingController::class, 'edit'])->name('branding.edit');
+        Route::put('/branding', [AdminBrandingController::class, 'update'])->name('branding.update');
         Route::post('/keluar', [AdminAuthController::class, 'destroy'])->name('logout');
     });
 });
@@ -131,6 +141,11 @@ Route::prefix('mitra')->name('partner.')->group(function (): void {
         Route::post('/invoice/{invoice}/kirim', [PortalInvoiceController::class, 'send'])->name('invoices.send');
         Route::get('/profil', [PortalProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profil', [PortalProfileController::class, 'update'])->name('profile.update');
+        Route::get('/komunitas', [CommunityController::class, 'index'])->name('community.index');
+        Route::post('/komunitas', [CommunityController::class, 'store'])->name('community.store');
+        Route::post('/komunitas/{post}/komentar', [CommunityController::class, 'comment'])->name('community.comment');
+        Route::get('/inbox', [InboxController::class, 'index'])->name('inbox.index');
+        Route::post('/inbox', [InboxController::class, 'store'])->name('inbox.store');
         Route::post('/keluar', [PartnerAuthController::class, 'destroy'])->name('logout');
     });
 });

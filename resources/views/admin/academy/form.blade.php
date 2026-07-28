@@ -30,10 +30,11 @@
                 <form method="post" action="{{ route('admin.academy.lessons.destroy', $lesson) }}">@csrf @method('delete')<button class="btn btn-sm btn-outline-danger">Hapus</button></form>
             </div>@endforeach
             <details><summary>+ Tambah materi</summary>
-                <form method="post" action="{{ route('admin.academy.lessons.store', $section) }}" class="stack-form">@csrf
+                <form method="post" enctype="multipart/form-data" action="{{ route('admin.academy.lessons.store', $section) }}" class="stack-form">@csrf
                     <input class="form-control" name="title" placeholder="Judul materi" required>
                     <select class="form-select" name="type">@foreach(['text','video','pdf','link','assignment','quiz'] as $type)<option>{{ $type }}</option>@endforeach</select>
                     <input class="form-control" type="url" name="resource_url" placeholder="URL video, PDF, atau materi">
+                    <label class="field"><span>Atau unggah PDF (maks. 25 MB)</span><input class="form-control" type="file" name="material_file" accept="application/pdf"></label>
                     <input class="form-control" type="number" name="duration_minutes" value="0" min="0" placeholder="Durasi menit">
                     <textarea class="form-control" name="content" placeholder="Isi materi/instruksi"></textarea>
                     <button class="btn btn-secondary">Tambah materi</button>
