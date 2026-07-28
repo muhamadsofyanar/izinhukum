@@ -6,9 +6,9 @@
 @section('content')
 <div class="admin-stats">
     <article><span>Permintaan baru</span><strong>{{ $newInquiries }}</strong></article>
-    <article><span>Total permintaan</span><strong>{{ $totalInquiries }}</strong></article>
-    <article><span>Layanan aktif</span><strong>{{ $activeServices }}</strong></article>
-    <article><span>Harga perkiraan</span><strong>{{ $estimatedPackages }}</strong></article>
+    <article><span>Mitra aktif</span><strong>{{ $activePartners }}</strong></article>
+    <article><span>Pendaftaran mitra</span><strong>{{ $pendingPartners }}</strong></article>
+    <article><span>Invoice belum lunas</span><strong>{{ $unpaidInvoices }}</strong></article>
 </div>
 
 <section class="admin-panel">

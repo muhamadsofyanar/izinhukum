@@ -10,10 +10,10 @@
     <main class="login-card">
         <a class="brand mb-4" href="{{ route('home') }}">
             <span class="brand-mark">IH</span>
-            <span class="brand-copy"><strong>IzinHukum</strong><small>Panel admin</small></span>
+            <span class="brand-copy"><strong>IzinHukum</strong><small>Panel administrator</small></span>
         </a>
         <h1>Selamat datang kembali</h1>
-        <p>Masuk untuk mengelola harga dan permintaan pelanggan.</p>
+        <p>Masuk untuk mengelola layanan, mitra, invoice, artikel, dan email.</p>
         <form action="{{ route('admin.login.store') }}" method="post">
             @csrf
             <div class="mb-3">

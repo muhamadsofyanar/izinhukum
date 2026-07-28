@@ -17,6 +17,7 @@ class Service extends Model
         'category',
         'summary',
         'description',
+        'requirements',
         'icon',
         'is_featured',
         'is_active',
@@ -26,6 +27,7 @@ class Service extends Model
     protected function casts(): array
     {
         return [
+            'requirements' => 'array',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
         ];

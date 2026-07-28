@@ -65,6 +65,8 @@
                             </div>
                         </li>
                         <li class="nav-item"><a class="nav-link" href="{{ route('kbli.index') }}">Cek KBLI</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ route('articles.index') }}">Artikel</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ route('partnership.create') }}">Kemitraan</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ route('contact') }}">Kontak</a></li>
                         <li class="nav-item ms-lg-3"><a class="btn btn-primary btn-sm" href="{{ route('proposal.create') }}">Minta Proposal</a></li>
                     </ul>
@@ -113,6 +115,10 @@
                     <h3>Jelajahi</h3>
                     <a href="{{ route('services.index') }}">Semua layanan</a>
                     <a href="{{ route('kbli.index') }}">Cek KBLI</a>
+                    <a href="{{ route('articles.index') }}">Artikel</a>
+                    <a href="{{ route('tracking.index') }}">Lacak permintaan</a>
+                    <a href="{{ route('partnership.create') }}">Kemitraan LegaOne</a>
+                    <a href="{{ route('partner.login') }}">Masuk mitra</a>
                     <a href="{{ route('proposal.create') }}">Minta proposal</a>
                     <a href="{{ route('contact') }}">Kontak</a>
                 </div>
@@ -134,6 +140,7 @@
             </div>
             <div class="footer-bottom">
                 <span>© {{ date('Y') }} {{ config('company.name') }}. Hak cipta dilindungi.</span>
+                <span><a href="{{ route('legal.privacy') }}">Privasi</a> · <a href="{{ route('legal.terms') }}">Syarat & ketentuan</a></span>
                 <span>Harga dapat berubah mengikuti ruang lingkup pekerjaan dan ketentuan pemerintah.</span>
             </div>
         </div>

@@ -80,10 +80,17 @@
                             <textarea class="form-control @error('message') is-invalid @enderror" id="message" name="message" rows="5" maxlength="3000" placeholder="Contoh: ingin mendirikan PT untuk usaha perdagangan di Sumedang dan membutuhkan NIB.">{{ old('message') }}</textarea>
                             @error('message')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
+                        <div class="col-12">
+                            <label class="consent-line">
+                                <input type="checkbox" name="privacy_consent" value="1" required @checked(old('privacy_consent'))>
+                                Saya menyetujui pemrosesan data untuk tindak lanjut layanan sesuai <a href="{{ route('legal.privacy') }}" target="_blank">Kebijakan Privasi</a>.
+                            </label>
+                            @error('privacy_consent')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                        </div>
                     </div>
 
                     <button class="btn btn-primary btn-lg mt-4" type="submit">Kirim permintaan</button>
-                    <p class="form-privacy">Dengan mengirim formulir, Anda menyetujui tim IzinHukum menghubungi Anda terkait permintaan ini.</p>
+                    <p class="form-privacy">Tim IzinHukum hanya menggunakan data untuk menindaklanjuti permintaan dan pelaksanaan layanan.</p>
                 </form>
             </div>
             <div class="col-lg-5">

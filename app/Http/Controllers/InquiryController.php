@@ -37,8 +37,10 @@ class InquiryController extends Controller
             'company_name' => ['nullable', 'string', 'max:160'],
             'city' => ['nullable', 'string', 'max:120'],
             'message' => ['nullable', 'string', 'max:3000'],
+            'privacy_consent' => ['accepted'],
         ]);
 
+        unset($validated['privacy_consent']);
         $inquiry = Inquiry::create([
             ...$validated,
             'reference' => 'IH-'.now()->format('ymd').'-'.Str::upper(Str::random(5)),

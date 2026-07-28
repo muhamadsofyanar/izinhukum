@@ -19,6 +19,7 @@
             @endif
             <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
                 <a class="btn btn-primary" target="_blank" rel="noopener" href="https://wa.me/{{ config('company.whatsapp') }}?text={{ urlencode('Halo IzinHukum, saya sudah mengirim permintaan dengan nomor '.$inquiry->reference.'.') }}">Konfirmasi via WhatsApp</a>
+                <a class="btn btn-outline-primary" href="{{ route('tracking.index', ['reference' => $inquiry->reference, 'phone' => $inquiry->phone]) }}">Lacak permintaan</a>
                 <a class="btn btn-outline-primary" href="{{ route('home') }}">Kembali ke beranda</a>
             </div>
         </div>

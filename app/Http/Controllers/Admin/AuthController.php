@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -21,22 +23,21 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $configuredEmail = (string) config('admin.email');
-        $configuredPassword = (string) config('admin.password');
+        $user = User::query()
+            ->where('email', mb_strtolower($validated['email']))
+            ->where('role', 'admin')
+            ->first();
 
-        if ($configuredEmail === '' || $configuredPassword === '') {
-            return back()->withErrors(['email' => 'Akun admin belum dikonfigurasi pada server.']);
-        }
-
-        $valid = hash_equals($configuredEmail, $validated['email'])
-            && hash_equals($configuredPassword, $validated['password']);
-
-        if (! $valid) {
+        if (! $user || ! $user->is_active || ! Hash::check($validated['password'], $user->password)) {
             return back()->withErrors(['email' => 'Email atau kata sandi tidak sesuai.'])->onlyInput('email');
         }
 
         $request->session()->regenerate();
-        $request->session()->put('admin_authenticated', true);
+        $request->session()->put([
+            'portal_user_id' => $user->id,
+            'portal_role' => 'admin',
+        ]);
+        $user->update(['last_login_at' => now()]);
 
         return redirect()->route('admin.dashboard');
     }

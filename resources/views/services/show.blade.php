@@ -43,6 +43,17 @@
     </div>
 </section>
 
+@if(!empty($service->requirements))
+<section class="section pt-0">
+    <div class="container">
+        <div class="requirements-panel">
+            <div><span class="eyebrow">Persyaratan awal</span><h2>Siapkan data berikut</h2><p>Tim akan mengonfirmasi kelengkapan dan dokumen tambahan sesuai kondisi pemohon.</p></div>
+            <ul>@foreach($service->requirements as $requirement)<li><span>✓</span>{{ $requirement }}</li>@endforeach</ul>
+        </div>
+    </div>
+</section>
+@endif
+
 <section class="section section-soft">
     <div class="container">
         <div class="row g-5 align-items-center">

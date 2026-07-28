@@ -16,6 +16,8 @@ class ServicePackage extends Model
         'name',
         'tagline',
         'price',
+        'minimum_end_user_price',
+        'partner_price',
         'original_price',
         'price_suffix',
         'features',
@@ -29,6 +31,8 @@ class ServicePackage extends Model
     {
         return [
             'price' => 'integer',
+            'minimum_end_user_price' => 'integer',
+            'partner_price' => 'integer',
             'original_price' => 'integer',
             'features' => 'array',
             'is_estimated' => 'boolean',
@@ -50,5 +54,15 @@ class ServicePackage extends Model
     public function formattedPrice(): string
     {
         return 'Rp'.number_format($this->price, 0, ',', '.');
+    }
+
+    public function formattedMinimumPrice(): string
+    {
+        return 'Rp'.number_format($this->minimum_end_user_price ?? 0, 0, ',', '.');
+    }
+
+    public function formattedPartnerPrice(): string
+    {
+        return 'Rp'.number_format($this->partner_price ?? 0, 0, ',', '.');
     }
 }

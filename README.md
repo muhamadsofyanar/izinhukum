@@ -11,6 +11,13 @@ Website legaltech **PT Praktisi Izin Hukum** berbasis Laravel 12, Bootstrap 5, M
 - Pencarian 1.559 kode resmi KBLI 2025.
 - Detail risiko OSS-RBA per ruang lingkup dan skala usaha, termasuk perizinan, persyaratan, kewajiban, kewenangan, dan jangka waktu.
 - Dashboard admin untuk melihat lead, mengubah status, harga, harga coret, dan label perkiraan.
+- Harga tiga tingkat: website, minimum end user, dan Mitra LegaOne.
+- Portal mitra dengan aktivasi akun, katalog harga khusus, profil, dan invoice end user.
+- Invoice untuk mitra/end user, email transaksi, tautan publik, dan tampilan cetak/PDF.
+- Pendaftaran kemitraan dengan alur persetujuan admin.
+- Artikel publik dengan pengelolaan draf, publikasi, dan metadata SEO.
+- Pengaturan SMTP Mailketing dan sender dari panel admin.
+- Pelacakan status permintaan, kebijakan privasi, dan syarat layanan.
 - Sitemap, robots.txt, health check, konfigurasi Nginx/PHP-FPM, dan container MariaDB.
 
 ## Identitas perusahaan
@@ -59,6 +66,26 @@ Data tersebut dapat diubah melalui environment variables tanpa mengedit kode.
 5. Pada deployment pertama, set `SEED_DATABASE=true`.
 6. Pastikan halaman publik, `/up`, dan `/admin/masuk` dapat dibuka.
 7. Ubah `SEED_DATABASE=false`, lalu redeploy.
+
+### Memasang pembaruan portal mitra
+
+Untuk website yang sudah berjalan, pertahankan:
+
+```dotenv
+SEED_DATABASE=false
+SEED_KBLI_DATABASE=false
+```
+
+Commit pembaruan lalu redeploy. Entrypoint akan menjalankan migrasi secara otomatis. Migrasi membuat akun admin database dari `ADMIN_EMAIL` dan `ADMIN_PASSWORD` yang sudah ada, menambahkan tujuh harga yang ditetapkan, serta tidak menjalankan ulang seeder layanan/KBLI.
+
+Sesudah login:
+
+1. Buka **Email & SMTP** dan simpan kredensial Mailketing.
+2. Tambahkan sender yang sudah berstatus approved di Mailketing.
+3. Kirim email tes.
+4. Buka **Mitra** untuk menyetujui pendaftaran atau membuat akun mitra.
+
+Password SMTP disimpan terenkripsi menggunakan `APP_KEY`. Jangan mengganti `APP_KEY` setelah password SMTP tersimpan.
 
 MariaDB dan folder storage menggunakan persistent volume. Jangan menghapus volume saat melakukan redeploy.
 

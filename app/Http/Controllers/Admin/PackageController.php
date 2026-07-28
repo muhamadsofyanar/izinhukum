@@ -21,6 +21,8 @@ class PackageController extends Controller
     {
         $validated = $request->validate([
             'price' => ['required', 'integer', 'min:0'],
+            'minimum_end_user_price' => ['required', 'integer', 'min:0', 'lte:price'],
+            'partner_price' => ['required', 'integer', 'min:0', 'lte:minimum_end_user_price'],
             'original_price' => ['nullable', 'integer', 'min:0'],
             'is_estimated' => ['nullable', 'boolean'],
             'is_popular' => ['nullable', 'boolean'],
@@ -29,6 +31,8 @@ class PackageController extends Controller
 
         $package->update([
             'price' => $validated['price'],
+            'minimum_end_user_price' => $validated['minimum_end_user_price'],
+            'partner_price' => $validated['partner_price'],
             'original_price' => $validated['original_price'] ?? null,
             'is_estimated' => $request->boolean('is_estimated'),
             'is_popular' => $request->boolean('is_popular'),

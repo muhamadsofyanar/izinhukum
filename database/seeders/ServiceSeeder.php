@@ -58,6 +58,8 @@ class ServiceSeeder extends Seeder
                     [
                         'tagline' => $package['tagline'] ?? null,
                         'price' => $package['price'],
+                        'minimum_end_user_price' => $package['minimum_end_user_price'] ?? (int) round($package['price'] * 0.70),
+                        'partner_price' => $package['partner_price'] ?? (int) round($package['price'] * 0.60),
                         'original_price' => $package['original_price'] ?? null,
                         'price_suffix' => $package['price_suffix'] ?? null,
                         'features' => $package['features'],
@@ -82,9 +84,9 @@ class ServiceSeeder extends Seeder
             'is_active' => true,
             'sort_order' => 1,
         ], [
-            ['name' => 'Pendirian PT', 'tagline' => 'Mau urus izin usaha sendiri.', 'price' => 3000000, 'features' => $legalBasic],
-            ['name' => 'Pendirian PT + Izin', 'tagline' => 'Tanpa repot, dengan alamat sendiri.', 'price' => 5500000, 'features' => $permit, 'is_popular' => true],
-            ['name' => 'Pendirian PT + Virtual Office', 'tagline' => 'Paket lengkap dengan kantor prestisius.', 'price' => 7500000, 'features' => $virtualOffice],
+            ['name' => 'Pendirian PT', 'tagline' => 'Mau urus izin usaha sendiri.', 'price' => 6000000, 'minimum_end_user_price' => 4200000, 'partner_price' => 3600000, 'features' => $legalBasic],
+            ['name' => 'Pendirian PT + Izin', 'tagline' => 'Tanpa repot, dengan alamat sendiri.', 'price' => 8000000, 'minimum_end_user_price' => 5600000, 'partner_price' => 4800000, 'features' => $permit, 'is_popular' => true],
+            ['name' => 'Pendirian PT + Virtual Office', 'tagline' => 'Paket lengkap dengan kantor prestisius.', 'price' => 10000000, 'minimum_end_user_price' => 7000000, 'partner_price' => 6000000, 'features' => $virtualOffice],
         ]);
 
         $create([
@@ -116,14 +118,14 @@ class ServiceSeeder extends Seeder
             'is_active' => true,
             'sort_order' => 3,
         ], [
-            ['name' => 'Pendirian PT PMA', 'tagline' => 'Paket akta dan pengesahan badan hukum.', 'price' => 5000000, 'features' => $legalBasic],
+            ['name' => 'Pendirian PT PMA', 'tagline' => 'Paket akta dan pengesahan badan hukum.', 'price' => 8000000, 'minimum_end_user_price' => 5600000, 'partner_price' => 4800000, 'features' => $legalBasic],
             ['name' => 'Pendirian PT PMA + Izin', 'tagline' => 'Paket pendirian dan perizinan.', 'price' => 10000000, 'features' => $permit, 'is_popular' => true],
             ['name' => 'PT PMA + Izin + Virtual Office', 'tagline' => 'Solusi lengkap untuk mulai beroperasi.', 'price' => 12000000, 'features' => $virtualOffice],
         ]);
 
         foreach ([
-            ['CV (Commanditaire Vennootschap)', 'pendirian-cv', 'CV', 'Badan usaha persekutuan yang praktis untuk usaha dengan sekutu aktif dan pasif.', 2250000, 4500000, 6500000, 4],
-            ['Firma', 'pendirian-firma', 'Firma', 'Persekutuan untuk menjalankan usaha bersama dengan satu nama perusahaan.', 2250000, 4500000, 6500000, 5],
+            ['CV (Commanditaire Vennootschap)', 'pendirian-cv', 'CV', 'Badan usaha persekutuan yang praktis untuk usaha dengan sekutu aktif dan pasif.', 4000000, 4500000, 6500000, 4],
+            ['Firma', 'pendirian-firma', 'Firma', 'Persekutuan untuk menjalankan usaha bersama dengan satu nama perusahaan.', 4000000, 4500000, 6500000, 5],
             ['Persekutuan Perdata', 'pendirian-persekutuan-perdata', 'Persekutuan Perdata', 'Persekutuan berdasarkan perjanjian para pihak untuk menjalankan profesi atau usaha bersama.', 2250000, 4500000, 6500000, 6],
         ] as [$name, $slug, $shortName, $summary, $basicPrice, $permitPrice, $voPrice, $sort]) {
             $create([
@@ -145,9 +147,9 @@ class ServiceSeeder extends Seeder
         }
 
         foreach ([
-            ['Perkumpulan', 'pendirian-perkumpulan', 'Badan hukum berbasis anggota untuk tujuan sosial, profesi, atau kegiatan bersama.', 7],
-            ['Yayasan', 'pendirian-yayasan', 'Badan hukum nirlaba berbasis kekayaan yang dipisahkan untuk tujuan sosial, keagamaan, atau kemanusiaan.', 8],
-        ] as [$name, $slug, $summary, $sort]) {
+            ['Perkumpulan', 'pendirian-perkumpulan', 'Badan hukum berbasis anggota untuk tujuan sosial, profesi, atau kegiatan bersama.', 5000000, 7],
+            ['Yayasan', 'pendirian-yayasan', 'Badan hukum nirlaba berbasis kekayaan yang dipisahkan untuk tujuan sosial, keagamaan, atau kemanusiaan.', 4000000, 8],
+        ] as [$name, $slug, $summary, $basicPrice, $sort]) {
             $create([
                 'name' => $name,
                 'slug' => $slug,
@@ -160,10 +162,25 @@ class ServiceSeeder extends Seeder
                 'is_active' => true,
                 'sort_order' => $sort,
             ], [
-                ['name' => "Pendirian {$name}", 'tagline' => 'Paket akta dan pengesahan.', 'price' => 3000000, 'features' => $legalBasic],
+                ['name' => "Pendirian {$name}", 'tagline' => 'Paket akta dan pengesahan.', 'price' => $basicPrice, 'minimum_end_user_price' => (int) round($basicPrice * 0.70), 'partner_price' => (int) round($basicPrice * 0.60), 'features' => $legalBasic],
                 ['name' => "Pendirian {$name} + Izin", 'tagline' => 'Paket pendirian dan perizinan.', 'price' => 5500000, 'features' => $permit, 'is_popular' => true],
             ]);
         }
+
+        $create([
+            'name' => 'Koperasi',
+            'slug' => 'pendirian-koperasi',
+            'short_name' => 'Koperasi',
+            'category' => 'Organisasi dan Nonprofit',
+            'summary' => 'Pendirian koperasi berbadan hukum dengan struktur pengurus dan pengawas yang sesuai ketentuan.',
+            'description' => 'Pendampingan persiapan pendiri, rapat pembentukan, akta, dan pengesahan badan hukum koperasi.',
+            'icon' => 'users',
+            'is_featured' => true,
+            'is_active' => true,
+            'sort_order' => 9,
+        ], [
+            ['name' => 'Pendirian Koperasi', 'tagline' => 'Paket akta dan pengesahan badan hukum.', 'price' => 6000000, 'minimum_end_user_price' => 4200000, 'partner_price' => 3600000, 'features' => ['Pengecekan dan pemesanan nama', 'Persiapan rapat pembentukan', 'Akta pendirian', 'Pengesahan badan hukum', 'Konsultasi struktur pengurus dan pengawas'], 'is_popular' => true],
+        ]);
 
         $create([
             'name' => 'NIB & OSS',
@@ -257,5 +274,19 @@ class ServiceSeeder extends Seeder
             ['name' => 'Pendaftaran Merek UMK', 'tagline' => 'Per kelas merek.', 'price' => 1500000, 'price_suffix' => '/kelas', 'features' => ['Pemeriksaan awal merek', 'Penentuan kelas', 'Persiapan dokumen', 'Pengajuan pendaftaran', 'Pemantauan administrasi'], 'is_estimated' => true],
             ['name' => 'Pendaftaran Merek Umum', 'tagline' => 'Per kelas merek.', 'price' => 3800000, 'price_suffix' => '/kelas', 'features' => ['Pemeriksaan awal merek', 'Penentuan kelas', 'Persiapan dokumen', 'Pengajuan pendaftaran', 'Pemantauan administrasi'], 'is_estimated' => true],
         ]);
+
+        $requirements = [
+            'pendirian-pt' => ['Nama PT minimal 3 kata', 'Alamat usaha (kabupaten/kota)', 'Minimal 2 pendiri', 'KTP dan NPWP para pendiri', 'Informasi modal usaha'],
+            'pendirian-cv' => ['Nama CV minimal 2 kata', 'Alamat usaha (kabupaten/kota)', 'Minimal 2 sekutu: aktif dan pasif', 'KTP dan NPWP para sekutu'],
+            'pendirian-yayasan' => ['Nama yayasan minimal 3 kata', 'Alamat yayasan (kabupaten/kota)', 'Pembina', 'Pengurus: Ketua, Sekretaris, dan Bendahara', 'Pengawas', 'KTP dan NPWP pengurus'],
+            'pendirian-koperasi' => ['Nama koperasi minimal 3 kata', 'Alamat koperasi (kabupaten/kota)', 'Minimal 9 pendiri', 'KTP dan NPWP para pendiri', 'Struktur pengurus dan pengawas'],
+            'pendirian-perkumpulan' => ['Nama perkumpulan minimal 3 kata', 'Alamat organisasi (kabupaten/kota)', 'Minimal 2 pendiri', 'Struktur pengurus: Ketua, Sekretaris, dan Bendahara', 'KTP para pendiri'],
+            'pendirian-firma' => ['Nama firma minimal 2 kata', 'Alamat usaha (kabupaten/kota)', 'Minimal 2 sekutu', 'KTP dan NPWP para sekutu'],
+            'pendirian-pt-pma' => ['Nama PT minimal 3 kata', 'Alamat usaha (kabupaten/kota)', 'Minimal 2 pemegang saham', 'KTP atau paspor pemegang saham', 'Informasi modal usaha'],
+        ];
+
+        foreach ($requirements as $slug => $items) {
+            Service::where('slug', $slug)->update(['requirements' => $items]);
+        }
     }
 }

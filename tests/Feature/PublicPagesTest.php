@@ -39,6 +39,7 @@ class PublicPagesTest extends TestCase
             'phone' => '081234567890',
             'email' => 'uji@example.com',
             'message' => 'Ingin konsultasi pendirian PT.',
+            'privacy_consent' => '1',
         ]);
 
         $response->assertRedirect();
