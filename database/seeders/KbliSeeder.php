@@ -2,40 +2,168 @@
 
 namespace Database\Seeders;
 
-use App\Models\KbliCode;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class KbliSeeder extends Seeder
 {
     public function run(): void
     {
-        $codes = [
-            ['code' => '46900', 'title' => 'Perdagangan Besar Berbagai Macam Barang', 'risk_level' => 'Menengah Rendah', 'licensing' => 'NIB dan Sertifikat Standar'],
-            ['code' => '47111', 'title' => 'Perdagangan Eceran Berbagai Macam Barang yang Utamanya Makanan, Minuman atau Tembakau di Minimarket/Supermarket/Hypermarket', 'risk_level' => 'Menengah Rendah', 'licensing' => 'NIB dan Sertifikat Standar'],
-            ['code' => '47911', 'title' => 'Perdagangan Eceran Melalui Media untuk Komoditi Makanan, Minuman, Tembakau, Kimia, Farmasi, Kosmetik dan Alat Laboratorium', 'risk_level' => 'Menengah Rendah', 'licensing' => 'NIB dan Sertifikat Standar'],
-            ['code' => '47919', 'title' => 'Perdagangan Eceran Melalui Media untuk Berbagai Macam Barang Lainnya', 'risk_level' => 'Rendah', 'licensing' => 'NIB'],
-            ['code' => '56101', 'title' => 'Restoran', 'risk_level' => 'Menengah Rendah', 'licensing' => 'NIB dan Sertifikat Standar'],
-            ['code' => '56102', 'title' => 'Rumah/Warung Makan', 'risk_level' => 'Menengah Rendah', 'licensing' => 'NIB dan Sertifikat Standar'],
-            ['code' => '62010', 'title' => 'Aktivitas Pemrograman Komputer', 'risk_level' => 'Rendah', 'licensing' => 'NIB'],
-            ['code' => '62020', 'title' => 'Aktivitas Konsultasi Komputer dan Manajemen Fasilitas Komputer', 'risk_level' => 'Rendah', 'licensing' => 'NIB'],
-            ['code' => '63122', 'title' => 'Portal Web dan/atau Platform Digital dengan Tujuan Komersial', 'risk_level' => 'Menengah Tinggi', 'licensing' => 'NIB dan Sertifikat Standar terverifikasi'],
-            ['code' => '68111', 'title' => 'Real Estat yang Dimiliki Sendiri atau Disewa', 'risk_level' => 'Rendah', 'licensing' => 'NIB'],
-            ['code' => '70209', 'title' => 'Aktivitas Konsultasi Manajemen Lainnya', 'risk_level' => 'Rendah', 'licensing' => 'NIB'],
-            ['code' => '73100', 'title' => 'Periklanan', 'risk_level' => 'Rendah', 'licensing' => 'NIB'],
-            ['code' => '74130', 'title' => 'Aktivitas Desain Komunikasi Visual/Desain Grafis', 'risk_level' => 'Rendah', 'licensing' => 'NIB'],
-            ['code' => '82301', 'title' => 'Jasa Penyelenggara Pertemuan, Perjalanan Insentif, Konferensi dan Pameran', 'risk_level' => 'Menengah Rendah', 'licensing' => 'NIB dan Sertifikat Standar'],
-            ['code' => '85499', 'title' => 'Pendidikan Lainnya Swasta', 'risk_level' => 'Menengah Tinggi', 'licensing' => 'NIB dan perizinan sektor'],
-        ];
+        ini_set('memory_limit', '768M');
+        set_time_limit(0);
 
-        foreach ($codes as $code) {
-            KbliCode::updateOrCreate(
-                ['code' => $code['code']],
-                [
-                    ...$code,
-                    'description' => 'Data awal untuk demonstrasi pencarian. Verifikasi klasifikasi dan tingkat risiko terbaru sebelum pengajuan OSS.',
-                    'is_sample' => true,
-                ],
-            );
+        $dataPath = database_path('data/kbli-2025.json');
+
+        if (! is_file($dataPath)) {
+            throw new RuntimeException('Dataset database/data/kbli-2025.json tidak ditemukan.');
         }
+
+        $dataset = json_decode(
+            file_get_contents($dataPath),
+            true,
+            flags: JSON_THROW_ON_ERROR,
+        );
+        $records = $dataset['records'] ?? [];
+        $metadata = $dataset['metadata'] ?? [];
+
+        if (count($records) !== 1559) {
+            throw new RuntimeException('Dataset KBLI 2025 harus berisi tepat 1.559 kode.');
+        }
+
+        $now = Carbon::now();
+        $sourceUpdatedAt = Carbon::parse($metadata['generated_at'] ?? $now);
+
+        DB::transaction(function () use ($records, $now, $sourceUpdatedAt): void {
+            DB::table('kbli_risk_profiles')->delete();
+            DB::table('kbli_scopes')->delete();
+            DB::table('kbli_codes')->where('is_sample', true)->delete();
+
+            $codeRows = array_map(static function (array $record) use ($now, $sourceUpdatedAt): array {
+                $riskLevels = array_values($record['risk_levels'] ?? []);
+                $licenses = array_values($record['licenses'] ?? []);
+
+                return [
+                    'code' => $record['code'],
+                    'version' => '2025',
+                    'category_code' => $record['category_code'],
+                    'category_title' => $record['category_title'],
+                    'title' => $record['title'],
+                    'description' => $record['description'] ?: null,
+                    'oss_id' => $record['oss_id'],
+                    'risk_level' => $riskLevels === [] ? null : implode(', ', $riskLevels),
+                    'risk_levels' => json_encode($riskLevels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'licensing' => $licenses === [] ? null : implode(', ', $licenses),
+                    'licenses' => json_encode($licenses, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'source_url' => "https://oss.go.id/id/kbli/detail/{$record['oss_id']}",
+                    'source_updated_at' => $sourceUpdatedAt,
+                    'is_sample' => false,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }, $records);
+
+            foreach (array_chunk($codeRows, 100) as $chunk) {
+                DB::table('kbli_codes')->upsert(
+                    $chunk,
+                    ['code'],
+                    [
+                        'version',
+                        'category_code',
+                        'category_title',
+                        'title',
+                        'description',
+                        'oss_id',
+                        'risk_level',
+                        'risk_levels',
+                        'licensing',
+                        'licenses',
+                        'source_url',
+                        'source_updated_at',
+                        'is_sample',
+                        'updated_at',
+                    ],
+                );
+            }
+
+            $codeIds = DB::table('kbli_codes')
+                ->where('version', '2025')
+                ->pluck('id', 'code');
+            $scopeRows = [];
+
+            foreach ($records as $record) {
+                $kbliCodeId = $codeIds[$record['code']] ?? null;
+
+                if (! $kbliCodeId) {
+                    throw new RuntimeException("ID database untuk KBLI {$record['code']} tidak ditemukan.");
+                }
+
+                foreach ($record['scopes'] ?? [] as $scope) {
+                    $scopeRows[] = [
+                        'kbli_code_id' => $kbliCodeId,
+                        'external_id' => $scope['external_id'],
+                        'name' => $scope['name'],
+                        'sector' => $scope['sector'] ?: null,
+                        'regulations' => json_encode(
+                            array_values($scope['regulations'] ?? []),
+                            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                        ),
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+            }
+
+            foreach (array_chunk($scopeRows, 200) as $chunk) {
+                DB::table('kbli_scopes')->insert($chunk);
+            }
+
+            $scopeIds = DB::table('kbli_scopes')->pluck('id', 'external_id');
+            $profileRows = [];
+
+            foreach ($records as $record) {
+                foreach ($record['scopes'] ?? [] as $scope) {
+                    $scopeId = $scopeIds[$scope['external_id']] ?? null;
+
+                    if (! $scopeId) {
+                        throw new RuntimeException("Ruang lingkup OSS {$scope['external_id']} tidak ditemukan.");
+                    }
+
+                    foreach ($scope['profiles'] ?? [] as $profile) {
+                        $profileRows[] = [
+                            'kbli_scope_id' => $scopeId,
+                            'external_code' => $profile['external_code'],
+                            'business_scale' => $profile['business_scale'],
+                            'risk_level' => $profile['risk_level'],
+                            'land_area' => $profile['land_area'],
+                            'licenses' => json_encode(
+                                array_values($profile['licenses'] ?? []),
+                                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                            ),
+                            'issue_period' => $profile['issue_period'],
+                            'requirements' => json_encode(
+                                array_values($profile['requirements'] ?? []),
+                                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                            ),
+                            'obligations' => json_encode(
+                                array_values($profile['obligations'] ?? []),
+                                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                            ),
+                            'authorities' => json_encode(
+                                array_values($profile['authorities'] ?? []),
+                                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+                            ),
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
+                }
+            }
+
+            foreach (array_chunk($profileRows, 200) as $chunk) {
+                DB::table('kbli_risk_profiles')->insert($chunk);
+            }
+        });
     }
 }

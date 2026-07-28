@@ -16,6 +16,7 @@ Route::get('/', HomeController::class)->name('home');
 Route::get('/layanan', [ServiceController::class, 'index'])->name('services.index');
 Route::get('/layanan/{service:slug}', [ServiceController::class, 'show'])->name('services.show');
 Route::get('/cek-risiko-kbli', [KbliController::class, 'index'])->name('kbli.index');
+Route::get('/cek-risiko-kbli/{code}', [KbliController::class, 'show'])->name('kbli.show');
 Route::get('/proposal', [InquiryController::class, 'create'])->name('proposal.create');
 Route::post('/proposal', [InquiryController::class, 'store'])->middleware('throttle:10,1')->name('proposal.store');
 Route::get('/proposal/berhasil/{inquiry:reference}', [InquiryController::class, 'success'])->name('proposal.success');

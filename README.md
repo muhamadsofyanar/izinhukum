@@ -2,13 +2,14 @@
 
 Website legaltech **PT Praktisi Izin Hukum** berbasis Laravel 12, Bootstrap 5, MariaDB, dan Docker. Proyek ini disiapkan untuk disimpan di GitHub dan dideploy melalui Coolify.
 
-## Fitur versi awal
+## Fitur
 
 - Homepage responsif dengan mega menu.
 - Katalog 14 layanan dan seluruh paket harga.
 - Label oranye **Harga Perkiraan** untuk harga yang belum final.
 - Form permintaan proposal yang tersimpan ke database.
-- Halaman cek KBLI dengan struktur database dan data contoh awal.
+- Pencarian 1.559 kode resmi KBLI 2025.
+- Detail risiko OSS-RBA per ruang lingkup dan skala usaha, termasuk perizinan, persyaratan, kewajiban, kewenangan, dan jangka waktu.
 - Dashboard admin untuk melihat lead, mengubah status, harga, harga coret, dan label perkiraan.
 - Sitemap, robots.txt, health check, konfigurasi Nginx/PHP-FPM, dan container MariaDB.
 
@@ -51,7 +52,7 @@ Data tersebut dapat diubah melalui environment variables tanpa mengedit kode.
 ## Deploy melalui Coolify
 
 1. Buat repository GitHub baru dan unggah seluruh isi folder ini.
-2. Di Coolify, pilih **New Resource → Docker Compose** lalu hubungkan repository.
+2. Di Coolify, hubungkan repository menggunakan resource Dockerfile atau Docker Compose yang sudah dikonfigurasi.
 3. Masukkan environment variables berdasarkan `.env.docker.example`.
    Untuk domain HTTPS, set `APP_URL=https://izinhukum.com` dan `SESSION_SECURE_COOKIE=true`.
 4. Gunakan domain `izinhukum.com` dan arahkan ke service `app` port `8080`.
@@ -63,7 +64,7 @@ MariaDB dan folder storage menggunakan persistent volume. Jangan menghapus volum
 
 ## Pengembangan lokal tanpa Docker
 
-Persyaratan: PHP 8.2+, Composer 2, Node.js 22+, dan MySQL/MariaDB atau SQLite.
+Persyaratan: PHP 8.4+, Composer 2, Node.js 22+, dan MySQL/MariaDB atau SQLite.
 
 ```bash
 composer install
@@ -85,7 +86,17 @@ DB_DATABASE=/path/absolut/ke/database/database.sqlite
 
 ## Catatan data KBLI
 
-Tabel KBLI pada versi ini baru berisi data demonstrasi. Sebelum fitur dipublikasikan sebagai rujukan operasional, impor dataset KBLI yang lengkap dan verifikasi tingkat risiko serta perizinannya terhadap OSS dan peraturan terbaru.
+Dataset memuat 1.559 kelompok KBLI 2025 dari Peraturan BPS Nomor 7 Tahun 2025/publikasi KBLI 2025 dan profil risiko publik OSS-RBA berdasarkan PP Nomor 28 Tahun 2025. Data menyimpan tanggal pembaruan dan URL detail OSS pada setiap kode.
+
+Untuk memasang atau memperbarui dataset pada server, jalankan seeder satu kali:
+
+```bash
+php artisan db:seed --class=KbliSeeder --force
+```
+
+Pada Coolify, pertahankan `SEED_DATABASE=false` agar data layanan yang pernah diubah melalui admin tidak disemai ulang. Aktifkan `SEED_KBLI_DATABASE=true` untuk satu kali redeploy, pastikan data berhasil masuk, lalu kembalikan menjadi `false` dan redeploy lagi.
+
+Skrip `scripts/sync-kbli-2025.mjs` digunakan untuk membangun ulang snapshot dari sumber resmi. Hasil pemeriksaan pada website tetap merupakan informasi awal karena penetapan resmi dipengaruhi data proyek, lokasi, persyaratan dasar, dan ketentuan sektoral pada OSS.
 
 ## Pengujian
 
