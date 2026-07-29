@@ -12,7 +12,7 @@
 <section class="admin-panel">
     <div class="table-responsive">
         <table class="table admin-table">
-            <thead><tr><th>Kontak</th><th>Kebutuhan</th><th>Pesan</th><th>Status</th></tr></thead>
+            <thead><tr><th>Kontak</th><th>Kebutuhan</th><th>Sumber</th><th>Pesan</th><th>Status</th></tr></thead>
             <tbody>
             @forelse($inquiries as $inquiry)
                 <tr>
@@ -23,7 +23,22 @@
                         @if($inquiry->email)<a href="mailto:{{ $inquiry->email }}">{{ $inquiry->email }}</a>@endif
                         @if($inquiry->city)<small>{{ $inquiry->city }}</small>@endif
                     </td>
-                    <td><strong>{{ $inquiry->package?->name ?? 'Konsultasi umum' }}</strong><small>{{ $inquiry->company_name }}</small><small>{{ $inquiry->created_at->format('d/m/Y H:i') }}</small></td>
+                    <td>
+                        <strong>{{ $inquiry->package?->name ?? 'Konsultasi umum' }}</strong>
+                        <small>{{ $inquiry->company_name }}</small>
+                        <small>{{ $inquiry->created_at->format('d/m/Y H:i') }}</small>
+                        <a class="btn btn-sm btn-outline-primary mt-2" href="{{ route('admin.invoices.create', ['inquiry' => $inquiry->id]) }}">Buat invoice</a>
+                    </td>
+                    <td>
+                        @if($inquiry->referredByPartner)
+                            <strong>{{ $inquiry->referredByPartner->name }}</strong>
+                            <small>{{ $inquiry->referral_code ?: $inquiry->referredByPartner->partner_code }}</small>
+                            <span class="status status-paid">Referral mitra</span>
+                        @else
+                            <strong>Website</strong>
+                            <small>Tanpa referral</small>
+                        @endif
+                    </td>
                     <td class="message-cell">{{ $inquiry->message ?: '—' }}</td>
                     <td>
                         <form action="{{ route('admin.inquiries.update', $inquiry) }}" method="post">
@@ -39,7 +54,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="4" class="text-center py-5">Belum ada permintaan.</td></tr>
+                <tr><td colspan="5" class="text-center py-5">Belum ada permintaan.</td></tr>
             @endforelse
             </tbody>
         </table>

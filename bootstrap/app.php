@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdminAuthenticated;
+use App\Http\Middleware\CapturePartnerReferral;
 use App\Http\Middleware\PartnerAuthenticated;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -21,6 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
         if ($trustedProxies !== []) {
             $middleware->trustProxies(at: $trustedProxies);
         }
+
+        $middleware->web(append: [
+            CapturePartnerReferral::class,
+        ]);
 
         $middleware->alias([
             'admin' => AdminAuthenticated::class,

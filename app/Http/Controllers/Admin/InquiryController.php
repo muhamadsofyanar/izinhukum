@@ -13,7 +13,7 @@ class InquiryController extends Controller
     public function index(Request $request): View
     {
         $status = $request->query('status');
-        $inquiries = Inquiry::with('package.service')
+        $inquiries = Inquiry::with(['package.service', 'referredByPartner'])
             ->when($status, fn ($query) => $query->where('status', $status))
             ->latest()
             ->paginate(20)

@@ -16,6 +16,9 @@
       id="invoice-form">
     @csrf
     @if($isEdit) @method('PUT') @endif
+    @if($selectedInquiryId)
+        <input type="hidden" name="inquiry_id" value="{{ $selectedInquiryId }}">
+    @endif
 
     <section class="admin-panel portal-section">
         <div class="admin-panel-head">
@@ -23,6 +26,14 @@
             @if($isEdit)<span class="status status-draft">{{ $invoice->invoice_number }}</span>@endif
         </div>
         <div class="p-4">
+            @if($sourceInquiry)
+                <div class="admin-note mb-3">
+                    Proposal <strong>{{ $sourceInquiry->reference }}</strong> dimuat ke invoice.
+                    @if($sourceInquiry->referredByPartner)
+                        Sumber mitra: <strong>{{ $sourceInquiry->referredByPartner->name }} · {{ $sourceInquiry->referral_code }}</strong>.
+                    @endif
+                </div>
+            @endif
             @if($user->isAdmin())
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
@@ -44,29 +55,41 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="referred_by_partner_id">Sumber pemasaran mitra</label>
+                        <select class="form-select" id="referred_by_partner_id" name="referred_by_partner_id">
+                            <option value="">Tanpa referral mitra</option>
+                            @foreach($referredPartners as $referralPartner)
+                                <option value="{{ $referralPartner->id }}" @selected(old('referred_by_partner_id', $selectedReferralPartnerId) == $referralPartner->id)>
+                                    {{ $referralPartner->partner_code }} · {{ $referralPartner->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">Dipakai untuk atribusi penjualan dan komisi otomatis.</small>
+                    </div>
                 </div>
             @endif
 
             <div class="end-user-fields row g-3">
                 <div class="col-md-6">
                     <label class="form-label" for="recipient_name">Nama penerima *</label>
-                    <input class="form-control" id="recipient_name" name="recipient_name" value="{{ old('recipient_name', $invoice?->recipient_name) }}">
+                    <input class="form-control" id="recipient_name" name="recipient_name" value="{{ old('recipient_name', $recipientDefaults['name']) }}">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label" for="recipient_company">Perusahaan/organisasi</label>
-                    <input class="form-control" id="recipient_company" name="recipient_company" value="{{ old('recipient_company', $invoice?->recipient_company) }}">
+                    <input class="form-control" id="recipient_company" name="recipient_company" value="{{ old('recipient_company', $recipientDefaults['company']) }}">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label" for="recipient_email">Email</label>
-                    <input class="form-control" id="recipient_email" name="recipient_email" type="email" value="{{ old('recipient_email', $invoice?->recipient_email) }}">
+                    <input class="form-control" id="recipient_email" name="recipient_email" type="email" value="{{ old('recipient_email', $recipientDefaults['email']) }}">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label" for="recipient_phone">WhatsApp</label>
-                    <input class="form-control" id="recipient_phone" name="recipient_phone" value="{{ old('recipient_phone', $invoice?->recipient_phone) }}">
+                    <input class="form-control" id="recipient_phone" name="recipient_phone" value="{{ old('recipient_phone', $recipientDefaults['phone']) }}">
                 </div>
                 <div class="col-12">
                     <label class="form-label" for="recipient_address">Alamat</label>
-                    <textarea class="form-control" id="recipient_address" name="recipient_address" rows="2">{{ old('recipient_address', $invoice?->recipient_address) }}</textarea>
+                    <textarea class="form-control" id="recipient_address" name="recipient_address" rows="2">{{ old('recipient_address', $recipientDefaults['address']) }}</textarea>
                 </div>
             </div>
         </div>

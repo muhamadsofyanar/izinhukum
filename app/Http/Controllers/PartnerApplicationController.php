@@ -12,13 +12,16 @@ class PartnerApplicationController extends Controller
 {
     public function create(): View
     {
-        return view('partnership');
+        return view('partnership', [
+            'plans' => collect(config('partner.plans', [])),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:160'],
+            'desired_partner_level' => ['required', 'in:starter,professional,priority'],
             'email' => ['required', 'email', 'max:160'],
             'password' => ['required', 'string', 'min:10', 'confirmed'],
             'phone' => ['required', 'string', 'max:32'],

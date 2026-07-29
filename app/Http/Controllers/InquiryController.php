@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Inquiry;
 use App\Models\Service;
 use App\Models\ServicePackage;
+use App\Services\PartnerReferralService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -27,7 +28,10 @@ class InquiryController extends Controller
         return view('proposal', compact('packages', 'selectedPackage'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(
+        Request $request,
+        PartnerReferralService $referrals,
+    ): RedirectResponse
     {
         $validated = $request->validate([
             'service_package_id' => ['nullable', 'exists:service_packages,id'],
@@ -41,10 +45,12 @@ class InquiryController extends Controller
         ]);
 
         unset($validated['privacy_consent']);
+        $attribution = $referrals->attribution($request);
         $inquiry = Inquiry::create([
             ...$validated,
+            ...($attribution ?? []),
             'reference' => 'IH-'.now()->format('ymd').'-'.Str::upper(Str::random(5)),
-            'source' => 'website',
+            'source' => $attribution ? 'partner_referral' : 'website',
             'status' => 'baru',
         ]);
 

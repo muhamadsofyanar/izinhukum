@@ -28,7 +28,10 @@ class OperationsController extends Controller
                 ->orderByDesc('is_pinned')->latest('published_at')->paginate(20),
             'materials' => MarketingMaterial::when(!$isAdmin, fn ($q) => $q->where('is_active', true))->latest()->paginate(20),
             'tickets' => SupportTicket::with('user')->when(!$isAdmin, fn ($q) => $q->where('user_id', $user->id))->latest()->paginate(20),
-            'commissions' => Commission::with('partner')->when(!$isAdmin, fn ($q) => $q->where('partner_id', $user->id))->latest()->paginate(20),
+            'commissions' => Commission::with(['partner', 'invoice', 'payment'])
+                ->when(!$isAdmin, fn ($q) => $q->where('partner_id', $user->id))
+                ->latest()
+                ->paginate(20),
             'audit' => AuditLog::latest()->paginate(30),
         };
 
@@ -61,7 +64,7 @@ class OperationsController extends Controller
         } elseif ($module === 'commissions') {
             $data = $request->validate(['partner_id' => ['required', 'exists:users,id'], 'amount' => ['required', 'integer', 'min:0'], 'notes' => ['nullable', 'string']]);
             abort_unless(User::whereKey($data['partner_id'])->where('role', 'partner')->exists(), 422);
-            Commission::create($data);
+            Commission::create([...$data, 'source' => 'manual']);
         } else {
             abort(404);
         }
@@ -80,8 +83,15 @@ class OperationsController extends Controller
     public function updateCommission(Request $request, Commission $commission): RedirectResponse
     {
         abort_unless($request->attributes->get('currentUser')->isAdmin(), 403);
-        $data = $request->validate(['status' => ['required', 'in:pending,approved,paid,cancelled']]);
-        $commission->update([...$data, 'paid_at' => $data['status'] === 'paid' ? now() : null]);
+        $data = $request->validate([
+            'status' => ['required', 'in:pending,approved,paid,cancelled,adjustment_required'],
+        ]);
+        $commission->update([
+            ...$data,
+            'paid_at' => $data['status'] === 'paid'
+                ? ($commission->paid_at ?: now())
+                : ($data['status'] === 'adjustment_required' ? $commission->paid_at : null),
+        ]);
         return back()->with('success', 'Status komisi diperbarui.');
     }
 }

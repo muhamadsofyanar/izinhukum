@@ -33,6 +33,7 @@ class PartnerController extends Controller
             'phone' => ['required', 'string', 'max:32'],
             'company_name' => ['nullable', 'string', 'max:160'],
             'city' => ['nullable', 'string', 'max:120'],
+            'partner_level' => ['required', 'in:starter,professional,priority'],
             'password' => ['nullable', 'string', 'min:10', 'confirmed'],
         ]);
 
@@ -62,6 +63,7 @@ class PartnerController extends Controller
                 'name' => $application->name,
                 'email' => $application->email,
                 'password' => $application->password,
+                'partner_level' => $application->desired_partner_level,
                 'phone' => $application->phone,
                 'company_name' => $application->company_name,
                 'tax_id' => $application->tax_id,
@@ -158,11 +160,13 @@ class PartnerController extends Controller
             'email' => mb_strtolower($data['email']),
             'role' => 'partner',
             'partner_code' => $this->nextPartnerCode(),
+            'partner_level' => $data['partner_level'] ?? 'starter',
             'password' => $chosenPassword ?: Str::random(40),
             'activation_token' => hash('sha256', $token),
             'activation_expires_at' => now()->addDays(7),
             'email_verified_at' => $chosenPassword ? now() : null,
             'is_active' => true,
+            'account_status' => 'active',
         ]);
 
         return [$partner, route('partner.activate', $token)];

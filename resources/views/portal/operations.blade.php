@@ -27,7 +27,52 @@ $labels=['announcements'=>'Pengumuman','materials'=>'Materi Pemasaran','tickets'
 @elseif($module==='tickets')
 <div class="table-responsive"><table class="table admin-table"><thead><tr><th>Referensi</th><th>Mitra/Subjek</th><th>Prioritas</th><th>Status/Tanggapan</th></tr></thead><tbody>@forelse($data as $item)<tr><td>{{ $item->reference }}</td><td>@if($isAdmin)<small>{{ $item->user->name }}</small>@endif<strong>{{ $item->subject }}</strong><small>{{ $item->message }}</small></td><td>{{ ucfirst($item->priority) }}</td><td>@if($isAdmin)<form method="post" action="{{ route('admin.tickets.update',$item) }}" class="stack-form">@csrf @method('put')<select class="form-select form-select-sm" name="status">@foreach(['open','in_progress','resolved','closed'] as $status)<option @selected($item->status===$status)>{{ $status }}</option>@endforeach</select><textarea class="form-control" name="admin_response" placeholder="Tanggapan">{{ $item->admin_response }}</textarea><button class="btn btn-sm btn-secondary">Simpan</button></form>@else<strong>{{ ucfirst($item->status) }}</strong><small>{{ $item->admin_response ?: 'Menunggu tanggapan admin.' }}</small>@endif</td></tr>@empty<tr><td colspan="4">Belum ada tiket.</td></tr>@endforelse</tbody></table></div>
 @elseif($module==='commissions')
-<div class="table-responsive"><table class="table admin-table"><thead><tr><th>Mitra</th><th>Nilai</th><th>Catatan</th><th>Status</th></tr></thead><tbody>@forelse($data as $item)<tr><td>{{ $isAdmin ? $item->partner->name : $currentUser->name }}</td><td>Rp{{ number_format($item->amount,0,',','.') }}</td><td>{{ $item->notes ?: '—' }}</td><td>@if($isAdmin)<form method="post" action="{{ route('admin.commissions.update',$item) }}" class="d-flex gap-2">@csrf @method('put')<select class="form-select form-select-sm" name="status">@foreach(['pending','approved','paid','cancelled'] as $status)<option @selected($item->status===$status)>{{ $status }}</option>@endforeach</select><button class="btn btn-sm btn-secondary">Simpan</button></form>@else{{ ucfirst($item->status) }}@endif</td></tr>@empty<tr><td colspan="4">Belum ada komisi.</td></tr>@endforelse</tbody></table></div>
+<div class="table-responsive">
+    <table class="table admin-table">
+        <thead><tr><th>Mitra</th><th>Sumber transaksi</th><th>Tarif</th><th>Nilai</th><th>Catatan</th><th>Status</th></tr></thead>
+        <tbody>
+        @forelse($data as $item)
+            @php($partnerCanOpenInvoice = $item->invoice && ($item->invoice->created_by === $currentUser->id || $item->invoice->partner_id === $currentUser->id))
+            <tr>
+                <td><strong>{{ $isAdmin ? $item->partner->name : $currentUser->name }}</strong><small>{{ $item->partner->partner_code }}</small></td>
+                <td>
+                    @if($item->invoice && $isAdmin)
+                        <a href="{{ route('admin.invoices.show', $item->invoice) }}">{{ $item->invoice->invoice_number }}</a>
+                    @elseif($item->invoice && $partnerCanOpenInvoice)
+                        <a href="{{ route('partner.invoices.show', $item->invoice) }}">{{ $item->invoice->invoice_number }}</a>
+                    @elseif($item->invoice)
+                        <span>{{ $item->invoice->invoice_number }}</span>
+                    @else
+                        <span>Komisi manual</span>
+                    @endif
+                    <small>{{ $item->payment?->receipt_number ?: ucfirst($item->source) }}</small>
+                </td>
+                <td>{{ $item->rate_bps > 0 ? number_format($item->rate_bps / 100, 0, ',', '.').'%' : 'Manual' }}</td>
+                <td><strong>Rp{{ number_format($item->amount,0,',','.') }}</strong></td>
+                <td>{{ $item->notes ?: '—' }}</td>
+                <td>
+                    @if($isAdmin)
+                        <form method="post" action="{{ route('admin.commissions.update',$item) }}" class="d-flex gap-2">
+                            @csrf
+                            @method('put')
+                            <select class="form-select form-select-sm" name="status">
+                                @foreach(['pending'=>'Menunggu','approved'=>'Disetujui','paid'=>'Dibayar','cancelled'=>'Dibatalkan','adjustment_required'=>'Perlu penyesuaian'] as $status=>$label)
+                                    <option value="{{ $status }}" @selected($item->status===$status)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <button class="btn btn-sm btn-secondary">Simpan</button>
+                        </form>
+                    @else
+                        {{ ['pending'=>'Menunggu','approved'=>'Disetujui','paid'=>'Dibayar','cancelled'=>'Dibatalkan','adjustment_required'=>'Perlu penyesuaian'][$item->status] ?? ucfirst($item->status) }}
+                    @endif
+                </td>
+            </tr>
+        @empty
+            <tr><td colspan="6">Belum ada komisi.</td></tr>
+        @endforelse
+        </tbody>
+    </table>
+</div>
 @else
 <div class="table-responsive"><table class="table admin-table"><thead><tr><th>Waktu</th><th>Pengguna</th><th>Aktivitas</th><th>Objek</th></tr></thead><tbody>@forelse($data as $item)<tr><td>{{ $item->created_at->format('d/m/Y H:i') }}</td><td>{{ $item->user_id ?: 'Sistem' }}</td><td>{{ $item->action }}</td><td>{{ class_basename($item->subject_type ?: '—') }} #{{ $item->subject_id }}</td></tr>@empty<tr><td colspan="4">Belum ada aktivitas.</td></tr>@endforelse</tbody></table></div>
 @endif

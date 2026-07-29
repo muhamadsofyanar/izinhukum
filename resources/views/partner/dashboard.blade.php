@@ -9,11 +9,29 @@
 
 @section('content')
 <div class="admin-stats">
-    <article><span>Kelas aktif</span><strong>{{ $activeCourses }}</strong></article>
-    <article><span>Kelas selesai</span><strong>{{ $completedCourses }}</strong></article>
-    <article><span>Invoice dibuat</span><strong>{{ $createdInvoices }}</strong></article>
+    <article><span>Klik referral</span><strong>{{ number_format($referralClicks, 0, ',', '.') }}</strong></article>
+    <article><span>Prospek referral</span><strong>{{ number_format($referralLeads, 0, ',', '.') }}</strong></article>
+    <article><span>Invoice referral</span><strong>{{ number_format($referralInvoices, 0, ',', '.') }}</strong></article>
+    <article><span>Omzet terbayar</span><strong>Rp{{ number_format($referralRevenue,0,',','.') }}</strong></article>
+    <article><span>Komisi diproses</span><strong>Rp{{ number_format($commissionPending,0,',','.') }}</strong></article>
     <article><span>Komisi dibayar</span><strong>Rp{{ number_format($commissionTotal,0,',','.') }}</strong></article>
 </div>
+<section class="admin-panel mb-4">
+    <div class="admin-panel-head">
+        <h2>Tautan pemasaran Anda</h2>
+        <span class="status status-paid">{{ $partnerPlan['name'] ?? 'Gratis' }}</span>
+    </div>
+    <div class="p-4">
+        <p>Bagikan tautan ini. Proposal, invoice, pembayaran, dan komisi akan terhubung ke kode mitra Anda selama atribusi masih berlaku.</p>
+        <div class="input-group">
+            <input class="form-control" id="partner-referral-url" value="{{ $referralUrl }}" readonly>
+            <button class="btn btn-primary" id="copy-partner-referral" type="button">Salin tautan</button>
+        </div>
+        <small class="text-muted d-block mt-2">
+            Paket {{ $partnerPlan['name'] ?? 'Gratis' }} · Komisi {{ number_format(($partnerPlan['commission_bps'] ?? 0) / 100, 0, ',', '.') }}% dari pembayaran aktif.
+        </small>
+    </div>
+</section>
 @if($announcements->isNotEmpty())<section class="admin-panel mb-4"><div class="admin-panel-head"><h2>Pengumuman terbaru</h2></div><div class="announcement-list">@foreach($announcements as $item)<article><small>{{ $item->published_at->format('d/m/Y') }}</small><h3>{{ $item->title }}</h3><p>{{ $item->body }}</p></article>@endforeach</div></section>@endif
 <section class="admin-panel">
     <div class="admin-panel-head"><h2>Invoice terbaru</h2><a href="{{ route('partner.invoices.index') }}">Lihat semua →</a></div>
@@ -37,3 +55,22 @@
     </div>
 </section>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const button = document.getElementById('copy-partner-referral');
+    const field = document.getElementById('partner-referral-url');
+    button?.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(field.value);
+            button.textContent = 'Tersalin';
+        } catch {
+            field.select();
+            document.execCommand('copy');
+            button.textContent = 'Tersalin';
+        }
+    });
+});
+</script>
+@endpush

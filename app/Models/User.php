@@ -61,6 +61,26 @@ class User extends Model
         return $this->hasMany(Invoice::class, 'partner_id');
     }
 
+    public function referredInquiries(): HasMany
+    {
+        return $this->hasMany(Inquiry::class, 'referred_by_partner_id');
+    }
+
+    public function referredInvoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class, 'referred_by_partner_id');
+    }
+
+    public function referralVisits(): HasMany
+    {
+        return $this->hasMany(PartnerReferral::class, 'partner_id');
+    }
+
+    public function commissions(): HasMany
+    {
+        return $this->hasMany(Commission::class, 'partner_id');
+    }
+
     public function courseEnrollments(): HasMany
     {
         return $this->hasMany(CourseEnrollment::class);
@@ -84,5 +104,13 @@ class User extends Model
     public function isPartner(): bool
     {
         return $this->role === 'partner';
+    }
+
+    public function partnerPlan(): array
+    {
+        return (array) config(
+            'partner.plans.'.$this->partner_level,
+            config('partner.plans.starter', []),
+        );
     }
 }

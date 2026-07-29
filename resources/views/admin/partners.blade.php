@@ -3,6 +3,8 @@
 @section('title', 'Mitra')
 @section('heading', 'Mitra LegaOne')
 
+@php($partnerPlans = config('partner.plans', []))
+
 @section('content')
 <section class="admin-panel portal-section">
     <div class="admin-panel-head"><h2>Tambah mitra langsung</h2></div>
@@ -14,6 +16,14 @@
             <div class="col-md-2"><label class="form-label">WhatsApp *</label><input class="form-control" name="phone" required></div>
             <div class="col-md-2"><label class="form-label">Perusahaan</label><input class="form-control" name="company_name"></div>
             <div class="col-md-2"><label class="form-label">Kota</label><input class="form-control" name="city"></div>
+            <div class="col-md-3">
+                <label class="form-label">Paket mitra *</label>
+                <select class="form-select" name="partner_level" required>
+                    @foreach($partnerPlans as $code => $plan)
+                        <option value="{{ $code }}">{{ $plan['name'] }} · {{ $plan['annual_price'] > 0 ? 'Rp'.number_format($plan['annual_price'], 0, ',', '.').'/tahun' : 'Rp0' }}</option>
+                    @endforeach
+                </select>
+            </div>
             <div class="col-md-3"><label class="form-label">Password (opsional)</label><input class="form-control" name="password" type="password" minlength="10" autocomplete="new-password"></div>
             <div class="col-md-3"><label class="form-label">Ulangi password</label><input class="form-control" name="password_confirmation" type="password" minlength="10" autocomplete="new-password"></div>
             <div class="col-12"><button class="btn btn-primary" type="submit">Buat akun mitra</button></div>
@@ -31,7 +41,11 @@
                 <tr>
                     <td><strong>{{ $application->name }}</strong><small>{{ $application->reference }}</small><small>{{ $application->company_name }}</small></td>
                     <td><a href="mailto:{{ $application->email }}">{{ $application->email }}</a><a href="https://wa.me/{{ preg_replace('/\D/', '', $application->phone) }}" target="_blank">{{ $application->phone }}</a><small>{{ $application->city }}</small></td>
-                    <td class="message-cell">{{ $application->message ?: '—' }}</td>
+                    <td class="message-cell">
+                        <strong>{{ $partnerPlans[$application->desired_partner_level]['name'] ?? 'Gratis' }}</strong>
+                        <small>{{ isset($partnerPlans[$application->desired_partner_level]) && $partnerPlans[$application->desired_partner_level]['annual_price'] > 0 ? 'Rp'.number_format($partnerPlans[$application->desired_partner_level]['annual_price'], 0, ',', '.').'/tahun' : 'Rp0/tahun' }}</small>
+                        <span>{{ $application->message ?: '—' }}</span>
+                    </td>
                     <td><span class="status status-{{ $application->status }}">{{ ucfirst($application->status) }}</span></td>
                     <td>
                         @if($application->status === 'pending')
@@ -65,7 +79,13 @@
                     <td>{{ $partner->email_verified_at ? 'Aktif '.$partner->email_verified_at->format('d/m/Y') : 'Menunggu aktivasi' }}</td>
                     <td>
                         <form action="{{ route('admin.partners.update', $partner) }}" method="post" class="stack-form">@csrf @method('PUT')
-                            <select class="form-select form-select-sm" name="partner_level">@foreach(['starter','professional','priority'] as $level)<option @selected($partner->partner_level===$level)>{{ $level }}</option>@endforeach</select>
+                            <select class="form-select form-select-sm" name="partner_level">
+                                @foreach($partnerPlans as $level => $plan)
+                                    <option value="{{ $level }}" @selected($partner->partner_level===$level)>
+                                        {{ $plan['name'] }} · {{ $plan['annual_price'] > 0 ? 'Rp'.number_format($plan['annual_price'], 0, ',', '.').'/tahun' : 'Rp0' }}
+                                    </option>
+                                @endforeach
+                            </select>
                             <select class="form-select form-select-sm" name="account_status">@foreach(['pending','active','suspended','inactive'] as $status)<option @selected($partner->account_status===$status)>{{ $status }}</option>@endforeach</select>
                             <button class="btn btn-sm btn-secondary" type="submit">Simpan</button>
                         </form>

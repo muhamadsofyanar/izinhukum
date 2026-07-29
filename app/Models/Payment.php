@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Payment extends Model
 {
@@ -15,6 +16,8 @@ class Payment extends Model
         'receipt_number',
         'public_token',
         'status',
+        'source',
+        'source_key',
         'payment_date',
         'amount',
         'payer_name',
@@ -62,6 +65,11 @@ class Payment extends Model
     public function lastEditedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'last_edited_by');
+    }
+
+    public function commission(): HasOne
+    {
+        return $this->hasOne(Commission::class);
     }
 
     public function scopeActive(Builder $query): Builder

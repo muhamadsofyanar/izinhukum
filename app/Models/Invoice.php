@@ -15,7 +15,10 @@ class Invoice extends Model
         'invoice_number',
         'public_token',
         'created_by',
+        'inquiry_id',
         'partner_id',
+        'referred_by_partner_id',
+        'referral_code',
         'recipient_type',
         'recipient_name',
         'recipient_company',
@@ -56,6 +59,16 @@ class Invoice extends Model
     public function partner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'partner_id');
+    }
+
+    public function inquiry(): BelongsTo
+    {
+        return $this->belongsTo(Inquiry::class);
+    }
+
+    public function referredByPartner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'referred_by_partner_id');
     }
 
     public function items(): HasMany

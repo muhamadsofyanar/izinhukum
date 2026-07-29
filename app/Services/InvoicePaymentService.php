@@ -12,6 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 class InvoicePaymentService
 {
+    public function __construct(private readonly CommissionService $commissions)
+    {
+    }
+
     public function record(Invoice $invoice, User $creator, array $data): Payment
     {
         return DB::transaction(function () use ($invoice, $creator, $data): Payment {
@@ -63,6 +67,8 @@ class InvoicePaymentService
                 'status' => $isPaid ? 'paid' : 'partial',
                 'paid_at' => $isPaid ? now() : null,
             ]);
+
+            $this->commissions->syncForPayment($payment);
 
             return $payment->fresh(['invoice', 'creator', 'category']);
         });
@@ -142,6 +148,8 @@ class InvoicePaymentService
                 $this->recalculateInvoice($invoice);
             }
 
+            $this->commissions->syncForPayment($lockedPayment);
+
             return $lockedPayment->fresh([
                 'invoice',
                 'creator',
@@ -193,6 +201,8 @@ class InvoicePaymentService
             if ($invoice) {
                 $this->recalculateInvoice($invoice);
             }
+
+            $this->commissions->cancelForPayment($lockedPayment);
 
             return $lockedPayment->fresh([
                 'invoice',

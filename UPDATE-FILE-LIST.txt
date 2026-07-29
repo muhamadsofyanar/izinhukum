@@ -76,3 +76,45 @@ resources/views/tracking.blade.php
 routes/web.php
 tests/Feature/PartnerInvoiceTest.php
 tests/Feature/PublicPagesTest.php
+V8 - Finance, Partner Plans, Referral, and Commission Integration
+
+New:
+- app/Console/Commands/ReconcileLegacyPaidInvoices.php
+- app/Http/Middleware/CapturePartnerReferral.php
+- app/Models/PartnerReferral.php
+- app/Services/CommissionService.php
+- app/Services/LegacyPaidInvoiceReconciler.php
+- app/Services/PartnerReferralService.php
+- config/partner.php
+- database/migrations/2026_07_29_000014_integrate_partner_referrals.php
+- PETUNJUK-UPGRADE-REFERRAL-KEUANGAN-V8.md
+- tests/Feature/LegacyPaidInvoiceReconciliationTest.php
+- tests/Feature/PartnerCommissionTest.php
+- tests/Feature/PartnerPlanTest.php
+- tests/Feature/PartnerReferralTest.php
+
+Updated:
+- bootstrap/app.php
+- docker/entrypoint.sh
+- app/Http/Controllers/Admin/InquiryController.php
+- app/Http/Controllers/Admin/PartnerController.php
+- app/Http/Controllers/InquiryController.php
+- app/Http/Controllers/OperationsController.php
+- app/Http/Controllers/Partner/DashboardController.php
+- app/Http/Controllers/PartnerApplicationController.php
+- app/Http/Controllers/Portal/InvoiceController.php
+- app/Models/Commission.php
+- app/Models/Inquiry.php
+- app/Models/Invoice.php
+- app/Models/PartnerApplication.php
+- app/Models/Payment.php
+- app/Models/User.php
+- app/Services/InvoicePaymentService.php
+- resources/views/admin/inquiries.blade.php
+- resources/views/admin/partners.blade.php
+- resources/views/partner/dashboard.blade.php
+- resources/views/partnership.blade.php
+- resources/views/portal/invoices/create.blade.php
+- resources/views/portal/invoices/show.blade.php
+- resources/views/portal/operations.blade.php
+- resources/views/portal/profile.blade.php

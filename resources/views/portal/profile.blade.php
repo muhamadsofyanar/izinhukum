@@ -10,7 +10,13 @@
     <section class="admin-panel portal-section">
         <div class="admin-panel-head"><h2>Identitas akun</h2></div>
         <div class="p-4">
-            @if($user->partner_code)<div class="admin-note">Kode mitra: <strong>{{ $user->partner_code }}</strong></div>@endif
+            @if($user->partner_code)
+                @php($plan = $user->partnerPlan())
+                <div class="admin-note">
+                    Kode mitra: <strong>{{ $user->partner_code }}</strong>
+                    · Paket: <strong>{{ $plan['name'] ?? 'Gratis' }}</strong>
+                </div>
+            @endif
             <div class="row g-3">
                 <div class="col-md-6"><label class="form-label">Nama *</label><input class="form-control" name="name" value="{{ old('name', $user->name) }}" required></div>
                 <div class="col-md-6"><label class="form-label">Email *</label><input class="form-control" name="email" type="email" value="{{ old('email', $user->email) }}" required></div>

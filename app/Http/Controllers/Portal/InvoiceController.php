@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\InvoiceMail;
 use App\Models\AuditLog;
 use App\Models\FinancialCategory;
+use App\Models\Inquiry;
 use App\Models\Invoice;
 use App\Models\ServicePackage;
 use App\Models\User;
@@ -43,8 +44,15 @@ class InvoiceController extends Controller
     public function create(Request $request): View
     {
         $user = $request->attributes->get('currentUser');
+        $inquiry = null;
 
-        return view('portal.invoices.create', $this->formData($user));
+        if ($user->isAdmin() && $request->filled('inquiry')) {
+            $inquiry = Inquiry::query()
+                ->with(['package.service', 'referredByPartner'])
+                ->findOrFail($request->integer('inquiry'));
+        }
+
+        return view('portal.invoices.create', $this->formData($user, null, $inquiry));
     }
 
     public function edit(Request $request, Invoice $invoice): View
@@ -77,6 +85,12 @@ class InvoiceController extends Controller
                 'invoice_number' => sprintf('INV/IH/%s/%05d', now()->format('Ym'), $invoice->id),
             ]);
             $invoice->items()->createMany($prepared['items']);
+            if ($invoice->inquiry_id) {
+                Inquiry::query()
+                    ->whereKey($invoice->inquiry_id)
+                    ->whereNotIn('status', ['selesai', 'batal'])
+                    ->update(['status' => 'proses']);
+            }
 
             return $invoice;
         });
@@ -229,6 +243,8 @@ class InvoiceController extends Controller
             'items.package.service',
             'creator',
             'partner',
+            'inquiry',
+            'referredByPartner',
             'payments.creator',
             'payments.category',
             'payments.cancelledBy',
@@ -312,6 +328,8 @@ class InvoiceController extends Controller
         $validated = $request->validate([
             'recipient_type' => ['nullable', Rule::in(['partner', 'end_user'])],
             'partner_id' => ['nullable', 'exists:users,id'],
+            'inquiry_id' => ['nullable', 'exists:inquiries,id'],
+            'referred_by_partner_id' => ['nullable', 'exists:users,id'],
             'recipient_name' => ['nullable', 'string', 'max:160'],
             'recipient_company' => ['nullable', 'string', 'max:160'],
             'recipient_email' => ['nullable', 'email', 'max:160'],
@@ -326,6 +344,13 @@ class InvoiceController extends Controller
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:100'],
             'items.*.unit_price' => ['nullable', 'integer', 'min:0'],
         ]);
+
+        $inquiry = null;
+        if ($user->isAdmin() && ! empty($validated['inquiry_id'])) {
+            $inquiry = Inquiry::query()
+                ->with('referredByPartner')
+                ->findOrFail((int) $validated['inquiry_id']);
+        }
 
         $partner = null;
         if ($recipientType === 'partner') {
@@ -348,6 +373,26 @@ class InvoiceController extends Controller
             throw ValidationException::withMessages([
                 'recipient_name' => 'Nama penerima wajib diisi.',
             ]);
+        }
+
+        $referredPartner = null;
+        $referredPartnerId = $user->isPartner()
+            ? $user->id
+            : ($validated['referred_by_partner_id']
+                ?? $inquiry?->referred_by_partner_id);
+
+        if ($referredPartnerId) {
+            $referredPartner = User::query()
+                ->whereKey($referredPartnerId)
+                ->where('role', 'partner')
+                ->where('is_active', true)
+                ->first();
+
+            if (! $referredPartner) {
+                throw ValidationException::withMessages([
+                    'referred_by_partner_id' => 'Mitra referral harus merupakan akun yang aktif.',
+                ]);
+            }
         }
 
         $packageIds = collect($validated['items'])->pluck('service_package_id')->unique();
@@ -399,7 +444,10 @@ class InvoiceController extends Controller
 
         return [
             'attributes' => [
+                'inquiry_id' => $inquiry?->id,
                 'partner_id' => $partner?->id,
+                'referred_by_partner_id' => $referredPartner?->id,
+                'referral_code' => $referredPartner?->partner_code,
                 'recipient_type' => $recipientType,
                 'recipient_name' => $partner?->name ?? $validated['recipient_name'],
                 'recipient_company' => $partner?->company_name ?? ($validated['recipient_company'] ?? null),
@@ -415,8 +463,14 @@ class InvoiceController extends Controller
         ];
     }
 
-    private function formData(User $user, ?Invoice $invoice = null): array
+    private function formData(
+        User $user,
+        ?Invoice $invoice = null,
+        ?Inquiry $inquiry = null,
+    ): array
     {
+        $invoice?->loadMissing(['items', 'inquiry', 'referredByPartner']);
+        $sourceInquiry = $invoice?->inquiry ?: $inquiry;
         $packages = ServicePackage::query()
             ->with('service')
             ->where('is_active', true)
@@ -431,6 +485,7 @@ class InvoiceController extends Controller
                 ->orderBy('name')
                 ->get()
             : collect();
+        $referredPartners = $partners;
         $packageOptions = $packages->map(fn (ServicePackage $package): array => [
             'id' => $package->id,
             'name' => $package->name,
@@ -446,19 +501,35 @@ class InvoiceController extends Controller
                 'unit_price' => $item->unit_price,
             ])->values()->all()
             : [[
-                'service_package_id' => '',
-                'description' => '',
+                'service_package_id' => $sourceInquiry?->service_package_id ?: '',
+                'description' => $sourceInquiry?->package?->name ?: '',
                 'quantity' => 1,
-                'unit_price' => '',
+                'unit_price' => $sourceInquiry?->package?->price ?: '',
             ]];
+        $recipientDefaults = [
+            'name' => $invoice?->recipient_name ?: $sourceInquiry?->name,
+            'company' => $invoice?->recipient_company ?: $sourceInquiry?->company_name,
+            'email' => $invoice?->recipient_email ?: $sourceInquiry?->email,
+            'phone' => $invoice?->recipient_phone ?: $sourceInquiry?->phone,
+            'address' => $invoice?->recipient_address,
+        ];
+        $selectedInquiryId = $invoice?->inquiry_id ?: $sourceInquiry?->id;
+        $selectedReferralPartnerId = $invoice?->referred_by_partner_id
+            ?: $sourceInquiry?->referred_by_partner_id
+            ?: ($user->isPartner() ? $user->id : null);
 
         return compact(
             'user',
             'invoice',
             'packages',
             'partners',
+            'referredPartners',
             'packageOptions',
             'formItems',
+            'sourceInquiry',
+            'recipientDefaults',
+            'selectedInquiryId',
+            'selectedReferralPartnerId',
         );
     }
 

@@ -20,6 +20,8 @@ Website legaltech **PT Praktisi Izin Hukum** berbasis Laravel 12, Bootstrap 5, M
 - LMS internal dengan video YouTube tertanam, PDF privat, progres belajar, dan sertifikat khusus.
 - Community dan inbox untuk komunikasi admin dengan mitra.
 - Pendaftaran kemitraan dengan alur persetujuan admin.
+- Tiga paket mitra, tautan referral, atribusi proposal, dan komisi berbasis pembayaran aktif.
+- Rekonsiliasi otomatis invoice lama berstatus lunas tanpa kwitansi.
 - Artikel publik dengan pengelolaan draf, publikasi, dan metadata SEO.
 - Pengaturan SMTP Mailketing dan sender dari panel admin.
 - Pelacakan status permintaan, kebijakan privasi, dan syarat layanan.
@@ -88,6 +90,14 @@ Sesudah login:
 2. Tambahkan sender yang sudah berstatus approved di Mailketing.
 3. Kirim email tes.
 4. Buka **Mitra** untuk menyetujui pendaftaran atau membuat akun mitra.
+
+### Memasang integrasi referral dan keuangan V8
+
+1. Cadangkan database SQLite.
+2. Pastikan `RUN_MIGRATIONS=true` dan `SEED_DATABASE=false`.
+3. Deploy source terbaru.
+4. Startup menjalankan migrasi dan `finance:reconcile-legacy-paid-invoices`.
+5. Baca `PETUNJUK-UPGRADE-REFERRAL-KEUANGAN-V8.md` untuk pengujian referral, invoice, pembayaran, laporan, dan komisi.
 
 Password SMTP disimpan terenkripsi menggunakan `APP_KEY`. Jangan mengganti `APP_KEY` setelah password SMTP tersimpan.
 

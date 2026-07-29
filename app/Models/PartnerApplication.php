@@ -12,6 +12,7 @@ class PartnerApplication extends Model
 
     protected $fillable = [
         'reference',
+        'desired_partner_level',
         'name',
         'email',
         'password',

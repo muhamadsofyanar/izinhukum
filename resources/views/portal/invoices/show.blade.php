@@ -59,6 +59,17 @@
     </details>
 @endif
 
+@if($invoice->referredByPartner)
+    <div class="admin-note mb-3">
+        Sumber pemasaran:
+        <strong>{{ $invoice->referredByPartner->name }}</strong>
+        · {{ $invoice->referral_code ?: $invoice->referredByPartner->partner_code }}
+        @if($invoice->inquiry)
+            · Proposal {{ $invoice->inquiry->reference }}
+        @endif
+    </div>
+@endif
+
 <section class="invoice-sheet admin-invoice">
     @include('portal.invoices._document')
 </section>
