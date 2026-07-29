@@ -31,15 +31,43 @@ class LearningController extends Controller
             ->firstOrFail();
         $course->load('sections.lessons');
         $completed = DB::table('lesson_progress')->where('enrollment_id', $enrollment->id)->pluck('lesson_id');
-        $videoEmbeds = $course->sections
-            ->flatMap->lessons
-            ->mapWithKeys(fn (Lesson $lesson): array => [
-                $lesson->id => $lesson->type === 'video'
-                    ? VideoEmbed::url($lesson->resource_url)
-                    : null,
-            ]);
+        $lessons = $course->sections->flatMap->lessons->values();
+        $requestedLessonId = $request->query->has('materi')
+            ? $request->integer('materi')
+            : null;
 
-        return view('partner.learning.show', compact('course', 'enrollment', 'completed', 'videoEmbeds'));
+        $activeLesson = $requestedLessonId
+            ? $lessons->firstWhere('id', $requestedLessonId)
+            : $lessons->first(fn (Lesson $lesson): bool => ! $completed->contains($lesson->id));
+        $activeLesson ??= $lessons->first();
+
+        if ($requestedLessonId) {
+            abort_unless($activeLesson && $activeLesson->id === $requestedLessonId, 404);
+        }
+
+        $activeIndex = $activeLesson
+            ? $lessons->search(fn (Lesson $lesson): bool => $lesson->id === $activeLesson->id)
+            : false;
+        $previousLesson = is_int($activeIndex) && $activeIndex > 0
+            ? $lessons->get($activeIndex - 1)
+            : null;
+        $nextLesson = is_int($activeIndex) && $activeIndex < $lessons->count() - 1
+            ? $lessons->get($activeIndex + 1)
+            : null;
+        $activeVideoEmbed = $activeLesson?->type === 'video'
+            ? VideoEmbed::url($activeLesson->resource_url)
+            : null;
+
+        return view('partner.learning.show', compact(
+            'course',
+            'enrollment',
+            'completed',
+            'lessons',
+            'activeLesson',
+            'previousLesson',
+            'nextLesson',
+            'activeVideoEmbed',
+        ));
     }
 
     public function complete(Request $request, Course $course, Lesson $lesson): RedirectResponse
@@ -68,6 +96,17 @@ class LearningController extends Controller
                 : null,
         ]);
 
-        return back()->with('success', $completed ? 'Kelas selesai. Sertifikat Anda sudah tersedia.' : 'Materi ditandai selesai.');
+        $lessons = $course->sections()->with('lessons')->get()->flatMap->lessons->values();
+        $currentIndex = $lessons->search(fn (Lesson $item): bool => $item->id === $lesson->id);
+        $nextLesson = is_int($currentIndex) ? $lessons->get($currentIndex + 1) : null;
+
+        return redirect()
+            ->route('partner.learning.show', [
+                'course' => $course,
+                'materi' => $nextLesson?->id ?? $lesson->id,
+            ])
+            ->with('success', $completed
+                ? 'Kelas selesai. Sertifikat Anda sudah tersedia.'
+                : 'Materi ditandai selesai.');
     }
 }

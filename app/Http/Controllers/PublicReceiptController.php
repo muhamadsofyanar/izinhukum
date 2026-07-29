@@ -15,7 +15,7 @@ class PublicReceiptController extends Controller
 
         $payment = Payment::query()
             ->where('public_token', $token)
-            ->with(['invoice', 'creator', 'category'])
+            ->with(['invoice', 'creator', 'category', 'cancelledBy', 'lastEditedBy'])
             ->firstOrFail();
 
         return view('receipts.show', [

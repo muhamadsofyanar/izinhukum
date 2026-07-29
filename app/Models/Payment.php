@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -13,6 +14,7 @@ class Payment extends Model
         'financial_category_id',
         'receipt_number',
         'public_token',
+        'status',
         'payment_date',
         'amount',
         'payer_name',
@@ -20,6 +22,11 @@ class Payment extends Model
         'payment_method',
         'reference_number',
         'notes',
+        'cancelled_at',
+        'cancelled_by',
+        'cancellation_reason',
+        'last_edited_at',
+        'last_edited_by',
     ];
 
     protected function casts(): array
@@ -27,6 +34,8 @@ class Payment extends Model
         return [
             'payment_date' => 'date',
             'amount' => 'integer',
+            'cancelled_at' => 'datetime',
+            'last_edited_at' => 'datetime',
         ];
     }
 
@@ -43,6 +52,26 @@ class Payment extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(FinancialCategory::class, 'financial_category_id');
+    }
+
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    public function lastEditedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'last_edited_by');
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === 'cancelled';
     }
 
     public function formattedAmount(): string

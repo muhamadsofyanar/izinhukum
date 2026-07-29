@@ -95,6 +95,34 @@ class FinancialReportTest extends TestCase
         ]);
     }
 
+    public function test_cancelled_receipts_are_excluded_from_cash_reports(): void
+    {
+        $admin = $this->user('admin', 'admin-cancelled@example.test');
+        Payment::create([
+            'created_by' => $admin->id,
+            'receipt_number' => 'KWT/IH/202607/00999',
+            'public_token' => str_repeat('Z', 64),
+            'status' => 'cancelled',
+            'payment_date' => '2026-07-15',
+            'amount' => 900000,
+            'payer_name' => 'Transaksi Batal',
+            'description' => 'Tidak boleh masuk laporan',
+            'payment_method' => 'transfer',
+            'cancelled_at' => now(),
+            'cancelled_by' => $admin->id,
+            'cancellation_reason' => 'Dana dikembalikan kepada pelanggan.',
+        ]);
+
+        $this->withSession(['portal_user_id' => $admin->id])
+            ->get(route('admin.finance.index', [
+                'from' => '2026-07-01',
+                'to' => '2026-07-31',
+            ]))
+            ->assertOk()
+            ->assertDontSee('Tidak boleh masuk laporan')
+            ->assertDontSee('Rp900.000');
+    }
+
     private function user(string $role, string $email): User
     {
         return User::create([

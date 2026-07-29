@@ -9,6 +9,12 @@
         <small>Status: {{ strtoupper($invoice->status) }}</small>
     </div>
 </header>
+@if($invoice->status === 'cancelled')
+    <div class="invoice-void">
+        <strong>INVOICE DIBATALKAN</strong>
+        <span>{{ $invoice->cancellation_reason }}</span>
+    </div>
+@endif
 <div class="invoice-meta">
     <div><span>Ditagihkan kepada</span><strong>{{ $invoice->recipient_name }}</strong>@if($invoice->recipient_company)<small>{{ $invoice->recipient_company }}</small>@endif<small>{{ $invoice->recipient_email }}</small><small>{{ $invoice->recipient_phone }}</small><small>{{ $invoice->recipient_address }}</small></div>
     <div><span>Tanggal invoice</span><strong>{{ $invoice->issue_date->translatedFormat('d F Y') }}</strong><span>Jatuh tempo</span><strong>{{ $invoice->due_date?->translatedFormat('d F Y') ?? 'Sesuai kesepakatan' }}</strong></div>

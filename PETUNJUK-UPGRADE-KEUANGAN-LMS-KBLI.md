@@ -1,6 +1,6 @@
-# Panduan Upgrade IzinHukum V6
+# Panduan Upgrade IzinHukum V7
 
-Pembaruan ini menambahkan perbaikan KBLI, LMS internal, materi privat, sertifikat, branding dokumen, pembayaran, kwitansi, serta laporan keuangan operasional.
+Pembaruan ini mempertahankan seluruh fungsi V6 dan menambahkan pembaca LMS terfokus, edit invoice draf, pembatalan invoice beralasan, koreksi kwitansi, serta pembatalan kwitansi dengan jejak audit.
 
 ## 1. Cadangkan sebelum mengganti container
 
@@ -40,9 +40,9 @@ TRUSTED_PROXIES=
 
 Isi `TRUSTED_PROXIES` hanya dengan alamat IP proxy atau load balancer yang benar. Jangan menggunakan `*`.
 
-## 3. Pasang source V6
+## 3. Pasang source V7
 
-Timpa source repository dengan isi paket V6, lalu commit dan push ke branch deployment. Setelah itu jalankan build dan deployment normal.
+Timpa source repository dengan isi paket V7, lalu commit dan push ke branch deployment. Setelah itu jalankan build dan deployment normal.
 
 ```bash
 docker compose up -d --build
@@ -58,7 +58,7 @@ php artisan portal:secure-files
 php artisan optimize
 ```
 
-Migrasi V6 tidak menjalankan `ServiceSeeder`. Harga dan status paket yang telah diedit admin tidak ditimpa.
+Migrasi tidak menjalankan `ServiceSeeder`. Harga dan status paket yang telah diedit admin tidak ditimpa. Migrasi `000013` menambahkan metadata audit pembatalan invoice dan pembayaran. Data pembayaran lama tetap berstatus aktif.
 
 ## 4. Pulihkan unggahan lama
 
@@ -106,22 +106,32 @@ Data tersebut digunakan bersama oleh invoice, kwitansi, sertifikat, dan email in
 4. Daftarkan satu akun mitra.
 5. Buka kelas dari akun mitra.
 6. Pastikan video tampil di portal dan tidak membuka aplikasi YouTube.
-7. Pastikan PDF dapat dibuka peserta terdaftar.
-8. Selesaikan semua materi.
-9. Buka sertifikat dan pilih **Cetak / Simpan PDF**.
+7. Pastikan daftar bab dan materi tampil di kiri, sedangkan hanya satu materi aktif tampil di panel utama.
+8. Uji tombol materi sebelumnya dan berikutnya.
+9. Pastikan PDF dapat dibuka peserta terdaftar.
+10. Selesaikan semua materi.
+11. Buka sertifikat dan pilih **Cetak / Simpan PDF**.
 
 Uji akun mitra lain yang tidak terdaftar. Permintaan file PDF harus menghasilkan 404.
 
 ## 8. Uji pembayaran dan kwitansi
 
-1. Buat invoice.
-2. Catat pembayaran sebagian.
-3. Pastikan status berubah menjadi **partial**.
-4. Buka kwitansi.
-5. Catat sisa pembayaran.
-6. Pastikan status berubah menjadi **paid** dan sisa tagihan menjadi nol.
+1. Buat invoice draf.
+2. Ubah penerima atau item invoice, lalu simpan.
+3. Uji hapus permanen pada invoice draf yang tidak digunakan.
+4. Tandai invoice sebagai terkirim. Pastikan data invoice terkunci.
+5. Catat pembayaran sebagian.
+6. Pastikan status berubah menjadi **partial**.
+7. Buka kwitansi.
+8. Pilih **Koreksi**, ubah data, dan isi alasan koreksi.
+9. Pastikan audit log mencatat perubahan.
+10. Batalkan satu kwitansi uji dengan alasan.
+11. Pastikan dokumen tetap dapat dibuka dengan tanda **DIBATALKAN**.
+12. Pastikan pembayaran batal tidak masuk laporan keuangan dan status invoice dihitung ulang.
+13. Catat pembayaran aktif sampai penuh.
+14. Pastikan status berubah menjadi **paid** dan sisa tagihan menjadi nol.
 
-Nominal pembayaran tidak boleh melebihi sisa invoice. Invoice yang sudah memiliki pembayaran tidak dapat dibatalkan.
+Nominal pembayaran tidak boleh melebihi sisa invoice. Invoice terkirim hanya dapat dibatalkan dengan alasan dan tanpa pembayaran aktif. Kwitansi tidak pernah dihapus permanen.
 
 ## 9. Uji laporan keuangan
 
@@ -156,8 +166,8 @@ Jika repository belum memiliki `composer.lock`, jalankan `composer update --lock
 Jika verifikasi kritis gagal:
 
 1. Hentikan deployment V6.
-2. Kembalikan image atau commit V5.
-3. Pulihkan database dari `database-before-v6.sql` hanya jika migrasi V6 harus dibatalkan.
+2. Kembalikan image atau commit V6.
+3. Pulihkan database dari `database-before-v6.sql` hanya jika migrasi harus dibatalkan.
 4. Pulihkan folder unggahan dari `uploads-before-v6`.
 
 Jangan menghapus volume sebelum cadangan diverifikasi.

@@ -146,6 +146,58 @@ class PartnerAcademyTest extends TestCase
             ->assertSee('Kelas diarsipkan');
     }
 
+    public function test_reader_displays_only_the_selected_lesson_content(): void
+    {
+        $partner = $this->partner('LEG-READER', 'reader@example.test');
+        $course = Course::create([
+            'title' => 'Kelas Terfokus',
+            'slug' => 'kelas-terfokus',
+            'summary' => 'Kelas dengan pembaca satu materi.',
+            'level' => 'dasar',
+            'status' => 'published',
+            'passing_score' => 70,
+        ]);
+        $section = CourseSection::create([
+            'course_id' => $course->id,
+            'title' => 'Modul Utama',
+        ]);
+        $first = Lesson::create([
+            'course_section_id' => $section->id,
+            'title' => 'Materi Pertama',
+            'type' => 'text',
+            'content' => 'Isi unik materi pertama tidak boleh tampil.',
+            'sort_order' => 1,
+        ]);
+        $second = Lesson::create([
+            'course_section_id' => $section->id,
+            'title' => 'Materi Kedua',
+            'type' => 'text',
+            'content' => 'Isi unik materi kedua tampil di panel utama.',
+            'sort_order' => 2,
+        ]);
+        CourseEnrollment::create([
+            'course_id' => $course->id,
+            'user_id' => $partner->id,
+        ]);
+
+        $this->withSession(['portal_user_id' => $partner->id])
+            ->get(route('partner.learning.show', [
+                'course' => $course,
+                'materi' => $second->id,
+            ]))
+            ->assertOk()
+            ->assertSee('learning-reader', false)
+            ->assertSee('Isi unik materi kedua tampil di panel utama.')
+            ->assertDontSee('Isi unik materi pertama tidak boleh tampil.');
+
+        $this->withSession(['portal_user_id' => $partner->id])
+            ->get(route('partner.learning.show', [
+                'course' => $course,
+                'materi' => $first->id + $second->id + 999,
+            ]))
+            ->assertNotFound();
+    }
+
     private function partner(string $code, string $email): User
     {
         return User::create([

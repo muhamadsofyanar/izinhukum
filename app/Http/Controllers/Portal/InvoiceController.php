@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
 use App\Mail\InvoiceMail;
+use App\Models\AuditLog;
+use App\Models\FinancialCategory;
 use App\Models\Invoice;
 use App\Models\ServicePackage;
 use App\Models\User;
-use App\Services\MailConfigurator;
 use App\Services\BrandingService;
-use App\Models\FinancialCategory;
+use App\Services\MailConfigurator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,9 @@ class InvoiceController extends Controller
         $status = $request->query('status');
         $invoices = $this->visibleInvoices($user)
             ->with(['creator', 'partner'])
-            ->withSum('payments as amount_paid', 'amount')
+            ->withSum([
+                'payments as amount_paid' => fn ($query) => $query->active(),
+            ], 'amount')
             ->when($status, fn ($query) => $query->where('status', $status))
             ->latest()
             ->paginate(20)
@@ -40,35 +43,273 @@ class InvoiceController extends Controller
     public function create(Request $request): View
     {
         $user = $request->attributes->get('currentUser');
-        $packages = ServicePackage::query()
-            ->with('service')
-            ->where('is_active', true)
-            ->whereHas('service', fn ($query) => $query->where('is_active', true))
-            ->orderBy('service_id')
-            ->orderBy('sort_order')
-            ->get();
 
-        $partners = $user->isAdmin()
-            ? User::where('role', 'partner')->where('is_active', true)->orderBy('name')->get()
-            : collect();
+        return view('portal.invoices.create', $this->formData($user));
+    }
 
-        $packageOptions = $packages->map(fn (ServicePackage $package): array => [
-            'id' => $package->id,
-            'name' => $package->name,
-            'website' => $package->price,
-            'minimum' => $package->minimum_end_user_price ?? 0,
-            'partner' => $package->partner_price ?? 0,
-        ])->values()->all();
+    public function edit(Request $request, Invoice $invoice): View
+    {
+        $user = $request->attributes->get('currentUser');
+        $this->authorizeInvoice($user, $invoice);
+        $this->authorizeInvoiceMutation($user, $invoice);
+        $this->ensureDraftEditable($invoice);
 
-        return view('portal.invoices.create', compact('user', 'packages', 'partners', 'packageOptions'));
+        return view('portal.invoices.create', $this->formData($user, $invoice));
     }
 
     public function store(Request $request): RedirectResponse
     {
         $user = $request->attributes->get('currentUser');
-        $recipientType = $user->isAdmin() ? $request->input('recipient_type', 'end_user') : 'end_user';
+        $prepared = $this->prepareInvoice($request, $user);
 
-        $rules = [
+        $invoice = DB::transaction(function () use ($user, $prepared): Invoice {
+            $invoice = Invoice::query()->create([
+                'invoice_number' => 'PENDING-'.Str::uuid(),
+                'public_token' => Str::random(56),
+                'created_by' => $user->id,
+                ...$prepared['attributes'],
+                'status' => 'draft',
+                'subtotal' => $prepared['subtotal'],
+                'total' => $prepared['subtotal'],
+            ]);
+
+            $invoice->update([
+                'invoice_number' => sprintf('INV/IH/%s/%05d', now()->format('Ym'), $invoice->id),
+            ]);
+            $invoice->items()->createMany($prepared['items']);
+
+            return $invoice;
+        });
+
+        return redirect()
+            ->route($this->routePrefix($user).'.invoices.show', $invoice)
+            ->with('success', 'Invoice berhasil dibuat.');
+    }
+
+    public function update(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $user = $request->attributes->get('currentUser');
+        $this->authorizeInvoice($user, $invoice);
+        $this->authorizeInvoiceMutation($user, $invoice);
+        $this->ensureDraftEditable($invoice);
+        $prepared = $this->prepareInvoice($request, $user);
+
+        DB::transaction(function () use ($request, $user, $invoice, $prepared): void {
+            $lockedInvoice = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            $this->ensureDraftEditable($lockedInvoice);
+            $before = $lockedInvoice->only([
+                'recipient_type',
+                'partner_id',
+                'recipient_name',
+                'recipient_company',
+                'recipient_email',
+                'recipient_phone',
+                'recipient_address',
+                'issue_date',
+                'due_date',
+                'subtotal',
+                'total',
+                'notes',
+            ]);
+
+            $lockedInvoice->update([
+                ...$prepared['attributes'],
+                'subtotal' => $prepared['subtotal'],
+                'total' => $prepared['subtotal'],
+            ]);
+            $lockedInvoice->items()->delete();
+            $lockedInvoice->items()->createMany($prepared['items']);
+
+            AuditLog::query()->create([
+                'user_id' => $user->id,
+                'action' => 'invoice.updated',
+                'subject_type' => Invoice::class,
+                'subject_id' => $lockedInvoice->id,
+                'metadata' => [
+                    'invoice_number' => $lockedInvoice->invoice_number,
+                    'before' => $before,
+                    'after' => $lockedInvoice->fresh()->only(array_keys($before)),
+                ],
+                'ip_address' => $request->ip(),
+            ]);
+        });
+
+        return redirect()
+            ->route($this->routePrefix($user).'.invoices.show', $invoice)
+            ->with('success', 'Invoice draf berhasil diperbarui.');
+    }
+
+    public function destroy(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $user = $request->attributes->get('currentUser');
+        $this->authorizeInvoice($user, $invoice);
+        $this->authorizeInvoiceMutation($user, $invoice);
+        $this->ensureDraftEditable($invoice);
+
+        DB::transaction(function () use ($request, $user, $invoice): void {
+            $lockedInvoice = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+            $this->ensureDraftEditable($lockedInvoice);
+
+            AuditLog::query()->create([
+                'user_id' => $user->id,
+                'action' => 'invoice.deleted',
+                'subject_type' => Invoice::class,
+                'subject_id' => $lockedInvoice->id,
+                'metadata' => [
+                    'invoice_number' => $lockedInvoice->invoice_number,
+                    'recipient_name' => $lockedInvoice->recipient_name,
+                    'total' => $lockedInvoice->total,
+                ],
+                'ip_address' => $request->ip(),
+            ]);
+
+            $lockedInvoice->delete();
+        });
+
+        return redirect()
+            ->route($this->routePrefix($user).'.invoices.index')
+            ->with('success', 'Invoice draf berhasil dihapus.');
+    }
+
+    public function cancel(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $user = $request->attributes->get('currentUser');
+        $this->authorizeInvoice($user, $invoice);
+        $this->authorizeInvoiceMutation($user, $invoice);
+        $data = $request->validate([
+            'cancellation_reason' => ['required', 'string', 'min:5', 'max:1000'],
+        ]);
+
+        DB::transaction(function () use ($request, $user, $invoice, $data): void {
+            $lockedInvoice = Invoice::query()->lockForUpdate()->findOrFail($invoice->id);
+
+            if ($lockedInvoice->status !== 'sent') {
+                throw ValidationException::withMessages([
+                    'invoice' => 'Hanya invoice terkirim yang dapat dibatalkan.',
+                ]);
+            }
+
+            if ($lockedInvoice->payments()->active()->exists()) {
+                throw ValidationException::withMessages([
+                    'invoice' => 'Invoice dengan pembayaran aktif tidak dapat dibatalkan.',
+                ]);
+            }
+
+            $lockedInvoice->update([
+                'status' => 'cancelled',
+                'cancelled_at' => now(),
+                'cancelled_by' => $user->id,
+                'cancellation_reason' => $data['cancellation_reason'],
+            ]);
+
+            AuditLog::query()->create([
+                'user_id' => $user->id,
+                'action' => 'invoice.cancelled',
+                'subject_type' => Invoice::class,
+                'subject_id' => $lockedInvoice->id,
+                'metadata' => [
+                    'reason' => $data['cancellation_reason'],
+                    'invoice_number' => $lockedInvoice->invoice_number,
+                ],
+                'ip_address' => $request->ip(),
+            ]);
+        });
+
+        return back()->with('success', 'Invoice dibatalkan dan alasan tersimpan pada audit log.');
+    }
+
+    public function show(
+        Request $request,
+        Invoice $invoice,
+        BrandingService $brandingService,
+    ): View {
+        $user = $request->attributes->get('currentUser');
+        $this->authorizeInvoice($user, $invoice);
+        $invoice->load([
+            'items.package.service',
+            'creator',
+            'partner',
+            'payments.creator',
+            'payments.category',
+            'payments.cancelledBy',
+            'payments.lastEditedBy',
+            'cancelledBy',
+        ]);
+
+        return view('portal.invoices.show', [
+            'invoice' => $invoice,
+            'user' => $user,
+            'branding' => $brandingService->document(),
+            'incomeCategories' => $user->isAdmin()
+                ? FinancialCategory::query()
+                    ->where('type', 'income')
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get()
+                : collect(),
+        ]);
+    }
+
+    public function updateStatus(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $user = $request->attributes->get('currentUser');
+        $this->authorizeInvoice($user, $invoice);
+        $this->authorizeInvoiceMutation($user, $invoice);
+        $this->ensureDraftEditable($invoice);
+
+        $request->validate([
+            'status' => ['required', Rule::in(['sent'])],
+        ]);
+
+        $invoice->update([
+            'status' => 'sent',
+            'sent_at' => $invoice->sent_at ?: now(),
+        ]);
+
+        return back()->with('success', 'Invoice ditandai sebagai terkirim dan datanya kini dikunci.');
+    }
+
+    public function send(
+        Request $request,
+        Invoice $invoice,
+        MailConfigurator $mailConfigurator,
+    ): RedirectResponse {
+        $user = $request->attributes->get('currentUser');
+        $this->authorizeInvoice($user, $invoice);
+        $this->authorizeInvoiceMutation($user, $invoice);
+
+        if ($invoice->status === 'cancelled') {
+            return back()->withErrors(['email' => 'Invoice yang dibatalkan tidak dapat dikirim.']);
+        }
+        if (! $invoice->recipient_email) {
+            return back()->withErrors(['email' => 'Invoice belum memiliki email penerima.']);
+        }
+
+        try {
+            $invoice->load(['items.package.service', 'creator']);
+            $mailConfigurator->apply();
+            Mail::to($invoice->recipient_email)->send(new InvoiceMail($invoice));
+            $invoice->update([
+                'status' => $invoice->status === 'draft' ? 'sent' : $invoice->status,
+                'sent_at' => now(),
+            ]);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()->withErrors([
+                'email' => 'Email gagal dikirim. Periksa konfigurasi SMTP pada panel admin.',
+            ]);
+        }
+
+        return back()->with('success', 'Invoice berhasil dikirim ke '.$invoice->recipient_email.'.');
+    }
+
+    private function prepareInvoice(Request $request, User $user): array
+    {
+        $recipientType = $user->isAdmin()
+            ? $request->input('recipient_type', 'end_user')
+            : 'end_user';
+        $validated = $request->validate([
             'recipient_type' => ['nullable', Rule::in(['partner', 'end_user'])],
             'partner_id' => ['nullable', 'exists:users,id'],
             'recipient_name' => ['nullable', 'string', 'max:160'],
@@ -84,8 +325,7 @@ class InvoiceController extends Controller
             'items.*.description' => ['nullable', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:100'],
             'items.*.unit_price' => ['nullable', 'integer', 'min:0'],
-        ];
-        $validated = $request->validate($rules);
+        ]);
 
         $partner = null;
         if ($recipientType === 'partner') {
@@ -100,15 +340,23 @@ class InvoiceController extends Controller
                 ->first();
 
             if (! $partner) {
-                throw ValidationException::withMessages(['partner_id' => 'Pilih mitra yang aktif.']);
+                throw ValidationException::withMessages([
+                    'partner_id' => 'Pilih mitra yang aktif.',
+                ]);
             }
         } elseif (empty($validated['recipient_name'])) {
-            throw ValidationException::withMessages(['recipient_name' => 'Nama penerima wajib diisi.']);
+            throw ValidationException::withMessages([
+                'recipient_name' => 'Nama penerima wajib diisi.',
+            ]);
         }
 
         $packageIds = collect($validated['items'])->pluck('service_package_id')->unique();
-        $packages = ServicePackage::with('service')->whereIn('id', $packageIds)->get()->keyBy('id');
-        $preparedItems = [];
+        $packages = ServicePackage::query()
+            ->with('service')
+            ->whereIn('id', $packageIds)
+            ->get()
+            ->keyBy('id');
+        $items = [];
         $subtotal = 0;
 
         foreach ($validated['items'] as $index => $item) {
@@ -130,14 +378,15 @@ class InvoiceController extends Controller
 
                 if ($unitPrice < $minimum) {
                     throw ValidationException::withMessages([
-                        "items.{$index}.unit_price" => 'Harga jual tidak boleh di bawah '.('Rp'.number_format($minimum, 0, ',', '.')).'.',
+                        "items.{$index}.unit_price" => 'Harga jual tidak boleh di bawah Rp'
+                            .number_format($minimum, 0, ',', '.').'.',
                     ]);
                 }
             }
 
             $lineTotal = $unitPrice * $quantity;
             $subtotal += $lineTotal;
-            $preparedItems[] = [
+            $items[] = [
                 'service_package_id' => $package->id,
                 'description' => trim((string) ($item['description'] ?? '')) ?: $package->name,
                 'quantity' => $quantity,
@@ -148,18 +397,8 @@ class InvoiceController extends Controller
             ];
         }
 
-        $invoice = DB::transaction(function () use (
-            $user,
-            $recipientType,
-            $partner,
-            $validated,
-            $preparedItems,
-            $subtotal,
-        ): Invoice {
-            $invoice = Invoice::create([
-                'invoice_number' => 'PENDING-'.Str::uuid(),
-                'public_token' => Str::random(56),
-                'created_by' => $user->id,
+        return [
+            'attributes' => [
                 'partner_id' => $partner?->id,
                 'recipient_type' => $recipientType,
                 'recipient_name' => $partner?->name ?? $validated['recipient_name'],
@@ -169,103 +408,67 @@ class InvoiceController extends Controller
                 'recipient_address' => $partner?->address ?? ($validated['recipient_address'] ?? null),
                 'issue_date' => $validated['issue_date'],
                 'due_date' => $validated['due_date'] ?? null,
-                'status' => 'draft',
-                'subtotal' => $subtotal,
-                'total' => $subtotal,
                 'notes' => $validated['notes'] ?? null,
-            ]);
-
-            $invoice->update([
-                'invoice_number' => sprintf('INV/IH/%s/%05d', now()->format('Ym'), $invoice->id),
-            ]);
-            $invoice->items()->createMany($preparedItems);
-
-            return $invoice;
-        });
-
-        return redirect()
-            ->route($this->routePrefix($user).'.invoices.show', $invoice)
-            ->with('success', 'Invoice berhasil dibuat.');
+            ],
+            'items' => $items,
+            'subtotal' => $subtotal,
+        ];
     }
 
-    public function show(
-        Request $request,
-        Invoice $invoice,
-        BrandingService $brandingService,
-    ): View
+    private function formData(User $user, ?Invoice $invoice = null): array
     {
-        $user = $request->attributes->get('currentUser');
-        $this->authorizeInvoice($user, $invoice);
-        $invoice->load(['items.package.service', 'creator', 'partner', 'payments.creator', 'payments.category']);
+        $packages = ServicePackage::query()
+            ->with('service')
+            ->where('is_active', true)
+            ->whereHas('service', fn ($query) => $query->where('is_active', true))
+            ->orderBy('service_id')
+            ->orderBy('sort_order')
+            ->get();
+        $partners = $user->isAdmin()
+            ? User::query()
+                ->where('role', 'partner')
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+            : collect();
+        $packageOptions = $packages->map(fn (ServicePackage $package): array => [
+            'id' => $package->id,
+            'name' => $package->name,
+            'website' => $package->price,
+            'minimum' => $package->minimum_end_user_price ?? 0,
+            'partner' => $package->partner_price ?? 0,
+        ])->values()->all();
+        $formItems = $invoice
+            ? $invoice->items()->get()->map(fn ($item): array => [
+                'service_package_id' => $item->service_package_id,
+                'description' => $item->description,
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+            ])->values()->all()
+            : [[
+                'service_package_id' => '',
+                'description' => '',
+                'quantity' => 1,
+                'unit_price' => '',
+            ]];
 
-        return view('portal.invoices.show', [
-            'invoice' => $invoice,
-            'user' => $user,
-            'branding' => $brandingService->document(),
-            'incomeCategories' => $user->isAdmin()
-                ? FinancialCategory::query()->where('type', 'income')->where('is_active', true)->orderBy('name')->get()
-                : collect(),
-        ]);
+        return compact(
+            'user',
+            'invoice',
+            'packages',
+            'partners',
+            'packageOptions',
+            'formItems',
+        );
     }
 
-    public function updateStatus(Request $request, Invoice $invoice): RedirectResponse
+    private function ensureDraftEditable(Invoice $invoice): void
     {
-        $user = $request->attributes->get('currentUser');
-        $this->authorizeInvoice($user, $invoice);
-
-        if ($user->isPartner() && $invoice->created_by !== $user->id) {
-            abort(403);
-        }
-
-        $validated = $request->validate([
-            'status' => ['required', Rule::in(['draft', 'sent', 'cancelled'])],
-        ]);
-
-        if ($invoice->payments()->exists()) {
+        if ($invoice->status !== 'draft' || $invoice->payments()->exists()) {
             throw ValidationException::withMessages([
-                'status' => 'Status invoice yang sudah memiliki pembayaran ditentukan otomatis oleh total pembayaran.',
+                'invoice' => 'Hanya invoice draf tanpa pembayaran yang dapat diedit atau dihapus.',
             ]);
         }
-
-        $updates = ['status' => $validated['status']];
-        if ($validated['status'] === 'sent' && ! $invoice->sent_at) {
-            $updates['sent_at'] = now();
-        }
-        $invoice->update($updates);
-
-        return back()->with('success', 'Status invoice diperbarui.');
-    }
-
-    public function send(
-        Request $request,
-        Invoice $invoice,
-        MailConfigurator $mailConfigurator,
-    ): RedirectResponse {
-        $user = $request->attributes->get('currentUser');
-        $this->authorizeInvoice($user, $invoice);
-
-        if ($user->isPartner() && $invoice->created_by !== $user->id) {
-            abort(403);
-        }
-        if (! $invoice->recipient_email) {
-            return back()->withErrors(['email' => 'Invoice belum memiliki email penerima.']);
-        }
-
-        try {
-            $invoice->load(['items.package.service', 'creator']);
-            $mailConfigurator->apply();
-            Mail::to($invoice->recipient_email)->send(new InvoiceMail($invoice));
-            $invoice->update([
-                'status' => $invoice->status === 'draft' ? 'sent' : $invoice->status,
-                'sent_at' => now(),
-            ]);
-        } catch (\Throwable $exception) {
-            report($exception);
-
-            return back()->withErrors(['email' => 'Email gagal dikirim. Periksa konfigurasi SMTP pada panel admin.']);
-        }
-
-        return back()->with('success', 'Invoice berhasil dikirim ke '.$invoice->recipient_email.'.');
     }
 
     private function visibleInvoices(User $user): Builder
@@ -274,7 +477,8 @@ class InvoiceController extends Controller
 
         if ($user->isPartner()) {
             $query->where(function ($builder) use ($user): void {
-                $builder->where('created_by', $user->id)->orWhere('partner_id', $user->id);
+                $builder->where('created_by', $user->id)
+                    ->orWhere('partner_id', $user->id);
             });
         }
 
@@ -287,7 +491,17 @@ class InvoiceController extends Controller
             return;
         }
 
-        abort_unless($invoice->created_by === $user->id || $invoice->partner_id === $user->id, 403);
+        abort_unless(
+            $invoice->created_by === $user->id || $invoice->partner_id === $user->id,
+            403,
+        );
+    }
+
+    private function authorizeInvoiceMutation(User $user, Invoice $invoice): void
+    {
+        if ($user->isPartner()) {
+            abort_unless($invoice->created_by === $user->id, 403);
+        }
     }
 
     private function routePrefix(User $user): string

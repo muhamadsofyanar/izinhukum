@@ -16,6 +16,7 @@ class FinancialReportService
         $toDate = $to->toDateString();
 
         $payments = Payment::query()
+            ->active()
             ->with(['invoice', 'category'])
             ->whereBetween('payment_date', [$fromDate, $toDate])
             ->orderBy('payment_date')
@@ -54,7 +55,10 @@ class FinancialReportService
 
     private function openingBalance(string $fromDate): int
     {
-        $income = (int) Payment::query()->whereDate('payment_date', '<', $fromDate)->sum('amount');
+        $income = (int) Payment::query()
+            ->active()
+            ->whereDate('payment_date', '<', $fromDate)
+            ->sum('amount');
         $expense = (int) Expense::query()->whereDate('transaction_date', '<', $fromDate)->sum('amount');
 
         return $income - $expense;
@@ -64,7 +68,9 @@ class FinancialReportService
     {
         return (int) Invoice::query()
             ->whereIn('status', ['sent', 'partial'])
-            ->withSum('payments', 'amount')
+            ->withSum([
+                'payments as payments_sum_amount' => fn ($query) => $query->active(),
+            ], 'amount')
             ->get(['id', 'total'])
             ->sum(fn (Invoice $invoice): int => max(
                 0,
@@ -142,6 +148,7 @@ class FinancialReportService
             'date' => $payment->payment_date,
             'number' => $payment->receipt_number,
             'document_url' => route('receipts.public', $payment->public_token),
+            'manage_url' => route('admin.payments.edit', $payment),
             'description' => $payment->description
                 ?: ($payment->invoice ? 'Pembayaran '.$payment->invoice->invoice_number : 'Pemasukan lain'),
             'counterparty' => $payment->payer_name ?: $payment->invoice?->recipient_name,
@@ -155,6 +162,7 @@ class FinancialReportService
             'date' => $expense->transaction_date,
             'number' => $expense->reference_number ?: 'EXP-'.$expense->id,
             'document_url' => null,
+            'manage_url' => null,
             'description' => $expense->description,
             'counterparty' => $expense->payee,
             'category' => $expense->category?->name ?: 'Tanpa kategori',

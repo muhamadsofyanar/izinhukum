@@ -77,9 +77,9 @@
 </div>
 <section class="admin-panel mt-3">
     <div class="admin-panel-head"><h2>Transaksi periode</h2><span>{{ $report['transactions']->count() }} transaksi</span></div>
-    <div class="table-responsive"><table class="table admin-table"><thead><tr><th>Tanggal</th><th>Nomor</th><th>Uraian</th><th>Kategori</th><th>Masuk</th><th>Keluar</th></tr></thead><tbody>
-    @forelse($report['transactions'] as $row)<tr><td>{{ $row['date']->format('d/m/Y') }}</td><td>@if($row['document_url'])<a href="{{ $row['document_url'] }}" target="_blank">{{ $row['number'] }}</a>@else{{ $row['number'] }}@endif</td><td><strong>{{ $row['description'] }}</strong><small>{{ $row['counterparty'] }}</small></td><td>{{ $row['category'] }}</td><td>@if($row['type']==='income')<strong class="text-success">Rp{{ number_format($row['amount'],0,',','.') }}</strong>@else—@endif</td><td>@if($row['type']==='expense')<strong class="text-danger">Rp{{ number_format($row['amount'],0,',','.') }}</strong>@else—@endif</td></tr>
-    @empty<tr><td colspan="6" class="text-center py-5">Belum ada transaksi pada periode ini.</td></tr>@endforelse
+    <div class="table-responsive"><table class="table admin-table"><thead><tr><th>Tanggal</th><th>Nomor</th><th>Uraian</th><th>Kategori</th><th>Masuk</th><th>Keluar</th><th></th></tr></thead><tbody>
+    @forelse($report['transactions'] as $row)<tr><td>{{ $row['date']->format('d/m/Y') }}</td><td>@if($row['document_url'])<a href="{{ $row['document_url'] }}" target="_blank">{{ $row['number'] }}</a>@else{{ $row['number'] }}@endif</td><td><strong>{{ $row['description'] }}</strong><small>{{ $row['counterparty'] }}</small></td><td>{{ $row['category'] }}</td><td>@if($row['type']==='income')<strong class="text-success">Rp{{ number_format($row['amount'],0,',','.') }}</strong>@else—@endif</td><td>@if($row['type']==='expense')<strong class="text-danger">Rp{{ number_format($row['amount'],0,',','.') }}</strong>@else—@endif</td><td>@if($row['manage_url'])<a class="btn btn-sm btn-outline-primary" href="{{ $row['manage_url'] }}">Koreksi</a>@endif</td></tr>
+    @empty<tr><td colspan="7" class="text-center py-5">Belum ada transaksi pada periode ini.</td></tr>@endforelse
     </tbody></table></div>
 </section>
 <div class="admin-note mt-3">Laporan laba rugi menggunakan basis kas. Pemasukan diakui ketika pembayaran diterima dan pengeluaran diakui pada tanggal transaksi.</div>

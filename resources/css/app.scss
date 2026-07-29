@@ -1119,6 +1119,10 @@ a { color: $teal-dark; text-decoration: none; }
 .invoice-brand { display: flex; align-items: center; gap: .7rem; > span { display: grid; place-items: center; width: 46px; height: 46px; color: #fff; background: $teal; border-radius: 13px 13px 13px 3px; font-weight: 800; } div { display: flex; flex-direction: column; } strong { color: $navy; font-family: "Manrope", sans-serif; font-size: 1.2rem; } small { color: $muted; font-size: .65rem; } }
 .invoice-logo { width: 54px; height: 54px; object-fit: contain; }
 .invoice-title { display: flex; flex-direction: column; align-items: flex-end; text-align: right; > span { color: $teal-dark; font-size: 1.55rem; font-weight: 800; letter-spacing: .12em; } strong { margin: .25rem 0; color: $navy; font-size: .8rem; overflow-wrap: anywhere; } small { color: $muted; } }
+.invoice-void { margin: 1.25rem 0; padding: 1rem; color: #8b1e25; background: #ffe7e9; border: 2px solid #c73943; border-radius: 10px; text-align: center; }
+.invoice-void strong,.invoice-void span { display: block; }
+.invoice-void strong { letter-spacing: .1em; }
+.invoice-void span { margin-top: .35rem; font-size: .78rem; }
 .invoice-meta {
     display: grid;
     grid-template-columns: 1fr 260px;
@@ -1278,6 +1282,46 @@ a { color: $teal-dark; text-decoration: none; }
 .pdf-material iframe { display: block; width: 100%; min-height: 620px; margin-top: .8rem; border: 1px solid $line; border-radius: 12px; }
 .video-material { width: min(860px, 100%); margin-top: 1rem; aspect-ratio: 16 / 9; overflow: hidden; background: #07192f; border-radius: 14px; }
 .video-material iframe { width: 100%; height: 100%; border: 0; }
+.learning-overview { display: flex; align-items: center; justify-content: space-between; gap: 1.25rem; padding: 1.25rem 1.4rem; margin-bottom: 1rem; color: #fff; background: linear-gradient(135deg,$navy 0%,#123b4f 100%); border-radius: 18px; }
+.learning-overview-copy { flex: 1 1 auto; min-width: 0; }
+.learning-overview-copy p { max-width: 760px; margin: .45rem 0 .8rem; color: rgba(255,255,255,.74); }
+.learning-eyebrow { color: #79dbc5; font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.learning-progress-row { display: flex; align-items: center; gap: .75rem; }
+.learning-progress-row .progress-track { flex: 1 1 auto; max-width: 640px; margin: 0; background: rgba(255,255,255,.18); }
+.learning-progress-row .progress-track span { background: #59d4b9; }
+.learning-progress-row strong { font-size: .78rem; }
+.learning-overview .certificate-box { color: $navy; background: #fff; }
+.learning-reader { display: grid; grid-template-columns: minmax(260px,320px) minmax(0,1fr); gap: 1rem; align-items: start; }
+.learning-outline { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto; }
+.learning-outline-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: 1rem 1.1rem; border-bottom: 1px solid $line; }
+.learning-outline-head span { color: $navy; font-size: .9rem; font-weight: 800; }
+.learning-outline-head strong { color: $muted; font-size: .68rem; }
+.learning-section { padding: .95rem .75rem; border-bottom: 1px solid $line; }
+.learning-section:last-child { border-bottom: 0; }
+.learning-section h2 { margin: 0 .45rem .65rem; color: $muted; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.learning-outline-item { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: .65rem; align-items: center; padding: .68rem .55rem; color: #33495d; border-radius: 10px; }
+.learning-outline-item:hover { color: $navy; background: $soft; }
+.learning-outline-item.active { color: $navy; background: #e9f8f4; box-shadow: inset 3px 0 0 $teal; }
+.learning-outline-item.completed { color: $muted; }
+.learning-outline-item strong,.learning-outline-item small { display: block; }
+.learning-outline-item strong { overflow: hidden; font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
+.learning-outline-item small { margin-top: .2rem; color: $muted; font-size: .58rem; font-weight: 700; }
+.learning-step { display: grid; width: 26px; height: 26px; place-items: center; color: $muted; background: #fff; border: 1px solid $line; border-radius: 50%; font-size: .68rem; font-weight: 800; }
+.learning-outline-item.active .learning-step,.learning-outline-item.completed .learning-step { color: #fff; background: $teal; border-color: $teal; }
+.learning-stage { min-width: 0; }
+.learning-stage-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.4rem; border-bottom: 1px solid $line; }
+.learning-stage-head span:first-child { color: $teal-dark; font-size: .68rem; font-weight: 800; letter-spacing: .06em; }
+.learning-stage-head h2 { margin: .3rem 0 0; color: $navy; font-size: clamp(1.25rem,2.2vw,1.75rem); }
+.learning-stage-body { min-height: 480px; padding: 1.4rem; }
+.learning-stage-body .video-material { width: 100%; margin: 0 0 1.25rem; border-radius: 16px; }
+.learning-stage-body .lesson-content { padding: 1.2rem; margin: 0 0 1.25rem; background: #f8fafb; border: 1px solid $line; border-radius: 12px; }
+.pdf-material-head,.learning-resource { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 1rem; background: $soft; border-radius: 12px; }
+.pdf-material-head strong,.pdf-material-head small { display: block; }
+.pdf-material-head small,.learning-resource span { margin-top: .2rem; color: $muted; font-size: .7rem; }
+.learning-stage-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.4rem; background: #fbfcfc; border-top: 1px solid $line; }
+.learning-stage-actions { display: flex; align-items: center; gap: .6rem; }
+.learning-stage-actions form { margin: 0; }
+.learning-empty { padding: 4rem 1rem; }
 .community-layout { display: grid; grid-template-columns: minmax(260px,.65fr) minmax(0,1.35fr); gap: 1.25rem; align-items: start; }
 .community-compose { padding: 1rem; position: sticky; top: 1rem; }
 .community-feed { display: grid; gap: 1rem; }
@@ -1313,8 +1357,12 @@ a { color: $teal-dark; text-decoration: none; }
 .finance-category-card .p-3 > div { display: flex; justify-content: space-between; gap: 1rem; padding: .55rem 0; border-bottom: 1px solid $line; font-size: .75rem; }
 .finance-category-card .p-3 > div strong { white-space: nowrap; }
 .finance-entry-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; align-items: start; }
+.transaction-cancel-panel { margin-bottom: 1rem; }
+.transaction-cancel-panel summary { padding: 1rem 1.2rem; color: #a2272f; cursor: pointer; font-weight: 800; }
+.transaction-cancelled { opacity: .68; background: #fff7f7; }
+.transaction-cancelled td > strong { text-decoration: line-through; }
 .category-chip-list { display: flex; flex-wrap: wrap; gap: .4rem; }
 .category-chip-list span { padding: .38rem .55rem; color: $muted; background: $soft; border-radius: 999px; font-size: .68rem; }
-@media(max-width:991.98px){.academy-builder,.form-grid{grid-template-columns:1fr}.course-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:991.98px){.academy-builder,.form-grid,.learning-reader{grid-template-columns:1fr}.course-grid{grid-template-columns:1fr 1fr}.learning-outline{position:static;max-height:none}.learning-outline nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.learning-section{border-right:1px solid $line}}
 @media(max-width:991.98px){.finance-stats{grid-template-columns:1fr 1fr}.finance-layout,.finance-entry-grid{grid-template-columns:1fr}}
-@media(max-width:767.98px){.course-grid,.community-layout,.inbox-layout{grid-template-columns:1fr}.course-intro,.learning-lesson,.finance-filter{align-items:stretch;flex-direction:column}.certificate-box{min-width:0;width:100%}.community-compose{position:static}.pdf-material iframe{min-height:440px}.finance-stats{grid-template-columns:1fr}}
+@media(max-width:767.98px){.course-grid,.community-layout,.inbox-layout,.learning-outline nav{grid-template-columns:1fr}.course-intro,.learning-lesson,.finance-filter,.learning-overview,.learning-stage-head,.learning-stage-footer,.pdf-material-head,.learning-resource{align-items:stretch;flex-direction:column}.certificate-box{min-width:0;width:100%}.community-compose{position:static}.pdf-material iframe{min-height:440px}.finance-stats{grid-template-columns:1fr}.learning-section{border-right:0}.learning-stage-body{min-height:360px;padding:1rem}.learning-stage-actions{align-items:stretch;flex-direction:column}.learning-stage-actions .btn{width:100%}}

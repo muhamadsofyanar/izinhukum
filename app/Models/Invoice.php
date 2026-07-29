@@ -32,6 +32,9 @@ class Invoice extends Model
         'notes',
         'sent_at',
         'paid_at',
+        'cancelled_at',
+        'cancelled_by',
+        'cancellation_reason',
     ];
 
     protected function casts(): array
@@ -41,6 +44,7 @@ class Invoice extends Model
             'due_date' => 'date',
             'sent_at' => 'datetime',
             'paid_at' => 'datetime',
+            'cancelled_at' => 'datetime',
         ];
     }
 
@@ -64,13 +68,20 @@ class Invoice extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
     public function amountPaid(): int
     {
         if ($this->relationLoaded('payments')) {
-            return (int) $this->payments->sum('amount');
+            return (int) $this->payments
+                ->where('status', 'active')
+                ->sum('amount');
         }
 
-        return (int) $this->payments()->sum('amount');
+        return (int) $this->payments()->active()->sum('amount');
     }
 
     public function remainingAmount(): int

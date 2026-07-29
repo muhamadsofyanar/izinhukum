@@ -30,6 +30,11 @@
         .signature { position: absolute; top: 0; left: 50%; width: 125px; height: 76px; object-fit: contain; transform: translateX(-50%); }
         .stamp { position: absolute; top: 2px; left: 57%; width: 85px; height: 85px; object-fit: contain; opacity: .75; }
         .signatory strong { display: block; padding-top: 7px; border-top: 1px solid #07192f; }
+        .void-banner { margin: 24px 0 0; padding: 18px 20px; color: #8b1e25; background: #ffe7e9; border: 2px solid #c73943; border-radius: 10px; text-align: center; }
+        .void-banner strong { display: block; font-size: 24px; letter-spacing: 3px; }
+        .void-banner span { display: block; margin-top: 6px; font-size: 12px; line-height: 1.5; }
+        .receipt.is-cancelled .amount { background: #f4f4f4; }
+        .receipt.is-cancelled .amount strong { color: #66717c; text-decoration: line-through; }
         @page { size: A4; margin: 12mm; }
         @media print { body { padding: 0; background: #fff; } .toolbar { display: none; } .receipt { width: 100%; padding: 18px 24px; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
         @media (max-width: 640px) { body { padding: 8px; } .receipt { padding: 24px 20px; } .head { flex-direction: column; } .title { text-align: left; } .row { grid-template-columns: 1fr; gap: 4px; } .amount { align-items: flex-start; flex-direction: column; } }
@@ -37,7 +42,7 @@
 </head>
 <body>
     <div class="toolbar"><button type="button" onclick="window.print()">Cetak / Simpan PDF</button></div>
-    <main class="receipt">
+    <main class="receipt {{ $payment->isCancelled() ? 'is-cancelled' : '' }}">
         <header class="head">
             <div>
                 <div class="identity">
@@ -48,6 +53,14 @@
             </div>
             <div class="title"><span>KWITANSI</span><strong>{{ $payment->receipt_number }}</strong></div>
         </header>
+        @if($payment->isCancelled())
+            <div class="void-banner">
+                <strong>DIBATALKAN</strong>
+                <span>{{ $payment->cancellation_reason }}<br>
+                    {{ $payment->cancelled_at?->translatedFormat('d F Y H:i') }}{{ $payment->cancelledBy ? ' · '.$payment->cancelledBy->name : '' }}
+                </span>
+            </div>
+        @endif
         <section class="rows">
             <div class="row"><span class="label">Sudah diterima dari</span><strong>{{ $payment->payer_name ?: $payment->invoice?->recipient_name }}{{ $payment->invoice?->recipient_company ? ' · '.$payment->invoice->recipient_company : '' }}</strong></div>
             <div class="row"><span class="label">Uang sejumlah</span><strong>{{ $amountInWords }}</strong></div>
@@ -62,7 +75,14 @@
             @if($branding['stamp'])<img class="stamp" src="{{ asset('storage/'.$branding['stamp']) }}" alt="">@endif
             <strong>{{ $branding['signatory_name'] }}</strong><span class="foot">{{ $branding['signatory_title'] }}</span>
         </div></div>
-        <p class="foot">Kwitansi ini dibuat secara elektronik dan dapat diverifikasi melalui tautan unik dokumen.</p>
+        <p class="foot">
+            @if($payment->isCancelled())
+                Dokumen dipertahankan untuk verifikasi dan jejak audit. Nilainya tidak lagi masuk laporan keuangan.
+            @else
+                Kwitansi ini dibuat secara elektronik dan dapat diverifikasi melalui tautan unik dokumen.
+                @if($payment->last_edited_at) Terakhir dikoreksi {{ $payment->last_edited_at->translatedFormat('d F Y H:i') }}. @endif
+            @endif
+        </p>
     </main>
 </body>
 </html>
