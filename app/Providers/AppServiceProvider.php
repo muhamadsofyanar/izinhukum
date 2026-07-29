@@ -2,8 +2,18 @@
 
 namespace App\Providers;
 
+use App\Models\Commission;
+use App\Models\Inquiry;
+use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Models\SystemSetting;
+use App\Observers\CommissionObserver;
+use App\Observers\InquiryObserver;
+use App\Observers\InvoiceObserver;
+use App\Observers\PaymentObserver;
+use App\Observers\ServiceOrderObserver;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
@@ -20,9 +30,14 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFive();
 
+        Inquiry::observe(InquiryObserver::class);
+        ServiceOrder::observe(ServiceOrderObserver::class);
+        Invoice::observe(InvoiceObserver::class);
+        Payment::observe(PaymentObserver::class);
+        Commission::observe(CommissionObserver::class);
+
         View::composer('layouts.app', function ($view): void {
             $services = collect();
-
             try {
                 if (Schema::hasTable('services')) {
                     $services = Service::query()
@@ -32,9 +47,8 @@ class AppServiceProvider extends ServiceProvider
                         ->groupBy('category');
                 }
             } catch (\Throwable) {
-                // The layout still renders during first deployment before migration.
+                // Layout tetap dapat dirender saat deployment pertama sebelum migrasi selesai.
             }
-
             $view->with('navServices', $services);
         });
 

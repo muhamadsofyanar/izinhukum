@@ -52,6 +52,31 @@ for value in "${ADMIN_PASSWORD:-}" "${DB_PASSWORD:-}"; do
     esac
 done
 
+if [ "${STARSENDER_ENABLED:-false}" = "true" ]; then
+    if [ "${QUEUE_CONNECTION:-database}" != "database" ]; then
+        fail_config "QUEUE_CONNECTION wajib database ketika StarSender aktif agar transaksi tidak menunggu API WhatsApp."
+    fi
+
+    if [ -z "${STARSENDER_ACCOUNT_API_KEY:-}" ]; then
+        fail_config "STARSENDER_ACCOUNT_API_KEY wajib diisi ketika integrasi StarSender aktif."
+    fi
+
+    if [ -z "${STARSENDER_TRANSACTION_DEVICE_KEY:-${STARSENDER_DEFAULT_DEVICE_KEY:-}}" ]; then
+        fail_config "Device API Key transaksi/default wajib diisi ketika integrasi StarSender aktif."
+    fi
+
+    webhook_secret="${STARSENDER_WEBHOOK_SECRET:-}"
+    case "$webhook_secret" in
+        ""|*GANTI*|*ganti*|*CHANGE*|*change*|*CONTOH*|*contoh*|*EXAMPLE*|*example*)
+            fail_config "STARSENDER_WEBHOOK_SECRET wajib berupa secret acak dan bukan nilai contoh."
+            ;;
+    esac
+
+    if [ "${#webhook_secret}" -lt 32 ]; then
+        fail_config "STARSENDER_WEBHOOK_SECRET minimal 32 karakter."
+    fi
+fi
+
 php artisan optimize:clear
 
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then

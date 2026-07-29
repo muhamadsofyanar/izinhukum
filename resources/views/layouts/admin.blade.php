@@ -6,7 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Portal') · IzinHukum</title>
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=10.0.0">
+    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=11.0.0">
+    <link rel="stylesheet" href="{{ asset('css/whatsapp-v11.css') }}?v=11.0.0">
 </head>
 <body class="admin-body">
 @php
@@ -54,7 +55,10 @@
                 <a class="{{ request()->routeIs('admin.partners.*') ? 'active' : '' }}" href="{{ route('admin.partners.index') }}">Daftar & pendaftaran</a>
                 <a class="{{ request()->routeIs('admin.academy.*') ? 'active' : '' }}" href="{{ route('admin.academy.index') }}">LMS Akademi</a>
                 <a class="{{ request()->routeIs('admin.community.*') ? 'active' : '' }}" href="{{ route('admin.community.index') }}">Community</a>
-                <a class="{{ request()->routeIs('admin.inbox.*') ? 'active' : '' }}" href="{{ route('admin.inbox.index') }}">Inbox</a>
+                <a class="{{ request()->routeIs('admin.inbox.*') ? 'active' : '' }}" href="{{ route('admin.inbox.index') }}">Inbox internal</a>
+
+                <span class="sidebar-section-label">Komunikasi</span>
+                <a class="{{ request()->routeIs('admin.whatsapp.*') ? 'active' : '' }}" href="{{ route('admin.whatsapp.dashboard') }}">WhatsApp & CRM</a>
 
                 <span class="sidebar-section-label">Konten & bantuan</span>
                 <a class="{{ request()->routeIs('admin.articles.*') ? 'active' : '' }}" href="{{ route('admin.articles.index') }}">Artikel</a>

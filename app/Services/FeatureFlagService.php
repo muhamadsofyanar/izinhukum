@@ -54,6 +54,46 @@ class FeatureFlagService
             'description' => 'Artikel dan detail artikel tampil pada website.',
             'default' => true,
         ],
+        'whatsapp' => [
+            'label' => 'Integrasi WhatsApp',
+            'description' => 'Mengaktifkan fondasi StarSender, antrean pesan, dan pengiriman manual.',
+            'default' => false,
+        ],
+        'whatsapp_transactional' => [
+            'label' => 'Notifikasi transaksi WhatsApp',
+            'description' => 'Mengizinkan otomasi proposal, order, invoice, pembayaran, dan komisi yang telah diaktifkan.',
+            'default' => false,
+        ],
+        'whatsapp_inbox' => [
+            'label' => 'Inbox WhatsApp',
+            'description' => 'Menyimpan dan menampilkan pesan masuk dari webhook StarSender.',
+            'default' => false,
+        ],
+        'whatsapp_campaigns' => [
+            'label' => 'Campaign WhatsApp',
+            'description' => 'Mengizinkan campaign tersegmentasi. Tetap tunduk pada consent dan daftar opt-out.',
+            'default' => false,
+        ],
+        'whatsapp_autoreply' => [
+            'label' => 'Autoreply WhatsApp',
+            'description' => 'Mengaktifkan balasan aman untuk kata kunci STATUS, INVOICE, ADMIN, HELP, dan STOP.',
+            'default' => false,
+        ],
+        'whatsapp_ai_assistant' => [
+            'label' => 'AI Assistant WhatsApp',
+            'description' => 'Menyiapkan mode bantuan AI. V11 tidak mengirim jawaban hukum otomatis tanpa provider dan persetujuan admin.',
+            'default' => false,
+        ],
+        'whatsapp_rotator' => [
+            'label' => 'Rotator perangkat WhatsApp',
+            'description' => 'Mengizinkan distribusi campaign melalui beberapa perangkat StarSender.',
+            'default' => false,
+        ],
+        'whatsapp_provider_tools' => [
+            'label' => 'Alat provider StarSender',
+            'description' => 'Mengizinkan operasi tulis berisiko tinggi seperti membuat kontak, campaign provider, relog, dan menghapus perangkat.',
+            'default' => false,
+        ],
     ];
 
     public function enabled(string $feature): bool

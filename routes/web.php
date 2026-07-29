@@ -12,6 +12,15 @@ use App\Http\Controllers\Admin\MailSettingController as AdminMailSettingControll
 use App\Http\Controllers\Admin\PackageController as AdminPackageController;
 use App\Http\Controllers\Admin\PartnerController as AdminPartnerController;
 use App\Http\Controllers\Admin\ServiceOrderController as AdminServiceOrderController;
+use App\Http\Controllers\Admin\WhatsAppAutomationController;
+use App\Http\Controllers\Admin\WhatsAppCampaignController;
+use App\Http\Controllers\Admin\WhatsAppDashboardController;
+use App\Http\Controllers\Admin\WhatsAppDeviceController;
+use App\Http\Controllers\Admin\WhatsAppInboxController;
+use App\Http\Controllers\Admin\WhatsAppMessageController;
+use App\Http\Controllers\Admin\WhatsAppProviderToolController;
+use App\Http\Controllers\Admin\WhatsAppSettingsController;
+use App\Http\Controllers\Admin\WhatsAppTemplateController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CustomerOrderController;
@@ -40,9 +49,13 @@ use App\Http\Controllers\PublicInvoiceController;
 use App\Http\Controllers\PublicReceiptController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\StarSenderWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/healthz', HealthController::class)->name('healthz');
+Route::post('/webhooks/starsender/{secret}', StarSenderWebhookController::class)
+    ->middleware('throttle:120,1')
+    ->name('webhooks.starsender');
 Route::get('/', HomeController::class)->name('home');
 Route::get('/layanan', [ServiceController::class, 'index'])->name('services.index');
 Route::get('/layanan/{service:slug}', [ServiceController::class, 'show'])->name('services.show');
@@ -162,6 +175,55 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::put('/branding', [AdminBrandingController::class, 'update'])->name('branding.update');
         Route::get('/pengaturan-fitur', [AdminFeatureSettingController::class, 'edit'])->name('features.edit');
         Route::put('/pengaturan-fitur', [AdminFeatureSettingController::class, 'update'])->name('features.update');
+
+        Route::prefix('whatsapp')->name('whatsapp.')->group(function (): void {
+            Route::get('/', WhatsAppDashboardController::class)->name('dashboard');
+            Route::get('/pengaturan', [WhatsAppSettingsController::class, 'index'])->name('settings.index');
+            Route::post('/pengaturan/pesan-uji', [WhatsAppSettingsController::class, 'testMessage'])->middleware('throttle:10,1')->name('settings.test-message');
+            Route::post('/pengaturan/cek-nomor', [WhatsAppSettingsController::class, 'checkNumber'])->middleware('throttle:20,1')->name('settings.check-number');
+            Route::post('/pengaturan/consent', [WhatsAppSettingsController::class, 'storeConsent'])->name('settings.consents.store');
+            Route::delete('/pengaturan/consent/{consent}', [WhatsAppSettingsController::class, 'revokeConsent'])->name('settings.consents.revoke');
+
+            Route::get('/pesan', [WhatsAppMessageController::class, 'index'])->name('messages.index');
+            Route::post('/pesan', [WhatsAppMessageController::class, 'store'])->middleware('throttle:30,1')->name('messages.store');
+            Route::post('/pesan/{message}/coba-lagi', [WhatsAppMessageController::class, 'retry'])->name('messages.retry');
+            Route::post('/pesan/{message}/batalkan', [WhatsAppMessageController::class, 'cancel'])->name('messages.cancel');
+
+            Route::get('/template', [WhatsAppTemplateController::class, 'index'])->name('templates.index');
+            Route::post('/template', [WhatsAppTemplateController::class, 'store'])->name('templates.store');
+            Route::put('/template/{template}', [WhatsAppTemplateController::class, 'update'])->name('templates.update');
+
+            Route::get('/inbox', [WhatsAppInboxController::class, 'index'])->name('inbox.index');
+            Route::get('/inbox/{conversation}', [WhatsAppInboxController::class, 'show'])->name('inbox.show');
+            Route::post('/inbox/{conversation}/balas', [WhatsAppInboxController::class, 'reply'])->middleware('throttle:30,1')->name('inbox.reply');
+            Route::put('/inbox/{conversation}', [WhatsAppInboxController::class, 'update'])->name('inbox.update');
+            Route::post('/inbox/{conversation}/ai-blacklist', [WhatsAppInboxController::class, 'aiBlacklist'])->name('inbox.ai-blacklist');
+
+            Route::get('/otomasi', [WhatsAppAutomationController::class, 'index'])->name('automations.index');
+            Route::post('/otomasi/kata-kunci', [WhatsAppAutomationController::class, 'storeKeyword'])->name('automations.keywords.store');
+            Route::put('/otomasi/{automation}', [WhatsAppAutomationController::class, 'update'])->name('automations.update');
+
+            Route::get('/campaign', [WhatsAppCampaignController::class, 'index'])->name('campaigns.index');
+            Route::post('/campaign', [WhatsAppCampaignController::class, 'store'])->name('campaigns.store');
+            Route::get('/campaign/{campaign}', [WhatsAppCampaignController::class, 'show'])->name('campaigns.show');
+            Route::post('/campaign/{campaign}/jalankan', [WhatsAppCampaignController::class, 'dispatch'])->name('campaigns.dispatch');
+            Route::post('/campaign/{campaign}/batalkan', [WhatsAppCampaignController::class, 'cancel'])->name('campaigns.cancel');
+
+            Route::get('/perangkat', [WhatsAppDeviceController::class, 'index'])->name('devices.index');
+            Route::post('/perangkat/sinkronkan', [WhatsAppDeviceController::class, 'sync'])->middleware('throttle:5,1')->name('devices.sync');
+            Route::post('/perangkat/buat', [WhatsAppDeviceController::class, 'create'])->middleware('throttle:5,1')->name('devices.create');
+            Route::put('/perangkat/{device}', [WhatsAppDeviceController::class, 'update'])->name('devices.update');
+            Route::post('/perangkat/{device}/relog', [WhatsAppDeviceController::class, 'relog'])->middleware('throttle:5,1')->name('devices.relog');
+            Route::delete('/perangkat/{device}', [WhatsAppDeviceController::class, 'delete'])->name('devices.delete');
+
+            Route::get('/alat-provider', [WhatsAppProviderToolController::class, 'index'])->name('provider-tools.index');
+            Route::post('/alat-provider/kontak', [WhatsAppProviderToolController::class, 'createContact'])->middleware('throttle:20,1')->name('provider-tools.contacts.store');
+            Route::delete('/alat-provider/kontak/grup', [WhatsAppProviderToolController::class, 'removeContactFromGroup'])->middleware('throttle:20,1')->name('provider-tools.contacts.groups.remove');
+            Route::post('/alat-provider/kontak/pindah-grup', [WhatsAppProviderToolController::class, 'moveContactGroup'])->middleware('throttle:20,1')->name('provider-tools.contacts.groups.move');
+            Route::post('/alat-provider/campaign', [WhatsAppProviderToolController::class, 'createProviderCampaign'])->middleware('throttle:10,1')->name('provider-tools.campaigns.store');
+            Route::post('/alat-provider/campaign/anggota', [WhatsAppProviderToolController::class, 'addProviderCampaignMember'])->middleware('throttle:20,1')->name('provider-tools.campaigns.members.store');
+            Route::post('/alat-provider/campaign/anggota/pindah', [WhatsAppProviderToolController::class, 'moveProviderCampaignMember'])->middleware('throttle:20,1')->name('provider-tools.campaigns.members.move');
+        });
         Route::post('/keluar', [AdminAuthController::class, 'destroy'])->name('logout');
     });
 });

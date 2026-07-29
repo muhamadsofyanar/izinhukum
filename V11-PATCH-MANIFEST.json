@@ -1,0 +1,434 @@
+{
+  "name": "IzinHukum V11 StarSender",
+  "version": "11.0.0",
+  "type": "overlay patch for V10.1",
+  "generated_at_utc": "2026-07-29T18:00:00Z",
+  "file_count_excluding_manifest": 85,
+  "files": [
+    {
+      "path": ".env.docker.example",
+      "size": 1862,
+      "sha256": "f989f4cdc945e7c6d118cc24e194ac25f1e395d38140fcad9a1b71d743929874"
+    },
+    {
+      "path": "CHANGELOG-V11.md",
+      "size": 2702,
+      "sha256": "10a59c00ac4a2d7a689564513d8ea98b69c774a5261cf5fdc7354b6fb23948db"
+    },
+    {
+      "path": "CHECKLIST-UJI-V11.md",
+      "size": 3706,
+      "sha256": "1b1e07b755c724c2a53133bd8a2ccb5ab116ef73750dc5a808908d2db923b48d"
+    },
+    {
+      "path": "DAFTAR-FILE-V11.txt",
+      "size": 3373,
+      "sha256": "6a37a236ec0e2763907235be81a241f80bb3aaa826649800224110ead3a6679a"
+    },
+    {
+      "path": "Dockerfile",
+      "size": 1922,
+      "sha256": "397f21b1e242dbd6405e216650c93db522e1a4d5bfb86011d54d7253a1b6091e"
+    },
+    {
+      "path": "PETUNJUK-UPDATE-V11.md",
+      "size": 8709,
+      "sha256": "4ebcaf576174b5ce8470b1597254378c5eb5762319bb31bc6693c635c16d8332"
+    },
+    {
+      "path": "ROLLBACK-V11.md",
+      "size": 964,
+      "sha256": "cb719a7659d78468e9bfcd4c703a7aefd3b08ad167ac58cc2b542a7badeeaec5"
+    },
+    {
+      "path": "SECURITY-V11.md",
+      "size": 2249,
+      "sha256": "1388de30b1c55e3d7fb0720fb9768600e0255a3f781e606ef1a252c3a63e8dc9"
+    },
+    {
+      "path": "VALIDASI-V11.md",
+      "size": 2438,
+      "sha256": "514fe3f4fb8f3a53f9b22ff1011c1d4dd6b6c7f5c15815403b4eb38333d2e49b"
+    },
+    {
+      "path": "VALIDATION-RESULTS-V11.txt",
+      "size": 848,
+      "sha256": "195d8ed857bb0a50cd405dad0858179f4bf0bb6a360459696e54b29cf755884d"
+    },
+    {
+      "path": "app/Console/Commands/DispatchDueWhatsAppMessages.php",
+      "size": 582,
+      "sha256": "22f175d8bac14549b15a1b0656fa4326aa19e7b3a48ad92cf26f01457c9778a1"
+    },
+    {
+      "path": "app/Console/Commands/PruneWhatsAppData.php",
+      "size": 2047,
+      "sha256": "e27b81b6095dbad7cab3d99f6f14e139609d4ab659acc825493952a44663c9d1"
+    },
+    {
+      "path": "app/Console/Commands/RunWhatsAppAutomations.php",
+      "size": 601,
+      "sha256": "283734c7149a17cba6b8793ee988bfcdbdbcb4dcaa7c44036184889c800349bd"
+    },
+    {
+      "path": "app/Console/Commands/SyncWhatsAppDevices.php",
+      "size": 2218,
+      "sha256": "6b0b217474f87faec10a02664b4dbee80e6199c9298aaf3977ca16cab2c9381e"
+    },
+    {
+      "path": "app/Console/Commands/SyncWhatsAppMessageStatuses.php",
+      "size": 3714,
+      "sha256": "ec5e2e0881c54514793bcc3f5a2339d35b31cec00f5c3307807c4c1c65bd317e"
+    },
+    {
+      "path": "app/Console/Commands/WhatsAppDiagnostics.php",
+      "size": 1272,
+      "sha256": "6020ba73b96cafdd042e0e41d07830243d6af54892c18f4f0c9a8d378864274a"
+    },
+    {
+      "path": "app/Http/Controllers/Admin/WhatsAppAutomationController.php",
+      "size": 3446,
+      "sha256": "e83e8481f814be5263b2ff5a98527985ba563f92ce061391b1e5360dd0552829"
+    },
+    {
+      "path": "app/Http/Controllers/Admin/WhatsAppCampaignController.php",
+      "size": 9914,
+      "sha256": "467b4cb9a992cbac898569010f9cab6995851e85bf89821e27d00b88c5263439"
+    },
+    {
+      "path": "app/Http/Controllers/Admin/WhatsAppDashboardController.php",
+      "size": 2913,
+      "sha256": "f79c3768117504ac369601f0788c76cf7617e62164639b4259f5aa111b584450"
+    },
+    {
+      "path": "app/Http/Controllers/Admin/WhatsAppDeviceController.php",
+      "size": 6285,
+      "sha256": "eec962e8fc3309fbc019f07d0ea6e1b5bc7c18491426e6ae1f73cef70c676d77"
+    },
+    {
+      "path": "app/Http/Controllers/Admin/WhatsAppInboxController.php",
+      "size": 6053,
+      "sha256": "d292d30070b020dda4126786a218b761ea65cb874c0d5044dbbac25359342871"
+    },
+    {
+      "path": "app/Http/Controllers/Admin/WhatsAppMessageController.php",
+      "size": 5278,
+      "sha256": "f75774a6286b947f9c04728023901a297487609c68f1cd4e8c6d4d8b3c75b6f6"
+    },
+    {
+      "path": "app/Http/Controllers/Admin/WhatsAppProviderToolController.php",
+      "size": 11024,
+      "sha256": "68dfc51c63dc84d63b048acd537dae941a373b513ac4eeccc52a07fab73f31fc"
+    },
+    {
+      "path": "app/Http/Controllers/Admin/WhatsAppSettingsController.php",
+      "size": 7104,
+      "sha256": "211dc1e40c430453d288158c8437b440d926e85fb49b77ca447afb5d4311512e"
+    },
+    {
+      "path": "app/Http/Controllers/Admin/WhatsAppTemplateController.php",
+      "size": 3774,
+      "sha256": "a9d8bf77844bd47e40becdcf9af474199688e62a530121b69dd0c920c5900340"
+    },
+    {
+      "path": "app/Http/Controllers/HealthController.php",
+      "size": 1999,
+      "sha256": "a4c55830d5f8e7dbf26f607ab0a1988573e03e526676ed308c22f33e37d84358"
+    },
+    {
+      "path": "app/Http/Controllers/StarSenderWebhookController.php",
+      "size": 4000,
+      "sha256": "2b7e698e08b6bcd8e4630da3109d60a6ba41960dd1d2e7e4f687fd84eeeefdb9"
+    },
+    {
+      "path": "app/Jobs/DispatchWhatsAppCampaign.php",
+      "size": 8156,
+      "sha256": "759cd385ec9e81e6425d5e7cbe0f4c773cb673359a54ea509a1e3970bbbef6f5"
+    },
+    {
+      "path": "app/Jobs/ProcessWhatsAppWebhook.php",
+      "size": 662,
+      "sha256": "ab02c9613e88f2b798a469f0222899bec8630152a9f8604524ff298c20f5c2a9"
+    },
+    {
+      "path": "app/Jobs/SendWhatsAppMessage.php",
+      "size": 7492,
+      "sha256": "06349152a1fd842322c4f6f9772717008c0aafc2f71f0867116651d59296d6e5"
+    },
+    {
+      "path": "app/Models/Invoice.php",
+      "size": 3739,
+      "sha256": "bd4298becf0d13842584a0bb265f362bbc1fec9fda9308373c185f9b49fa6011"
+    },
+    {
+      "path": "app/Models/WhatsAppAutomation.php",
+      "size": 704,
+      "sha256": "51b4395ef27d0d7128bc07a65213230da6ac78c0e5aa5b8456958a918cd43b96"
+    },
+    {
+      "path": "app/Models/WhatsAppCampaign.php",
+      "size": 1390,
+      "sha256": "9efa96766f1daed54287f77eae83ca29f81ecca488c5286d6f4bb31dd8c107c6"
+    },
+    {
+      "path": "app/Models/WhatsAppCampaignRecipient.php",
+      "size": 677,
+      "sha256": "0fa7b92ca50fbfd69654d93c708786b69ff7c9cdd4600b9a63a73f4924bc05f2"
+    },
+    {
+      "path": "app/Models/WhatsAppConsent.php",
+      "size": 826,
+      "sha256": "d4eb19ae96811b53b441be9b2398052e9ffddceef8c86a3f715fe560a529c008"
+    },
+    {
+      "path": "app/Models/WhatsAppConversation.php",
+      "size": 1423,
+      "sha256": "6a16dadd53bd1af7127aadbbc10089fc96d6b1558a03aaf78f37667973fd3663"
+    },
+    {
+      "path": "app/Models/WhatsAppDevice.php",
+      "size": 602,
+      "sha256": "85671b640fd01f91ecfd597f9a15f28a636784b8aedad327471ae2b2f8f8a997"
+    },
+    {
+      "path": "app/Models/WhatsAppMessage.php",
+      "size": 2849,
+      "sha256": "823eb61add2b498f2d3853754d429a3293e0a5953f28ec7afaf2a06b81e115f3"
+    },
+    {
+      "path": "app/Models/WhatsAppMessageAttempt.php",
+      "size": 813,
+      "sha256": "02148962ab14a9bddd2ee4f3bb49132d59852e8b08ca6b02e6dc0213e0b63b87"
+    },
+    {
+      "path": "app/Models/WhatsAppOptOut.php",
+      "size": 672,
+      "sha256": "bd367e0e0e04f40f225812daf89ce11450db44e0a2470ec509c9411e40d2c167"
+    },
+    {
+      "path": "app/Models/WhatsAppTemplate.php",
+      "size": 884,
+      "sha256": "5c8cd1245944c7fc6240cb0a56b42f838e30c8cbb64352e017831f310f9d5f98"
+    },
+    {
+      "path": "app/Models/WhatsAppWebhookEvent.php",
+      "size": 481,
+      "sha256": "577055c8b0fa000c58265e07d27a737220dc1392f7b29e68846edbf8de328b7c"
+    },
+    {
+      "path": "app/Observers/CommissionObserver.php",
+      "size": 889,
+      "sha256": "f3301e8647b63bcc71a8da89736f0e1e7fe9d44bd016e0e60dc67123859f891f"
+    },
+    {
+      "path": "app/Observers/InquiryObserver.php",
+      "size": 356,
+      "sha256": "eba770520483890f285510a045dc326f2e35f9cd6e649f30b05a90b0a0750566"
+    },
+    {
+      "path": "app/Observers/InvoiceObserver.php",
+      "size": 442,
+      "sha256": "feaec58d184a489869b52a17ab9613effd7acf04f3c66952148a41cb07aaf525"
+    },
+    {
+      "path": "app/Observers/PaymentObserver.php",
+      "size": 691,
+      "sha256": "41929c5244f4cb54c269ae69eddfa4bac2e6c22753be4c005a1894a16ea40bb5"
+    },
+    {
+      "path": "app/Observers/ServiceOrderObserver.php",
+      "size": 711,
+      "sha256": "a4affd10f0340cad58c585444401210ce6b01845356306fd384a9c9692609c08"
+    },
+    {
+      "path": "app/Providers/AppServiceProvider.php",
+      "size": 2455,
+      "sha256": "ac3163009cbb5a42dc77e0ce18185fb994710d4889ac48e710b001fa0a067b80"
+    },
+    {
+      "path": "app/Rules/SafePublicUrl.php",
+      "size": 2049,
+      "sha256": "f3cd8f52b9c2685e2bdd48cb83ebc648f54c2aaa96766f8709f71d5f6ac8e60a"
+    },
+    {
+      "path": "app/Services/FeatureFlagService.php",
+      "size": 5220,
+      "sha256": "49efb2b614dcdf49a9e602e59cac75f86e3e1a65eae134fc85e791497b40de5a"
+    },
+    {
+      "path": "app/Services/WhatsApp/PhoneNumberNormalizer.php",
+      "size": 889,
+      "sha256": "5966c0533dbcabb97075a466814fa7b7040e195c60df3ef6d04493565fec5555"
+    },
+    {
+      "path": "app/Services/WhatsApp/StarSenderClient.php",
+      "size": 7913,
+      "sha256": "db6eb50dee75ac79470eb14106fd1c51c7c8bd76d6a47aac6ac92195eae5af0d"
+    },
+    {
+      "path": "app/Services/WhatsApp/WhatsAppAuditService.php",
+      "size": 781,
+      "sha256": "77efd7041adcdbc4a6b98eb9ee007c31fb29cd69d586f2cc0b9521d69999d8cc"
+    },
+    {
+      "path": "app/Services/WhatsApp/WhatsAppAutomationService.php",
+      "size": 10592,
+      "sha256": "ab53a2bb2f025f4b583504f1eba8b9b1bfa38bbbd408c184d6513177ac4dffb1"
+    },
+    {
+      "path": "app/Services/WhatsApp/WhatsAppCampaignProgressService.php",
+      "size": 1141,
+      "sha256": "f80b8b22d4ecb81179654cc87a18bc883eca2f18a66910968c230affb7a8257a"
+    },
+    {
+      "path": "app/Services/WhatsApp/WhatsAppManager.php",
+      "size": 9991,
+      "sha256": "9e0ee954ade1134554abe12e18784d5eed2d6915cf9f6e80ea08551b95b5c353"
+    },
+    {
+      "path": "app/Services/WhatsApp/WhatsAppTemplateRenderer.php",
+      "size": 657,
+      "sha256": "6f817eec09c09bfe4c0695a98e2268b9c4381b62336d79e9aeec86a518319a5d"
+    },
+    {
+      "path": "app/Services/WhatsApp/WhatsAppWebhookService.php",
+      "size": 13014,
+      "sha256": "9e43cd3c85f55cfdc759dc9e324552174b32fea6bac33ad321aab4edd2a1f15b"
+    },
+    {
+      "path": "bootstrap/app.php",
+      "size": 1658,
+      "sha256": "a94ce0f44ef4eca1c8e1dfcbf2da8134b32ea6b768d26776b76e8306275bb6ec"
+    },
+    {
+      "path": "config/queue.php",
+      "size": 659,
+      "sha256": "daf19a2e9e1f5e8f7ae1ba8e99dd70feac35ae417476c69f228e5adbe22af269"
+    },
+    {
+      "path": "config/starsender.php",
+      "size": 1667,
+      "sha256": "2f08cf5f856003c5fe3d28e287bf59517a7159ca965b0d7540cca73d1829d9e7"
+    },
+    {
+      "path": "database/migrations/2026_07_29_000016_add_v11_whatsapp_operations.php",
+      "size": 20289,
+      "sha256": "c9dd67cfc2e94a989ea6d7e959fb583c9674ccabd2e2b2c8dbef041391d8fa7d"
+    },
+    {
+      "path": "docker/entrypoint.sh",
+      "size": 2928,
+      "sha256": "dada6c09511da5492513469b6e7031dfbee837e2440e7613d37ee93bc382527f"
+    },
+    {
+      "path": "docker/nginx.conf",
+      "size": 1278,
+      "sha256": "e2d09aafb12780898ede9d74c50b87c76e5594efad3d8cf8e62ceea8abd1236f"
+    },
+    {
+      "path": "docker/supervisord.conf",
+      "size": 1135,
+      "sha256": "1e73594b4c18079936980ba094f79ec24f1c580e1dc23e04723c10ffddcf2f7c"
+    },
+    {
+      "path": "public/css/whatsapp-v11.css",
+      "size": 3586,
+      "sha256": "cb9ece60741a24e1bc11b3b949a816c9e1635abe4d2e2b710f39b13fe4da2beb"
+    },
+    {
+      "path": "resources/views/admin/whatsapp/_nav.blade.php",
+      "size": 1415,
+      "sha256": "ec2531b86b24bf4010f26b843d2e5f204bc2e210e75c3cdb75a6c0885f5e4c89"
+    },
+    {
+      "path": "resources/views/admin/whatsapp/automations.blade.php",
+      "size": 2916,
+      "sha256": "b5315a6b9593dbb2f5b0832f209bc92acec34116c3add243a7fd4ae95380c29a"
+    },
+    {
+      "path": "resources/views/admin/whatsapp/campaign-show.blade.php",
+      "size": 2293,
+      "sha256": "ede55770e94a5090f1dce7a3ff4b85d32f96f809397d712511a9ea00bfe5f641"
+    },
+    {
+      "path": "resources/views/admin/whatsapp/campaigns.blade.php",
+      "size": 3110,
+      "sha256": "6c175df4202f24709e6298d0490af063f76029c29269bbb10058d71af58a5a2c"
+    },
+    {
+      "path": "resources/views/admin/whatsapp/conversation.blade.php",
+      "size": 3855,
+      "sha256": "97db0d6b1fa2fc412daac634bf8af64aa5187470c51db079b9d59f7d68de281c"
+    },
+    {
+      "path": "resources/views/admin/whatsapp/dashboard.blade.php",
+      "size": 4479,
+      "sha256": "7776c7c982d45d31b8de4ae1efc2518db8673ee9cf1d7cc84b78364ad9a71d58"
+    },
+    {
+      "path": "resources/views/admin/whatsapp/device-scan.blade.php",
+      "size": 1100,
+      "sha256": "64e13cbd752d089a8549ff251676bcbaa49520e2e2eddd4a23c61dd6095c84c5"
+    },
+    {
+      "path": "resources/views/admin/whatsapp/devices.blade.php",
+      "size": 3245,
+      "sha256": "14b910ae600a5476cc7a4461c045eac160bd01838cae1da9a8ee13d974d41c36"
+    },
+    {
+      "path": "resources/views/admin/whatsapp/inbox.blade.php",
+      "size": 1891,
+      "sha256": "9111f1069812a08468ce50bb428c9c2cf4d43f84ef5292587ed6630564d527de"
+    },
+    {
+      "path": "resources/views/admin/whatsapp/messages.blade.php",
+      "size": 4651,
+      "sha256": "6ac2816a0dcbf474fbfe0af6dcf32167901c361161883c1a295e78ed704bb2ef"
+    },
+    {
+      "path": "resources/views/admin/whatsapp/provider-tools.blade.php",
+      "size": 8239,
+      "sha256": "24a26f7dcfcefe8ab3c091a17113c049af0eb94d5c298db5290dca04fb2c6126"
+    },
+    {
+      "path": "resources/views/admin/whatsapp/settings.blade.php",
+      "size": 6136,
+      "sha256": "18613650760224c494e165f7b75dedeb2f68b515e9c2c14f79c40cf8925c1254"
+    },
+    {
+      "path": "resources/views/admin/whatsapp/templates.blade.php",
+      "size": 4085,
+      "sha256": "079f392c3af73e9d19761b8672469699d86296fd4e4fd3127590c2af29c656c8"
+    },
+    {
+      "path": "resources/views/layouts/admin.blade.php",
+      "size": 9615,
+      "sha256": "eb524a3cdcba04eed8143dc16364854dc05e6b391e0fb4031ac7191b4d27408f"
+    },
+    {
+      "path": "routes/console.php",
+      "size": 692,
+      "sha256": "1479755066e5a9cb9e0baee2416bac1ea787fc89a1493cd3f1d31f675b7dc10d"
+    },
+    {
+      "path": "routes/web.php",
+      "size": 25450,
+      "sha256": "fa4c0d3810d7c8d3fbe5ba8dc8bb3170e47da910a962ea3ba1db257132e41e0d"
+    },
+    {
+      "path": "tests/Feature/V11WhatsAppFoundationTest.php",
+      "size": 2399,
+      "sha256": "6df132850070b314f5be1ad2b0a80b860a3d833e71c5a873f102e3e03ce6e75d"
+    },
+    {
+      "path": "tests/Unit/PhoneNumberNormalizerTest.php",
+      "size": 971,
+      "sha256": "25a992a7a4004d89f2e94808182e259751a509df8ddec97ef8fb3a1e7ab45542"
+    },
+    {
+      "path": "tests/Unit/WhatsAppTemplateRendererTest.php",
+      "size": 583,
+      "sha256": "3defbcd726205433b1ffa5bc9c9fb618ede0f1a4a3a40279c536bb7dbfdfb611"
+    }
+  ]
+}

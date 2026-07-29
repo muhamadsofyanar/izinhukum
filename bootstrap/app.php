@@ -26,6 +26,13 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [CapturePartnerReferral::class]);
 
+        // StarSender adalah webhook machine-to-machine dan tidak memiliki token CSRF browser.
+        // Keamanan endpoint tetap memakai secret acak pada URL, optional header secret,
+        // pembatasan ukuran payload, rate limit, dan deduplikasi event.
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/starsender/*',
+        ]);
+
         $middleware->alias([
             'admin' => AdminAuthenticated::class,
             'partner' => PartnerAuthenticated::class,
