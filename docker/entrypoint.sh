@@ -8,6 +8,7 @@ cd /var/www/html
 # would otherwise keep stale migration/seeder files. Refresh application-owned
 # database code while preserving the persistent database.sqlite file.
 mkdir -p database/migrations database/seeders database/data database/uploads
+touch database/database.sqlite
 cp -R /opt/izinhukum-database/migrations/. database/migrations/
 cp -R /opt/izinhukum-database/seeders/. database/seeders/
 cp -R /opt/izinhukum-database/data/. database/data/
