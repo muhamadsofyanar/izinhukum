@@ -14,18 +14,24 @@ class FinancialReportService
     {
         $fromDate = $from->toDateString();
         $toDate = $to->toDateString();
+        $toExclusiveDate = $to->copy()->addDay()->toDateString();
 
+        // Gunakan rentang setengah terbuka [awal, sehari setelah akhir).
+        // Ini tetap benar saat kolom database berupa DATE maupun DATETIME,
+        // sehingga seluruh transaksi pada tanggal akhir ikut terbaca.
         $payments = Payment::query()
             ->active()
             ->with(['invoice', 'category'])
-            ->whereBetween('payment_date', [$fromDate, $toDate])
+            ->where('payment_date', '>=', $fromDate)
+            ->where('payment_date', '<', $toExclusiveDate)
             ->orderBy('payment_date')
             ->orderBy('id')
             ->get();
 
         $expenses = Expense::query()
             ->with('category')
-            ->whereBetween('transaction_date', [$fromDate, $toDate])
+            ->where('transaction_date', '>=', $fromDate)
+            ->where('transaction_date', '<', $toExclusiveDate)
             ->orderBy('transaction_date')
             ->orderBy('id')
             ->get();
@@ -34,27 +40,48 @@ class FinancialReportService
             ->withSum([
                 'payments as active_paid_amount' => fn ($query) => $query->active(),
             ], 'amount')
-            ->whereBetween('issue_date', [$fromDate, $toDate])
+            ->where('issue_date', '>=', $fromDate)
+            ->where('issue_date', '<', $toExclusiveDate)
             ->orderByDesc('issue_date')
             ->orderByDesc('id')
             ->get()
             ->each(function (Invoice $invoice): void {
-                $paid = min((int) $invoice->total, (int) ($invoice->active_paid_amount ?? 0));
+                $rawPaid = (int) ($invoice->active_paid_amount ?? 0);
+                $countedPaid = min((int) $invoice->total, $rawPaid);
 
-                $invoice->setAttribute('report_paid_amount', $paid);
+                $invoice->setAttribute('report_raw_paid_amount', $rawPaid);
+                $invoice->setAttribute('report_paid_amount', $countedPaid);
                 $invoice->setAttribute(
                     'report_outstanding_amount',
                     $invoice->status === 'cancelled'
                         ? 0
-                        : max(0, (int) $invoice->total - $paid),
+                        : max(0, (int) $invoice->total - $countedPaid),
                 );
             });
 
         $countedInvoices = $invoices->where('status', '!=', 'cancelled');
+        $cancelledInvoices = $invoices->where('status', 'cancelled');
+        $statusCounts = $invoices->countBy('status');
+
+        $paidWithoutFullPayment = $invoices->filter(
+            fn (Invoice $invoice): bool => $invoice->status === 'paid'
+                && (int) $invoice->report_raw_paid_amount < (int) $invoice->total,
+        );
+        $overpaidInvoices = $invoices->filter(
+            fn (Invoice $invoice): bool => $invoice->status !== 'cancelled'
+                && (int) $invoice->report_raw_paid_amount > (int) $invoice->total,
+        );
+        $cancelledWithPayment = $cancelledInvoices->filter(
+            fn (Invoice $invoice): bool => (int) $invoice->report_raw_paid_amount > 0,
+        );
+
         $income = (int) $payments->sum('amount');
         $expense = (int) $expenses->sum('amount');
         $openingBalance = $this->openingBalance($fromDate);
         $netCashFlow = $income - $expense;
+        $dataIssueCount = $paidWithoutFullPayment->count()
+            + $overpaidInvoices->count()
+            + $cancelledWithPayment->count();
 
         return [
             'from' => $from,
@@ -65,11 +92,22 @@ class FinancialReportService
             'net_cash_flow' => $netCashFlow,
             'closing_balance' => $openingBalance + $netCashFlow,
             'receivables' => $this->receivables(),
+            'invoice_document_count' => $invoices->count(),
             'invoice_count' => $countedInvoices->count(),
+            'invoice_cancelled_count' => $cancelledInvoices->count(),
+            'invoice_cancelled_total' => (int) $cancelledInvoices->sum('total'),
+            'invoice_paid_count' => (int) ($statusCounts->get('paid') ?? 0),
+            'invoice_partial_count' => (int) ($statusCounts->get('partial') ?? 0),
+            'invoice_open_count' => (int) $countedInvoices->whereIn('status', ['draft', 'sent', 'partial'])->count(),
+            'invoice_status_counts' => $statusCounts,
             'invoice_total' => (int) $countedInvoices->sum('total'),
             'invoice_paid_total' => (int) $countedInvoices->sum('report_paid_amount'),
             'invoice_outstanding_total' => (int) $countedInvoices->sum('report_outstanding_amount'),
             'receipt_count' => $payments->count(),
+            'data_issue_count' => $dataIssueCount,
+            'paid_without_full_payment_count' => $paidWithoutFullPayment->count(),
+            'overpaid_invoice_count' => $overpaidInvoices->count(),
+            'cancelled_with_payment_count' => $cancelledWithPayment->count(),
             'income_by_category' => $this->incomeByCategory($payments),
             'expense_by_category' => $this->expenseByCategory($expenses),
             'monthly' => $this->monthly($payments, $expenses, $from, $to),
@@ -84,11 +122,11 @@ class FinancialReportService
     {
         $income = (int) Payment::query()
             ->active()
-            ->whereDate('payment_date', '<', $fromDate)
+            ->where('payment_date', '<', $fromDate)
             ->sum('amount');
 
         $expense = (int) Expense::query()
-            ->whereDate('transaction_date', '<', $fromDate)
+            ->where('transaction_date', '<', $fromDate)
             ->sum('amount');
 
         return $income - $expense;

@@ -1,13 +1,21 @@
 @extends('layouts.admin')
 
-@php($prefix = $user->isAdmin() ? 'admin' : 'partner')
+@php
+    $prefix = $user->isAdmin() ? 'admin' : 'partner';
+    $statusLabels = [
+        'draft' => 'Draf',
+        'sent' => 'Terkirim',
+        'partial' => 'Dibayar sebagian',
+        'paid' => 'Lunas',
+        'cancelled' => 'Dibatalkan',
+    ];
+@endphp
 @section('title', 'Invoice')
 @section('heading', 'Invoice')
 
 @section('header_action')
 <a class="btn btn-primary" href="{{ route($prefix.'.invoices.create') }}">Buat invoice</a>
 @endsection
-
 @section('content')
 <div class="filter-row">
     @foreach(['' => 'Semua', 'draft' => 'Draf', 'sent' => 'Terkirim', 'partial' => 'Dibayar sebagian', 'paid' => 'Lunas', 'cancelled' => 'Dibatalkan'] as $value => $label)
@@ -23,9 +31,9 @@
                 <tr>
                     <td><a href="{{ route($prefix.'.invoices.show', $invoice) }}">{{ $invoice->invoice_number }}</a><small>{{ $invoice->issue_date->format('d/m/Y') }}</small></td>
                     <td><strong>{{ $invoice->recipient_name }}</strong><small>{{ $invoice->recipient_company }}</small><small>{{ $invoice->recipient_email }}</small></td>
-                    <td>{{ $invoice->recipient_type === 'partner' ? 'Mitra' : 'End user' }}</td>
+                    <td>{{ $invoice->recipient_type === 'partner' ? 'Mitra' : 'Pelanggan langsung' }}</td>
                     <td><strong>{{ $invoice->formattedTotal() }}</strong><small>Terbayar Rp{{ number_format($invoice->amount_paid ?? 0, 0, ',', '.') }}</small></td>
-                    <td><span class="status status-{{ $invoice->status }}">{{ ucfirst($invoice->status) }}</span></td>
+                    <td><span class="status status-{{ $invoice->status }}">{{ $statusLabels[$invoice->status] ?? ucfirst($invoice->status) }}</span></td>
                     <td>{{ $invoice->due_date?->format('d/m/Y') ?? '—' }}</td>
                     <td>
                         @if($invoice->status === 'draft' && ($user->isAdmin() || $invoice->created_by === $user->id))

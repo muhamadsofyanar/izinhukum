@@ -27,7 +27,7 @@
 </header>
 
 <section class="summary">
-    <div><span>Nilai invoice</span><strong>Rp{{ number_format($report['invoice_total'],0,',','.') }}</strong></div>
+    <div><span>Invoice aktif</span><strong>Rp{{ number_format($report['invoice_total'],0,',','.') }}</strong></div>
     <div><span>Pemasukan aktual</span><strong>Rp{{ number_format($report['income'],0,',','.') }}</strong></div>
     <div><span>Pengeluaran</span><strong>Rp{{ number_format($report['expense'],0,',','.') }}</strong></div>
     <div><span>Surplus / defisit</span><strong class="{{ $report['net_cash_flow']<0?'negative':'' }}">Rp{{ number_format($report['net_cash_flow'],0,',','.') }}</strong></div>
@@ -35,7 +35,7 @@
     <div><span>Kwitansi periode</span><strong>{{ number_format($report['receipt_count'],0,',','.') }}</strong></div>
 </section>
 
-<h2>Invoice Periode</h2>
+<h2>Invoice Periode ({{ $report['invoice_count'] }} aktif, {{ $report['invoice_cancelled_count'] }} dibatalkan)</h2>
 <table>
     <thead><tr><th>Tanggal</th><th>Nomor</th><th>Penerima</th><th class="number">Total</th><th class="number">Terbayar aktif</th><th class="number">Sisa</th><th>Status</th></tr></thead>
     <tbody>

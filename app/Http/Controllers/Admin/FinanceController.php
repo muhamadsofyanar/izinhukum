@@ -25,26 +25,30 @@ class FinanceController extends Controller
         LegacyPaidInvoiceReconciler $reconciler,
     ): View|RedirectResponse {
         [$from, $to] = $this->period($request);
-        $reconciledCount = $reconciler->run();
 
         if ($request->boolean('sync')) {
+            $reconciledCount = $reconciler->run();
+            $report = $reportService->forPeriod($from, $to);
+
+            if ($reconciledCount > 0) {
+                $message = $reconciledCount.' kwitansi rekonsiliasi berhasil dibuat dari invoice lunas lama.';
+            } elseif ($report['data_issue_count'] > 0) {
+                $message = 'Pemeriksaan selesai. Masih ada '.$report['data_issue_count'].' anomali yang perlu diperiksa manual pada periode ini.';
+            } else {
+                $message = 'Pemeriksaan selesai. Tidak ditemukan invoice lunas yang kekurangan pembayaran aktif pada periode ini.';
+            }
+
             return redirect()
                 ->route('admin.finance.index', [
                     'from' => $from->format('Y-m-d'),
                     'to' => $to->format('Y-m-d'),
                 ])
-                ->with(
-                    'success',
-                    $reconciledCount > 0
-                        ? $reconciledCount.' invoice lunas berhasil disinkronkan menjadi kwitansi aktif.'
-                        : 'Sinkronisasi selesai. Semua invoice lunas sudah memiliki kwitansi aktif yang sesuai.',
-                );
+                ->with('success', $message);
         }
 
         return view('admin.finance.index', [
             'report' => $reportService->forPeriod($from, $to),
             'categories' => FinancialCategory::query()->orderBy('type')->orderBy('name')->get(),
-            'reconciledCount' => $reconciledCount,
         ]);
     }
 
@@ -119,10 +123,8 @@ class FinanceController extends Controller
     public function export(
         Request $request,
         FinancialReportService $reportService,
-        LegacyPaidInvoiceReconciler $reconciler,
     ): Response {
         [$from, $to] = $this->period($request);
-        $reconciler->run();
         $report = $reportService->forPeriod($from, $to);
         $stream = fopen('php://temp', 'r+');
 
@@ -185,10 +187,8 @@ class FinanceController extends Controller
         Request $request,
         FinancialReportService $reportService,
         BrandingService $brandingService,
-        LegacyPaidInvoiceReconciler $reconciler,
     ): View {
         [$from, $to] = $this->period($request);
-        $reconciler->run();
 
         return view('admin.finance.print', [
             'report' => $reportService->forPeriod($from, $to),
