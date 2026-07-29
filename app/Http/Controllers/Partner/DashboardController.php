@@ -11,13 +11,15 @@ use App\Models\Invoice;
 use App\Models\PartnerReferral;
 use App\Models\Payment;
 use App\Models\Service;
+use App\Models\ServiceOrder;
 use App\Models\ServicePackage;
+use App\Services\FeatureFlagService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request): View
+    public function __invoke(Request $request, FeatureFlagService $features): View
     {
         $user = $request->attributes->get('currentUser');
         $invoices = Invoice::query()
@@ -41,12 +43,14 @@ class DashboardController extends Controller
 
         return view('partner.dashboard', [
             'partnerPlan' => $user->partnerPlan(),
+            'referralTrackingEnabled' => $features->enabled('referral_tracking'),
             'referralUrl' => route('home', ['ref' => $user->partner_code]),
             'proposalReferralUrl' => route('proposal.create', ['ref' => $user->partner_code]),
             'servicesReferralUrl' => route('services.index', ['ref' => $user->partner_code]),
             'referralServices' => $referralServices,
             'referralClicks' => PartnerReferral::where('partner_id', $user->id)->sum('click_count'),
             'referralLeads' => Inquiry::where('referred_by_partner_id', $user->id)->count(),
+            'referralOrders' => ServiceOrder::where('referred_by_partner_id', $user->id)->count(),
             'referralInvoices' => Invoice::where('referred_by_partner_id', $user->id)->count(),
             'referralRevenue' => Payment::query()
                 ->active()

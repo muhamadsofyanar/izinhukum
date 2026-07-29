@@ -12,10 +12,11 @@
     <meta property="og:description" content="@yield('meta_description', 'Layanan legalitas bisnis yang praktis, aman, dan transparan.')">
     <meta property="og:url" content="{{ url()->current() }}">
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=10.0.0">
 </head>
+@php($featureFlags = app(\App\Services\FeatureFlagService::class))
 <body>
     <a class="skip-link" href="#main">Lewati ke konten</a>
-
     <div class="utility-bar">
         <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
             <span>Konsultasi awal gratis · Melayani seluruh Indonesia</span>
@@ -25,7 +26,6 @@
             </div>
         </div>
     </div>
-
     <header class="site-header sticky-top">
         <nav class="navbar navbar-expand-lg" aria-label="Navigasi utama">
             <div class="container">
@@ -33,11 +33,9 @@
                     <span class="brand-mark">IH</span>
                     <span class="brand-copy"><strong>IzinHukum</strong><small>Legalitas sampai tuntas</small></span>
                 </a>
-
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Buka menu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-
                 <div class="collapse navbar-collapse" id="mainNav">
                     <ul class="navbar-nav ms-auto align-items-lg-center">
                         <li class="nav-item dropdown dropdown-mega">
@@ -58,23 +56,24 @@
                                         <div class="col-12"><a class="mega-link" href="{{ route('services.index') }}">Lihat seluruh layanan <span>→</span></a></div>
                                     @endforelse
                                 </div>
-                                <div class="mega-footer">
-                                    <span>Belum tahu layanan yang tepat?</span>
-                                    <a href="{{ route('proposal.create') }}">Konsultasikan kebutuhan Anda →</a>
-                                </div>
+                                @if($featureFlags->enabled('public_proposal'))
+                                    <div class="mega-footer">
+                                        <span>Belum tahu layanan yang tepat?</span>
+                                        <a href="{{ route('proposal.create') }}">Konsultasikan kebutuhan Anda →</a>
+                                    </div>
+                                @endif
                             </div>
                         </li>
                         <li class="nav-item"><a class="nav-link" href="{{ route('kbli.index') }}">Cek KBLI</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ route('articles.index') }}">Artikel</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ route('partnership.create') }}">Kemitraan</a></li>
+                        @if($featureFlags->enabled('public_articles'))<li class="nav-item"><a class="nav-link" href="{{ route('articles.index') }}">Artikel</a></li>@endif
+                        @if($featureFlags->enabled('partner_registration'))<li class="nav-item"><a class="nav-link" href="{{ route('partnership.create') }}">Kemitraan</a></li>@endif
                         <li class="nav-item"><a class="nav-link" href="{{ route('contact') }}">Kontak</a></li>
-                        <li class="nav-item ms-lg-3"><a class="btn btn-primary btn-sm" href="{{ route('proposal.create') }}">Minta Proposal</a></li>
+                        @if($featureFlags->enabled('public_proposal'))<li class="nav-item ms-lg-3"><a class="btn btn-primary btn-sm" href="{{ route('proposal.create') }}">Minta Proposal</a></li>@endif
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
-
     @if(session('success'))
         <div class="container mt-3">
             <div class="alert alert-success" role="status">{{ session('success') }}</div>
@@ -84,7 +83,6 @@
     <main id="main">
         @yield('content')
     </main>
-
     <section class="cta-band">
         <div class="container">
             <div class="cta-panel">
@@ -94,13 +92,12 @@
                     <p>Ceritakan kebutuhan Anda. Tim kami membantu memilih layanan dan menjelaskan tahap berikutnya.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a class="btn btn-light" href="{{ route('proposal.create') }}">Minta penawaran</a>
+                    @if($featureFlags->enabled('public_proposal'))<a class="btn btn-light" href="{{ route('proposal.create') }}">Minta penawaran</a>@endif
                     <a class="btn btn-outline-light" target="_blank" rel="noopener" href="https://wa.me/{{ config('company.whatsapp') }}?text={{ urlencode('Halo IzinHukum, saya ingin konsultasi legalitas.') }}">Chat WhatsApp</a>
                 </div>
             </div>
         </div>
     </section>
-
     <footer class="site-footer">
         <div class="container">
             <div class="row g-5">
@@ -115,11 +112,11 @@
                     <h3>Jelajahi</h3>
                     <a href="{{ route('services.index') }}">Semua layanan</a>
                     <a href="{{ route('kbli.index') }}">Cek KBLI</a>
-                    <a href="{{ route('articles.index') }}">Artikel</a>
+                    @if($featureFlags->enabled('public_articles'))<a href="{{ route('articles.index') }}">Artikel</a>@endif
                     <a href="{{ route('tracking.index') }}">Lacak permintaan</a>
-                    <a href="{{ route('partnership.create') }}">Kemitraan LegaOne</a>
+                    @if($featureFlags->enabled('partner_registration'))<a href="{{ route('partnership.create') }}">Kemitraan LegaOne</a>@endif
                     <a href="{{ route('partner.login') }}">Masuk mitra</a>
-                    <a href="{{ route('proposal.create') }}">Minta proposal</a>
+                    @if($featureFlags->enabled('public_proposal'))<a href="{{ route('proposal.create') }}">Minta proposal</a>@endif
                     <a href="{{ route('contact') }}">Kontak</a>
                 </div>
                 <div class="col-6 col-lg-3">
@@ -145,7 +142,6 @@
             </div>
         </div>
     </footer>
-
     <a class="whatsapp-float" target="_blank" rel="noopener" aria-label="Chat IzinHukum melalui WhatsApp" href="https://wa.me/{{ config('company.whatsapp') }}?text={{ urlencode('Halo IzinHukum, saya ingin konsultasi legalitas.') }}">
         <span>WA</span><strong>Konsultasi</strong>
     </a>

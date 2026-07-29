@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Inquiry extends Model
 {
@@ -30,9 +31,7 @@ class Inquiry extends Model
 
     protected function casts(): array
     {
-        return [
-            'referred_at' => 'datetime',
-        ];
+        return ['referred_at' => 'datetime'];
     }
 
     public function package(): BelongsTo
@@ -53,5 +52,10 @@ class Inquiry extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function serviceOrder(): HasOne
+    {
+        return $this->hasOne(ServiceOrder::class);
     }
 }

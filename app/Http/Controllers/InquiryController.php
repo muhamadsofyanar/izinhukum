@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Inquiry;
-use App\Models\Service;
 use App\Models\ServicePackage;
+use App\Services\FeatureFlagService;
 use App\Services\PartnerReferralService;
+use App\Services\ReferralEventService;
+use App\Services\ServiceOrderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -31,8 +33,10 @@ class InquiryController extends Controller
     public function store(
         Request $request,
         PartnerReferralService $referrals,
-    ): RedirectResponse
-    {
+        ServiceOrderService $orders,
+        ReferralEventService $events,
+        FeatureFlagService $features,
+    ): RedirectResponse {
         $validated = $request->validate([
             'service_package_id' => ['nullable', 'exists:service_packages,id'],
             'name' => ['required', 'string', 'max:120'],
@@ -43,16 +47,21 @@ class InquiryController extends Controller
             'message' => ['nullable', 'string', 'max:3000'],
             'privacy_consent' => ['accepted'],
         ]);
-
         unset($validated['privacy_consent']);
-        $attribution = $referrals->attribution($request);
-        $inquiry = Inquiry::create([
+
+        $attribution = $features->enabled('referral_tracking')
+            ? $referrals->attribution($request)
+            : null;
+        $inquiry = Inquiry::query()->create([
             ...$validated,
             ...($attribution ?? []),
             'reference' => 'IH-'.now()->format('ymd').'-'.Str::upper(Str::random(5)),
             'source' => $attribution ? 'partner_referral' : 'website',
             'status' => 'baru',
         ]);
+
+        $events->recordInquiry($inquiry);
+        $orders->createFromInquiry($inquiry);
 
         return redirect()
             ->route('proposal.success', $inquiry)
@@ -61,7 +70,7 @@ class InquiryController extends Controller
 
     public function success(Inquiry $inquiry): View
     {
-        $inquiry->load('package.service');
+        $inquiry->load(['package.service', 'serviceOrder']);
 
         return view('proposal-success', compact('inquiry'));
     }

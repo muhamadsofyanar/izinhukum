@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Services\ReferralEventService;
+use App\Services\ServiceOrderService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 
 class Invoice extends Model
 {
@@ -16,6 +19,7 @@ class Invoice extends Model
         'public_token',
         'created_by',
         'inquiry_id',
+        'service_order_id',
         'partner_id',
         'referred_by_partner_id',
         'referral_code',
@@ -51,6 +55,33 @@ class Invoice extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (Invoice $invoice): void {
+            if (
+                ! $invoice->service_order_id
+                && $invoice->inquiry_id
+                && Schema::hasTable('service_orders')
+                && Schema::hasColumn('invoices', 'service_order_id')
+            ) {
+                $invoice->service_order_id = ServiceOrder::query()
+                    ->where('inquiry_id', $invoice->inquiry_id)
+                    ->value('id');
+            }
+        });
+
+        static::saved(function (Invoice $invoice): void {
+            if ($invoice->service_order_id && Schema::hasTable('service_orders')) {
+                $order = ServiceOrder::query()->find($invoice->service_order_id);
+                if ($order) {
+                    app(ServiceOrderService::class)->syncPaymentStatus($order);
+                }
+            }
+
+            app(ReferralEventService::class)->recordInvoice($invoice);
+        });
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -64,6 +95,11 @@ class Invoice extends Model
     public function inquiry(): BelongsTo
     {
         return $this->belongsTo(Inquiry::class);
+    }
+
+    public function serviceOrder(): BelongsTo
+    {
+        return $this->belongsTo(ServiceOrder::class);
     }
 
     public function referredByPartner(): BelongsTo
@@ -89,9 +125,7 @@ class Invoice extends Model
     public function amountPaid(): int
     {
         if ($this->relationLoaded('payments')) {
-            return (int) $this->payments
-                ->where('status', 'active')
-                ->sum('amount');
+            return (int) $this->payments->where('status', 'active')->sum('amount');
         }
 
         return (int) $this->payments()->active()->sum('amount');

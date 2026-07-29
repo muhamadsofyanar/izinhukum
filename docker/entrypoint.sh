@@ -1,12 +1,9 @@
 #!/bin/sh
+
 set -eu
 
 cd /var/www/html
 
-# A persistent volume may be mounted on /var/www/html/database. Docker only
-# populates a named volume on its first creation, so later image deployments
-# would otherwise keep stale migration/seeder files. Refresh application-owned
-# database code while preserving the persistent database.sqlite file.
 mkdir -p database/migrations database/seeders database/data database/uploads
 touch database/database.sqlite
 cp -R /opt/izinhukum-database/migrations/. database/migrations/
@@ -28,14 +25,39 @@ if [ ! -L public/storage ]; then
     php artisan storage:link || true
 fi
 
-if [ -z "${APP_KEY:-}" ]; then
-    echo "ERROR: APP_KEY wajib diisi. Buat dengan: printf 'base64:%s\\n' \"\$(openssl rand -base64 32)\""
+fail_config() {
+    echo "ERROR: $1"
     exit 1
+}
+
+if [ -z "${APP_KEY:-}" ]; then
+    fail_config "APP_KEY wajib diisi. Buat dengan: printf 'base64:%s\\n' \"\$(openssl rand -base64 32)\""
 fi
+
+case "${APP_KEY}" in
+    *GANTI*|*ganti*|*CHANGE*|*change*|*CONTOH*|*contoh*|*EXAMPLE*|*example*)
+        fail_config "APP_KEY masih memakai nilai contoh. Ganti sebelum aplikasi dijalankan."
+        ;;
+esac
+
+if [ "${#APP_KEY}" -lt 32 ]; then
+    fail_config "APP_KEY terlalu pendek. Gunakan key Laravel yang valid."
+fi
+
+for value in "${ADMIN_PASSWORD:-}" "${DB_PASSWORD:-}"; do
+    case "$value" in
+        *GANTI*|*ganti*|*CHANGE*|*change*|*CONTOH*|*contoh*|*EXAMPLE*|*example*|password|admin123|12345678)
+            fail_config "Terdapat password environment yang masih memakai nilai contoh atau terlalu mudah."
+            ;;
+    esac
+done
+
+php artisan optimize:clear
 
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
     php artisan migrate --force
     php artisan finance:reconcile-legacy-paid-invoices --no-interaction
+    php artisan app:backfill-orders --no-interaction
 fi
 
 if [ "${SEED_DATABASE:-false}" = "true" ]; then

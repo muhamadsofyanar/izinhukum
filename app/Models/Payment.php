@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Services\ReferralEventService;
+use App\Services\ServiceOrderService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Schema;
 
 class Payment extends Model
 {
@@ -40,6 +43,25 @@ class Payment extends Model
             'cancelled_at' => 'datetime',
             'last_edited_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function (Payment $payment): void {
+            if (! Schema::hasTable('service_orders')) {
+                return;
+            }
+
+            $payment->loadMissing('invoice');
+            if ($payment->invoice?->service_order_id) {
+                $order = ServiceOrder::query()->find($payment->invoice->service_order_id);
+                if ($order) {
+                    app(ServiceOrderService::class)->syncPaymentStatus($order);
+                }
+            }
+
+            app(ReferralEventService::class)->recordPayment($payment);
+        });
     }
 
     public function invoice(): BelongsTo

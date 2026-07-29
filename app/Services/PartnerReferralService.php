@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\PartnerReferral;
+use App\Models\ReferralEvent;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class PartnerReferralService
@@ -16,13 +18,21 @@ class PartnerReferralService
 
     public function capture(Request $request): ?PartnerReferral
     {
+        if ($request->session()->get('portal_role') === 'partner') {
+            return null;
+        }
+
         $rawCode = $request->query('ref');
         if (! is_string($rawCode) || trim($rawCode) === '') {
             return null;
         }
 
-        $code = Str::upper(trim($rawCode));
-        $partner = $this->activePartner($code);
+        $requestedCode = Str::upper(trim($rawCode));
+        $storedCode = Str::upper(trim((string) (
+            $request->session()->get('partner_referral_code')
+            ?: $request->cookie(self::CODE_COOKIE)
+        )));
+        $partner = $this->activePartner($storedCode) ?: $this->activePartner($requestedCode);
         if (! $partner) {
             return null;
         }
@@ -54,6 +64,21 @@ class PartnerReferralService
             'last_landing_path' => $path,
             'last_seen_at' => now(),
         ]);
+
+        if (Schema::hasTable('referral_events')) {
+            ReferralEvent::query()->create([
+                'partner_referral_id' => $referral->id,
+                'partner_id' => $partner->id,
+                'event_type' => 'click',
+                'event_value' => 0,
+                'path' => $path,
+                'metadata' => [
+                    'visitor_hash' => hash('sha256', $visitorToken),
+                    'referral_code' => $partner->partner_code,
+                ],
+                'occurred_at' => now(),
+            ]);
+        }
 
         $request->session()->put([
             'partner_referral_id' => $referral->id,
@@ -90,6 +115,10 @@ class PartnerReferralService
 
     public function attribution(Request $request): ?array
     {
+        if ($request->session()->get('portal_role') === 'partner') {
+            return null;
+        }
+
         $code = (string) (
             $request->session()->get('partner_referral_code')
             ?: $request->cookie(self::CODE_COOKIE)
@@ -135,4 +164,3 @@ class PartnerReferralService
             ->first();
     }
 }
-

@@ -3,6 +3,7 @@
 use App\Http\Middleware\AdminAuthenticated;
 use App\Http\Middleware\CapturePartnerReferral;
 use App\Http\Middleware\PartnerAuthenticated;
+use App\Http\Middleware\RequireFeature;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,15 +24,14 @@ return Application::configure(basePath: dirname(__DIR__))
             $middleware->trustProxies(at: $trustedProxies);
         }
 
-        $middleware->web(append: [
-            CapturePartnerReferral::class,
-        ]);
+        $middleware->web(append: [CapturePartnerReferral::class]);
 
         $middleware->alias([
             'admin' => AdminAuthenticated::class,
             'partner' => PartnerAuthenticated::class,
+            'feature' => RequireFeature::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Gunakan halaman error production bawaan Laravel tanpa menampilkan stack trace.
     })->create();

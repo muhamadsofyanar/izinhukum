@@ -20,7 +20,6 @@ COPY . .
 RUN composer dump-autoload --no-dev --optimize
 
 FROM php:8.4-fpm-alpine AS runtime
-
 RUN apk add --no-cache \
         curl \
         nginx \
@@ -36,14 +35,12 @@ RUN apk add --no-cache \
     && rm -rf /tmp/* /var/cache/apk/*
 
 WORKDIR /var/www/html
-
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
 COPY docker/php.ini /usr/local/etc/php/conf.d/99-izinhukum.ini
 COPY docker/entrypoint.sh /usr/local/bin/izinhukum-entrypoint
 COPY --from=vendor --chown=www-data:www-data /app .
 COPY --from=assets --chown=www-data:www-data /app/public/build ./public/build
-
 RUN chmod +x /usr/local/bin/izinhukum-entrypoint \
     && mkdir -p /opt/izinhukum-database \
     && cp -R database/migrations database/seeders database/data /opt/izinhukum-database/ \
@@ -58,9 +55,8 @@ RUN chmod +x /usr/local/bin/izinhukum-entrypoint \
     && chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 8080
-
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD curl --fail --silent http://127.0.0.1:8080/up || exit 1
+    CMD curl --fail --silent --header "Accept: application/json" http://127.0.0.1:8080/healthz || exit 1
 
 ENTRYPOINT ["izinhukum-entrypoint"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

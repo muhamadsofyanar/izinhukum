@@ -8,20 +8,34 @@ use Illuminate\View\View;
 
 class InquiryTrackingController extends Controller
 {
-    public function index(Request $request): View
+    public function index(): View
     {
-        $inquiry = null;
-        $reference = mb_strtoupper(trim((string) $request->query('reference', '')));
-        $phone = trim((string) $request->query('phone', ''));
+        return view('tracking', [
+            'inquiry' => null,
+            'reference' => '',
+            'searched' => false,
+        ]);
+    }
 
-        if ($reference !== '' && $phone !== '') {
-            $inquiry = Inquiry::query()
-                ->with('package.service')
-                ->where('reference', $reference)
-                ->where('phone', $phone)
-                ->first();
-        }
+    public function search(Request $request): View
+    {
+        $data = $request->validate([
+            'reference' => ['required', 'string', 'max:40'],
+            'phone' => ['required', 'string', 'max:32'],
+        ]);
 
-        return view('tracking', compact('inquiry', 'reference', 'phone'));
+        $reference = mb_strtoupper(trim($data['reference']));
+        $phone = trim($data['phone']);
+        $inquiry = Inquiry::query()
+            ->with(['package.service', 'serviceOrder'])
+            ->where('reference', $reference)
+            ->where('phone', $phone)
+            ->first();
+
+        return view('tracking', [
+            'inquiry' => $inquiry,
+            'reference' => $reference,
+            'searched' => true,
+        ]);
     }
 }

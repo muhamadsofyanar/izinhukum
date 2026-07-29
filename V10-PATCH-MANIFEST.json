@@ -1,0 +1,17 @@
+{
+  "name": "IzinHukum V10 - Order, Finance, Referral, and Customer Foundation",
+  "version": "10.0.0",
+  "base_live_commit_reported": "e88602ae8ed6eccc8e9c11710ca7e3a4b8cf7cef",
+  "created_at": "2026-07-29",
+  "deployment": "manual GitHub upload followed by Coolify redeploy",
+  "database_change": "additive migration",
+  "automatic_commands": [
+    "migrate --force",
+    "finance:reconcile-legacy-paid-invoices",
+    "app:backfill-orders",
+    "kbli:ensure",
+    "portal:secure-files",
+    "optimize"
+  ],
+  "file_count_excluding_manifest": 56
+}

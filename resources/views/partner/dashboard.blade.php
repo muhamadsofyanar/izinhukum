@@ -11,12 +11,13 @@
 <div class="admin-stats">
     <article><span>Klik referral</span><strong>{{ number_format($referralClicks, 0, ',', '.') }}</strong></article>
     <article><span>Prospek referral</span><strong>{{ number_format($referralLeads, 0, ',', '.') }}</strong></article>
-    <article><span>Invoice referral</span><strong>{{ number_format($referralInvoices, 0, ',', '.') }}</strong></article>
+    <article><span>Order referral</span><strong>{{ number_format($referralOrders, 0, ',', '.') }}</strong></article>
     <article><span>Omzet terbayar</span><strong>Rp{{ number_format($referralRevenue,0,',','.') }}</strong></article>
     <article><span>Komisi diproses</span><strong>Rp{{ number_format($commissionPending,0,',','.') }}</strong></article>
     <article><span>Komisi dibayar</span><strong>Rp{{ number_format($commissionTotal,0,',','.') }}</strong></article>
 </div>
 
+@if($referralTrackingEnabled)
 <section class="admin-panel mb-4">
     <div class="admin-panel-head">
         <h2>Tautan referral semua layanan</h2>
@@ -89,6 +90,13 @@
         </div>
     </div>
 </section>
+@else
+<section class="admin-panel mb-4">
+    <div class="p-4">
+        <div class="alert alert-warning mb-0">Pelacakan referral sedang dinonaktifkan oleh admin. Tautan lama tidak mencatat atribusi baru sampai fitur diaktifkan kembali.</div>
+    </div>
+</section>
+@endif
 
 @if($announcements->isNotEmpty())
 <section class="admin-panel mb-4">
