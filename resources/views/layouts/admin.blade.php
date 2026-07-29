@@ -6,24 +6,38 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Portal') · IzinHukum</title>
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=9.0.0">
 </head>
 <body class="admin-body">
 @php
     $isAdmin = $currentUser->isAdmin();
     $prefix = $isAdmin ? 'admin' : 'partner';
+    $operationModule = request()->route('module');
 @endphp
 <div class="admin-shell">
     <aside class="admin-sidebar">
-        <a class="brand brand-light" href="{{ route($prefix.'.dashboard') }}">
-            @if($platformBrandLogo)<img class="brand-logo-image" src="{{ asset('storage/'.$platformBrandLogo) }}" alt="{{ $platformBrandName }}">@else<span class="brand-mark">IH</span>@endif
-            <span class="brand-copy"><strong>{{ $platformBrandName }}</strong><small>{{ $isAdmin ? 'Administrator' : 'Mitra LegaOne' }}</small></span>
-        </a>
-        <div class="portal-identity">
-            <strong>{{ $currentUser->name }}</strong>
-            <small>{{ $currentUser->partner_code ?: $currentUser->email }}</small>
+        <div class="admin-sidebar-top">
+            <a class="brand brand-light" href="{{ route($prefix.'.dashboard') }}">
+                @if($platformBrandLogo)
+                    <img class="brand-logo-image" src="{{ asset('storage/'.$platformBrandLogo) }}" alt="{{ $platformBrandName }}">
+                @else
+                    <span class="brand-mark">IH</span>
+                @endif
+                <span class="brand-copy">
+                    <strong>{{ $platformBrandName }}</strong>
+                    <small>{{ $isAdmin ? 'Administrator' : 'Mitra LegaOne' }}</small>
+                </span>
+            </a>
+            <div class="portal-identity">
+                <strong>{{ $currentUser->name }}</strong>
+                <small>{{ $currentUser->partner_code ?: $currentUser->email }}</small>
+            </div>
         </div>
-        <nav>
+
+        <nav class="admin-sidebar-nav" aria-label="Navigasi portal">
+            <span class="sidebar-section-label">Utama</span>
             <a class="{{ request()->routeIs($prefix.'.dashboard') ? 'active' : '' }}" href="{{ route($prefix.'.dashboard') }}">Ringkasan</a>
+
             @if($isAdmin)
                 <a class="{{ request()->routeIs('admin.inquiries.*') ? 'active' : '' }}" href="{{ route('admin.inquiries.index') }}">Permintaan masuk</a>
                 <a class="{{ request()->routeIs('admin.packages.*') ? 'active' : '' }}" href="{{ route('admin.packages.index') }}">Harga & paket</a>
@@ -33,33 +47,43 @@
                 <a class="{{ request()->routeIs('partner.prices.*') ? 'active' : '' }}" href="{{ route('partner.prices.index') }}">Harga mitra</a>
                 <a class="{{ request()->routeIs('partner.learning.*') ? 'active' : '' }}" href="{{ route('partner.learning.index') }}">Kelas saya</a>
             @endif
+
+            <span class="sidebar-section-label">Operasional</span>
             <a class="{{ request()->routeIs($prefix.'.community.*') ? 'active' : '' }}" href="{{ route($prefix.'.community.index') }}">Community</a>
             <a class="{{ request()->routeIs($prefix.'.inbox.*') ? 'active' : '' }}" href="{{ route($prefix.'.inbox.index') }}">Inbox</a>
             <a class="{{ request()->routeIs($prefix.'.invoices.*') ? 'active' : '' }}" href="{{ route($prefix.'.invoices.index') }}">Invoice</a>
+
             @if($isAdmin)
                 <a class="{{ request()->routeIs('admin.finance.*') ? 'active' : '' }}" href="{{ route('admin.finance.index') }}">Laporan keuangan</a>
                 <a class="{{ request()->routeIs('admin.articles.*') ? 'active' : '' }}" href="{{ route('admin.articles.index') }}">Artikel</a>
-                <a href="{{ route('admin.operations.index', 'announcements') }}">Pengumuman</a>
-                <a href="{{ route('admin.operations.index', 'materials') }}">Materi pemasaran</a>
-                <a href="{{ route('admin.operations.index', 'tickets') }}">Tiket bantuan</a>
-                <a href="{{ route('admin.operations.index', 'commissions') }}">Komisi mitra</a>
-                <a href="{{ route('admin.operations.index', 'audit') }}">Audit log</a>
+                <a class="{{ request()->routeIs('admin.operations.*') && $operationModule === 'announcements' ? 'active' : '' }}" href="{{ route('admin.operations.index', 'announcements') }}">Pengumuman</a>
+                <a class="{{ request()->routeIs('admin.operations.*') && $operationModule === 'materials' ? 'active' : '' }}" href="{{ route('admin.operations.index', 'materials') }}">Materi pemasaran</a>
+                <a class="{{ (request()->routeIs('admin.operations.*') && $operationModule === 'tickets') || request()->routeIs('admin.tickets.*') ? 'active' : '' }}" href="{{ route('admin.operations.index', 'tickets') }}">Tiket bantuan</a>
+                <a class="{{ (request()->routeIs('admin.operations.*') && $operationModule === 'commissions') || request()->routeIs('admin.commissions.*') ? 'active' : '' }}" href="{{ route('admin.operations.index', 'commissions') }}">Komisi mitra</a>
+                <a class="{{ request()->routeIs('admin.operations.*') && $operationModule === 'audit' ? 'active' : '' }}" href="{{ route('admin.operations.index', 'audit') }}">Audit log</a>
+
+                <span class="sidebar-section-label">Pengaturan</span>
                 <a class="{{ request()->routeIs('admin.mail.*') ? 'active' : '' }}" href="{{ route('admin.mail.edit') }}">Email & SMTP</a>
                 <a class="{{ request()->routeIs('admin.branding.*') ? 'active' : '' }}" href="{{ route('admin.branding.edit') }}">Logo & branding</a>
             @else
-                <a href="{{ route('partner.operations.index', 'announcements') }}">Pengumuman</a>
-                <a href="{{ route('partner.operations.index', 'materials') }}">Materi pemasaran</a>
-                <a href="{{ route('partner.operations.index', 'tickets') }}">Bantuan</a>
-                <a href="{{ route('partner.operations.index', 'commissions') }}">Komisi saya</a>
+                <a class="{{ request()->routeIs('partner.operations.*') && $operationModule === 'announcements' ? 'active' : '' }}" href="{{ route('partner.operations.index', 'announcements') }}">Pengumuman</a>
+                <a class="{{ request()->routeIs('partner.operations.*') && $operationModule === 'materials' ? 'active' : '' }}" href="{{ route('partner.operations.index', 'materials') }}">Materi pemasaran</a>
+                <a class="{{ request()->routeIs('partner.operations.*') && $operationModule === 'tickets' ? 'active' : '' }}" href="{{ route('partner.operations.index', 'tickets') }}">Bantuan</a>
+                <a class="{{ request()->routeIs('partner.operations.*') && $operationModule === 'commissions' ? 'active' : '' }}" href="{{ route('partner.operations.index', 'commissions') }}">Komisi saya</a>
             @endif
+
             <a class="{{ request()->routeIs($prefix.'.profile.*') ? 'active' : '' }}" href="{{ route($prefix.'.profile.edit') }}">Profil</a>
-            <a href="{{ route('home') }}" target="_blank">Lihat website ↗</a>
         </nav>
-        <form action="{{ route($prefix.'.logout') }}" method="post">
-            @csrf
-            <button type="submit">Keluar</button>
-        </form>
+
+        <div class="admin-sidebar-footer">
+            <a class="sidebar-site-link" href="{{ route('home') }}" target="_blank" rel="noopener">Lihat website ↗</a>
+            <form action="{{ route($prefix.'.logout') }}" method="post">
+                @csrf
+                <button type="submit">Keluar</button>
+            </form>
+        </div>
     </aside>
+
     <main class="admin-main">
         <header class="admin-header">
             <div>
@@ -68,17 +92,33 @@
             </div>
             @yield('header_action')
         </header>
-        @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
-        @if(session('receipt_url'))<div class="alert alert-info"><a href="{{ session('receipt_url') }}" target="_blank">Buka kwitansi pembayaran ↗</a></div>@endif
+
+        @if(session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+
+        @if(session('receipt_url'))
+            <div class="alert alert-info"><a href="{{ session('receipt_url') }}" target="_blank">Buka kwitansi pembayaran ↗</a></div>
+        @endif
+
         @if(session('activation_url'))
             <div class="alert alert-warning">
                 <strong>Tautan aktivasi (berlaku 7 hari):</strong>
                 <a href="{{ session('activation_url') }}" target="_blank">{{ session('activation_url') }}</a>
             </div>
         @endif
+
         @if($errors->any())
-            <div class="alert alert-danger"><strong>Periksa kembali data:</strong><ul class="mb-0 mt-2">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+            <div class="alert alert-danger">
+                <strong>Periksa kembali data:</strong>
+                <ul class="mb-0 mt-2">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
         @endif
+
         @yield('content')
     </main>
 </div>

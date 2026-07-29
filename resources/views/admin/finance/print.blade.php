@@ -4,15 +4,106 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Laporan Keuangan {{ $report['from']->format('Y-m-d') }} - {{ $report['to']->format('Y-m-d') }}</title>
 <style>
-*{box-sizing:border-box}body{margin:0;padding:22px;color:#07192f;font-family:Arial,sans-serif}.toolbar{text-align:center;margin-bottom:15px}.toolbar button{padding:10px 17px;color:#fff;background:#087864;border:0;border-radius:7px;font-weight:700}.head{display:flex;justify-content:space-between;gap:25px;padding-bottom:18px;border-bottom:3px solid #07192f}.brand{display:flex;align-items:center;gap:12px}.logo{width:58px;height:58px;object-fit:contain}.mark{display:grid;width:52px;height:52px;place-items:center;color:#fff;background:#087864;border-radius:11px;font-weight:800}.brand strong,.brand small{display:block}.brand small,.period{color:#647487;font-size:12px}.title{text-align:right}.title h1{margin:0;font-size:22px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:20px 0}.summary div{padding:12px;background:#eef8f5;border-radius:8px}.summary span{display:block;color:#647487;font-size:10px;text-transform:uppercase}.summary strong{display:block;margin-top:6px;font-size:15px}h2{margin:25px 0 8px;font-size:15px}table{width:100%;border-collapse:collapse;font-size:10px}th,td{padding:7px;border:1px solid #d9e1e4;text-align:left;vertical-align:top}th{color:#fff;background:#07192f}.number{text-align:right;white-space:nowrap}.note{margin-top:18px;color:#647487;font-size:10px}.negative{color:#b4232b}@page{size:A4 landscape;margin:10mm}@media print{body{padding:0}.toolbar{display:none}.summary div,th{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+*{box-sizing:border-box}body{margin:0;padding:22px;color:#07192f;font-family:Arial,sans-serif}.toolbar{text-align:center;margin-bottom:15px}.toolbar button{padding:10px 17px;color:#fff;background:#087864;border:0;border-radius:7px;font-weight:700}.head{display:flex;justify-content:space-between;gap:25px;padding-bottom:18px;border-bottom:3px solid #07192f}.brand{display:flex;align-items:center;gap:12px}.logo{width:58px;height:58px;object-fit:contain}.mark{display:grid;width:52px;height:52px;place-items:center;color:#fff;background:#087864;border-radius:11px;font-weight:800}.brand strong,.brand small{display:block}.brand small,.period{color:#647487;font-size:12px}.title{text-align:right}.title h1{margin:0;font-size:22px}.summary{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin:20px 0}.summary div{padding:12px;background:#eef8f5;border-radius:8px}.summary span{display:block;color:#647487;font-size:9px;text-transform:uppercase}.summary strong{display:block;margin-top:6px;font-size:14px}h2{margin:25px 0 8px;font-size:15px}table{width:100%;border-collapse:collapse;font-size:9px}th,td{padding:6px;border:1px solid #d9e1e4;text-align:left;vertical-align:top}th{color:#fff;background:#07192f}.number{text-align:right;white-space:nowrap}.note{margin-top:18px;color:#647487;font-size:10px}.negative{color:#b4232b}@page{size:A4 landscape;margin:9mm}@media print{body{padding:0}.toolbar{display:none}.summary div,th{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 </style>
 </head>
 <body>
 <div class="toolbar"><button onclick="window.print()">Cetak / Simpan PDF</button></div>
-<header class="head"><div><div class="brand">@if($branding['logo'])<img class="logo" src="{{ asset('storage/'.$branding['logo']) }}" alt="{{ $branding['name'] }}">@else<span class="mark">IH</span>@endif<div><strong>{{ $branding['name'] }}</strong><small>{{ $branding['address'] }}</small></div></div></div><div class="title"><h1>LAPORAN KEUANGAN OPERASIONAL</h1><span class="period">{{ $report['from']->translatedFormat('d F Y') }} sampai {{ $report['to']->translatedFormat('d F Y') }}</span></div></header>
-<section class="summary"><div><span>Pemasukan</span><strong>Rp{{ number_format($report['income'],0,',','.') }}</strong></div><div><span>Pengeluaran</span><strong>Rp{{ number_format($report['expense'],0,',','.') }}</strong></div><div><span>Surplus / defisit</span><strong class="{{ $report['net_cash_flow']<0?'negative':'' }}">Rp{{ number_format($report['net_cash_flow'],0,',','.') }}</strong></div><div><span>Piutang</span><strong>Rp{{ number_format($report['receivables'],0,',','.') }}</strong></div></section>
-<h2>Arus Kas Bulanan</h2><table><thead><tr><th>Bulan</th><th class="number">Pemasukan</th><th class="number">Pengeluaran</th><th class="number">Bersih</th></tr></thead><tbody>@foreach($report['monthly'] as $month)<tr><td>{{ $month['label'] }}</td><td class="number">Rp{{ number_format($month['income'],0,',','.') }}</td><td class="number">Rp{{ number_format($month['expense'],0,',','.') }}</td><td class="number">Rp{{ number_format($month['net'],0,',','.') }}</td></tr>@endforeach</tbody></table>
-<h2>Rincian Transaksi</h2><table><thead><tr><th>Tanggal</th><th>Jenis</th><th>Nomor</th><th>Kategori</th><th>Uraian</th><th>Pihak</th><th class="number">Pemasukan</th><th class="number">Pengeluaran</th></tr></thead><tbody>@forelse($report['transactions'] as $row)<tr><td>{{ $row['date']->format('d/m/Y') }}</td><td>{{ $row['type']==='income'?'Masuk':'Keluar' }}</td><td>{{ $row['number'] }}</td><td>{{ $row['category'] }}</td><td>{{ $row['description'] }}</td><td>{{ $row['counterparty'] }}</td><td class="number">{{ $row['type']==='income'?'Rp'.number_format($row['amount'],0,',','.'):'—' }}</td><td class="number">{{ $row['type']==='expense'?'Rp'.number_format($row['amount'],0,',','.'):'—' }}</td></tr>@empty<tr><td colspan="8">Tidak ada transaksi.</td></tr>@endforelse</tbody></table>
-<p class="note">Basis kas. Pemasukan diakui saat pembayaran diterima. Pengeluaran diakui pada tanggal transaksi. Dicetak {{ now('Asia/Jakarta')->translatedFormat('d F Y H:i') }} WIB.</p>
+<header class="head">
+    <div>
+        <div class="brand">
+            @if($branding['logo'])
+                <img class="logo" src="{{ asset('storage/'.$branding['logo']) }}" alt="{{ $branding['name'] }}">
+            @else
+                <span class="mark">IH</span>
+            @endif
+            <div><strong>{{ $branding['name'] }}</strong><small>{{ $branding['address'] }}</small></div>
+        </div>
+    </div>
+    <div class="title">
+        <h1>LAPORAN KEUANGAN OPERASIONAL</h1>
+        <span class="period">{{ $report['from']->translatedFormat('d F Y') }} sampai {{ $report['to']->translatedFormat('d F Y') }}</span>
+    </div>
+</header>
+
+<section class="summary">
+    <div><span>Nilai invoice</span><strong>Rp{{ number_format($report['invoice_total'],0,',','.') }}</strong></div>
+    <div><span>Pemasukan aktual</span><strong>Rp{{ number_format($report['income'],0,',','.') }}</strong></div>
+    <div><span>Pengeluaran</span><strong>Rp{{ number_format($report['expense'],0,',','.') }}</strong></div>
+    <div><span>Surplus / defisit</span><strong class="{{ $report['net_cash_flow']<0?'negative':'' }}">Rp{{ number_format($report['net_cash_flow'],0,',','.') }}</strong></div>
+    <div><span>Piutang aktif</span><strong>Rp{{ number_format($report['receivables'],0,',','.') }}</strong></div>
+    <div><span>Kwitansi periode</span><strong>{{ number_format($report['receipt_count'],0,',','.') }}</strong></div>
+</section>
+
+<h2>Invoice Periode</h2>
+<table>
+    <thead><tr><th>Tanggal</th><th>Nomor</th><th>Penerima</th><th class="number">Total</th><th class="number">Terbayar aktif</th><th class="number">Sisa</th><th>Status</th></tr></thead>
+    <tbody>
+        @php
+            $invoiceStatusLabels = [
+                'draft' => 'Draf',
+                'sent' => 'Terkirim',
+                'partial' => 'Dibayar sebagian',
+                'paid' => 'Lunas',
+                'cancelled' => 'Dibatalkan',
+            ];
+        @endphp
+        @forelse($report['invoices'] as $invoice)
+            <tr>
+                <td>{{ $invoice->issue_date->format('d/m/Y') }}</td>
+                <td>{{ $invoice->invoice_number }}</td>
+                <td>{{ $invoice->recipient_name }}</td>
+                <td class="number">Rp{{ number_format($invoice->total,0,',','.') }}</td>
+                <td class="number">Rp{{ number_format($invoice->report_paid_amount,0,',','.') }}</td>
+                <td class="number">Rp{{ number_format($invoice->report_outstanding_amount,0,',','.') }}</td>
+                <td>{{ $invoiceStatusLabels[$invoice->status] ?? ucfirst($invoice->status) }}</td>
+            </tr>
+        @empty
+            <tr><td colspan="7">Tidak ada invoice pada periode ini.</td></tr>
+        @endforelse
+    </tbody>
+</table>
+
+<h2>Arus Kas Bulanan</h2>
+<table>
+    <thead><tr><th>Bulan</th><th class="number">Pemasukan</th><th class="number">Pengeluaran</th><th class="number">Bersih</th></tr></thead>
+    <tbody>
+        @foreach($report['monthly'] as $month)
+            <tr>
+                <td>{{ $month['label'] }}</td>
+                <td class="number">Rp{{ number_format($month['income'],0,',','.') }}</td>
+                <td class="number">Rp{{ number_format($month['expense'],0,',','.') }}</td>
+                <td class="number">Rp{{ number_format($month['net'],0,',','.') }}</td>
+            </tr>
+        @endforeach
+    </tbody>
+</table>
+
+<h2>Rincian Transaksi Kas dan Kwitansi</h2>
+<table>
+    <thead><tr><th>Tanggal</th><th>Jenis</th><th>Nomor</th><th>Kategori</th><th>Uraian</th><th>Pihak</th><th class="number">Pemasukan</th><th class="number">Pengeluaran</th></tr></thead>
+    <tbody>
+        @forelse($report['transactions'] as $row)
+            <tr>
+                <td>{{ $row['date']->format('d/m/Y') }}</td>
+                <td>{{ $row['type']==='income'?'Masuk':'Keluar' }}</td>
+                <td>{{ $row['number'] }}</td>
+                <td>{{ $row['category'] }}</td>
+                <td>{{ $row['description'] }}</td>
+                <td>{{ $row['counterparty'] }}</td>
+                <td class="number">{{ $row['type']==='income'?'Rp'.number_format($row['amount'],0,',','.'):'—' }}</td>
+                <td class="number">{{ $row['type']==='expense'?'Rp'.number_format($row['amount'],0,',','.'):'—' }}</td>
+            </tr>
+        @empty
+            <tr><td colspan="8">Tidak ada transaksi.</td></tr>
+        @endforelse
+    </tbody>
+</table>
+
+<p class="note">
+    Basis kas: invoice ditampilkan sebagai dokumen tagihan, sedangkan pemasukan diakui saat pembayaran/kwitansi aktif
+    tercatat. Pengeluaran diakui pada tanggal transaksi. Dicetak
+    {{ now('Asia/Jakarta')->translatedFormat('d F Y H:i') }} WIB.
+</p>
 </body>
 </html>

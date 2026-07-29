@@ -31,7 +31,13 @@
         <p class="estimate-note">Harga dapat berubah sesuai kondisi dokumen dan ruang lingkup pekerjaan.</p>
     @endif
 
-    <a class="btn {{ $package->is_estimated ? 'btn-outline-primary' : 'btn-primary' }} w-100" href="{{ route('proposal.create', ['paket' => $package->id]) }}">
+    <a
+        class="btn {{ $package->is_estimated ? 'btn-outline-primary' : 'btn-primary' }} w-100"
+        href="{{ route('proposal.create', array_filter([
+            'paket' => $package->id,
+            'ref' => request('ref'),
+        ])) }}"
+    >
         {{ $package->is_estimated ? 'Minta Penawaran' : 'Pilih Paket' }}
     </a>
 

@@ -2,7 +2,6 @@
 
 @section('title', $service->name)
 @section('meta_description', $service->summary)
-
 @section('content')
 <section class="service-hero">
     <div class="container">
@@ -16,7 +15,10 @@
                 <p>{{ $service->description }}</p>
             </div>
             <div class="col-lg-4 text-lg-end">
-                <a class="btn btn-primary" href="{{ route('proposal.create') }}">Konsultasi layanan ini</a>
+                <a
+                    class="btn btn-primary"
+                    href="{{ route('proposal.create', array_filter(['ref' => request('ref')])) }}"
+                >Konsultasi layanan ini</a>
             </div>
         </div>
     </div>
@@ -47,8 +49,16 @@
 <section class="section pt-0">
     <div class="container">
         <div class="requirements-panel">
-            <div><span class="eyebrow">Persyaratan awal</span><h2>Siapkan data berikut</h2><p>Tim akan mengonfirmasi kelengkapan dan dokumen tambahan sesuai kondisi pemohon.</p></div>
-            <ul>@foreach($service->requirements as $requirement)<li><span>✓</span>{{ $requirement }}</li>@endforeach</ul>
+            <div>
+                <span class="eyebrow">Persyaratan awal</span>
+                <h2>Siapkan data berikut</h2>
+                <p>Tim akan mengonfirmasi kelengkapan dan dokumen tambahan sesuai kondisi pemohon.</p>
+            </div>
+            <ul>
+                @foreach($service->requirements as $requirement)
+                    <li><span>✓</span>{{ $requirement }}</li>
+                @endforeach
+            </ul>
         </div>
     </div>
 </section>

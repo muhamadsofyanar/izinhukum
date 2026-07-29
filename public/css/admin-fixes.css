@@ -1,0 +1,142 @@
+/*
+ * IzinHukum V9 admin corrections.
+ * Loaded after the Vite stylesheet so this file can be deployed without
+ * changing the existing SCSS bundle.
+ */
+
+.admin-sidebar {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100vh;
+    overflow: hidden;
+    padding-bottom: 1rem;
+}
+
+.admin-sidebar-top {
+    flex: 0 0 auto;
+}
+
+.admin-sidebar .admin-sidebar-nav {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: .3rem;
+    min-height: 0;
+    margin-top: 1.15rem;
+    padding-right: .35rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: rgba(255, 255, 255, .28) transparent;
+    scrollbar-width: thin;
+}
+
+.admin-sidebar .admin-sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.admin-sidebar .admin-sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.admin-sidebar .admin-sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, .26);
+    border-radius: 999px;
+}
+
+.admin-sidebar .admin-sidebar-nav > a {
+    flex: 0 0 auto;
+}
+
+.sidebar-section-label {
+    display: block;
+    margin: .85rem .8rem .2rem;
+    color: rgba(255, 255, 255, .48);
+    font-size: .67rem;
+    font-weight: 800;
+    letter-spacing: .11em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.sidebar-section-label:first-child {
+    margin-top: .15rem;
+}
+
+.admin-sidebar-footer {
+    flex: 0 0 auto;
+    margin-top: .75rem;
+    padding-top: .75rem;
+    border-top: 1px solid rgba(255, 255, 255, .12);
+    background: inherit;
+}
+
+.admin-sidebar-footer .sidebar-site-link {
+    display: block;
+    padding: .7rem .8rem;
+    color: rgba(255, 255, 255, .78);
+    font-size: .86rem;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: .65rem;
+}
+
+.admin-sidebar-footer .sidebar-site-link:hover,
+.admin-sidebar-footer .sidebar-site-link:focus-visible {
+    color: #fff;
+    background: rgba(255, 255, 255, .08);
+}
+
+.admin-sidebar .admin-sidebar-footer form {
+    margin-top: .45rem;
+}
+
+.admin-sidebar .admin-sidebar-footer button {
+    width: 100%;
+}
+
+@media (max-width: 991.98px) {
+    .admin-sidebar {
+        position: relative;
+        top: auto;
+        height: auto;
+        min-height: auto;
+        overflow: visible;
+    }
+
+    .admin-sidebar .admin-sidebar-nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
+    }
+
+    .admin-sidebar .admin-sidebar-nav .sidebar-section-label {
+        grid-column: 1 / -1;
+    }
+
+    .admin-sidebar-footer {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .65rem;
+        align-items: stretch;
+    }
+
+    .admin-sidebar .admin-sidebar-footer form {
+        margin-top: 0;
+    }
+
+    .admin-sidebar-footer .sidebar-site-link {
+        display: grid;
+        place-items: center;
+        text-align: center;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .admin-sidebar .admin-sidebar-nav,
+    .admin-sidebar-footer {
+        grid-template-columns: 1fr;
+    }
+}

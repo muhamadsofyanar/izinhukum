@@ -8,6 +8,7 @@ use App\Models\FinancialCategory;
 use App\Services\BrandingService;
 use App\Services\FinancialReportService;
 use App\Services\IncomeService;
+use App\Services\LegacyPaidInvoiceReconciler;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,13 +19,32 @@ use Illuminate\View\View;
 
 class FinanceController extends Controller
 {
-    public function index(Request $request, FinancialReportService $reportService): View
-    {
+    public function index(
+        Request $request,
+        FinancialReportService $reportService,
+        LegacyPaidInvoiceReconciler $reconciler,
+    ): View|RedirectResponse {
         [$from, $to] = $this->period($request);
+        $reconciledCount = $reconciler->run();
+
+        if ($request->boolean('sync')) {
+            return redirect()
+                ->route('admin.finance.index', [
+                    'from' => $from->format('Y-m-d'),
+                    'to' => $to->format('Y-m-d'),
+                ])
+                ->with(
+                    'success',
+                    $reconciledCount > 0
+                        ? $reconciledCount.' invoice lunas berhasil disinkronkan menjadi kwitansi aktif.'
+                        : 'Sinkronisasi selesai. Semua invoice lunas sudah memiliki kwitansi aktif yang sesuai.',
+                );
+        }
 
         return view('admin.finance.index', [
             'report' => $reportService->forPeriod($from, $to),
             'categories' => FinancialCategory::query()->orderBy('type')->orderBy('name')->get(),
+            'reconciledCount' => $reconciledCount,
         ]);
     }
 
@@ -96,13 +116,45 @@ class FinanceController extends Controller
         ]);
     }
 
-    public function export(Request $request, FinancialReportService $reportService): Response
-    {
+    public function export(
+        Request $request,
+        FinancialReportService $reportService,
+        LegacyPaidInvoiceReconciler $reconciler,
+    ): Response {
         [$from, $to] = $this->period($request);
+        $reconciler->run();
         $report = $reportService->forPeriod($from, $to);
         $stream = fopen('php://temp', 'r+');
 
         fwrite($stream, "\xEF\xBB\xBF");
+
+        fputcsv($stream, ['LAPORAN KEUANGAN IZINHUKUM']);
+        fputcsv($stream, ['Periode', $from->format('Y-m-d').' s.d. '.$to->format('Y-m-d')]);
+        fputcsv($stream, ['Pemasukan aktual', $report['income']]);
+        fputcsv($stream, ['Pengeluaran', $report['expense']]);
+        fputcsv($stream, ['Surplus / defisit', $report['net_cash_flow']]);
+        fputcsv($stream, ['Piutang aktif', $report['receivables']]);
+        fputcsv($stream, ['Nilai invoice periode', $report['invoice_total']]);
+        fputcsv($stream, ['Kwitansi periode', $report['receipt_count']]);
+        fputcsv($stream, []);
+
+        fputcsv($stream, ['DAFTAR INVOICE PERIODE']);
+        fputcsv($stream, ['Tanggal', 'Nomor invoice', 'Penerima', 'Total', 'Terbayar aktif', 'Sisa', 'Status']);
+
+        foreach ($report['invoices'] as $invoice) {
+            fputcsv($stream, [
+                $invoice->issue_date->format('Y-m-d'),
+                $invoice->invoice_number,
+                $invoice->recipient_name,
+                (int) $invoice->total,
+                (int) $invoice->report_paid_amount,
+                (int) $invoice->report_outstanding_amount,
+                $this->invoiceStatusLabel($invoice->status),
+            ]);
+        }
+
+        fputcsv($stream, []);
+        fputcsv($stream, ['TRANSAKSI KAS PERIODE']);
         fputcsv($stream, ['Tanggal', 'Jenis', 'Nomor', 'Kategori', 'Uraian', 'Pihak', 'Metode', 'Pemasukan', 'Pengeluaran']);
 
         foreach ($report['transactions'] as $row) {
@@ -133,8 +185,10 @@ class FinanceController extends Controller
         Request $request,
         FinancialReportService $reportService,
         BrandingService $brandingService,
+        LegacyPaidInvoiceReconciler $reconciler,
     ): View {
         [$from, $to] = $this->period($request);
+        $reconciler->run();
 
         return view('admin.finance.print', [
             'report' => $reportService->forPeriod($from, $to),
@@ -154,6 +208,7 @@ class FinanceController extends Controller
             $data['from'] ?? now()->startOfMonth()->format('Y-m-d'),
             'Asia/Jakarta',
         )->startOfDay();
+
         $to = CarbonImmutable::createFromFormat(
             'Y-m-d',
             $data['to'] ?? now()->format('Y-m-d'),
@@ -164,5 +219,16 @@ class FinanceController extends Controller
         abort_if($from->diffInMonths($to) > 60, 422, 'Rentang laporan maksimal 60 bulan.');
 
         return [$from, $to];
+    }
+
+    private function invoiceStatusLabel(string $status): string
+    {
+        return [
+            'draft' => 'Draf',
+            'sent' => 'Terkirim',
+            'partial' => 'Dibayar sebagian',
+            'paid' => 'Lunas',
+            'cancelled' => 'Dibatalkan',
+        ][$status] ?? ucfirst($status);
     }
 }

@@ -30,6 +30,27 @@ class FinancialReportService
             ->orderBy('id')
             ->get();
 
+        $invoices = Invoice::query()
+            ->withSum([
+                'payments as active_paid_amount' => fn ($query) => $query->active(),
+            ], 'amount')
+            ->whereBetween('issue_date', [$fromDate, $toDate])
+            ->orderByDesc('issue_date')
+            ->orderByDesc('id')
+            ->get()
+            ->each(function (Invoice $invoice): void {
+                $paid = min((int) $invoice->total, (int) ($invoice->active_paid_amount ?? 0));
+
+                $invoice->setAttribute('report_paid_amount', $paid);
+                $invoice->setAttribute(
+                    'report_outstanding_amount',
+                    $invoice->status === 'cancelled'
+                        ? 0
+                        : max(0, (int) $invoice->total - $paid),
+                );
+            });
+
+        $countedInvoices = $invoices->where('status', '!=', 'cancelled');
         $income = (int) $payments->sum('amount');
         $expense = (int) $expenses->sum('amount');
         $openingBalance = $this->openingBalance($fromDate);
@@ -44,10 +65,16 @@ class FinancialReportService
             'net_cash_flow' => $netCashFlow,
             'closing_balance' => $openingBalance + $netCashFlow,
             'receivables' => $this->receivables(),
+            'invoice_count' => $countedInvoices->count(),
+            'invoice_total' => (int) $countedInvoices->sum('total'),
+            'invoice_paid_total' => (int) $countedInvoices->sum('report_paid_amount'),
+            'invoice_outstanding_total' => (int) $countedInvoices->sum('report_outstanding_amount'),
+            'receipt_count' => $payments->count(),
             'income_by_category' => $this->incomeByCategory($payments),
             'expense_by_category' => $this->expenseByCategory($expenses),
             'monthly' => $this->monthly($payments, $expenses, $from, $to),
             'transactions' => $this->transactions($payments, $expenses),
+            'invoices' => $invoices,
             'payments' => $payments,
             'expenses' => $expenses,
         ];
@@ -59,7 +86,10 @@ class FinancialReportService
             ->active()
             ->whereDate('payment_date', '<', $fromDate)
             ->sum('amount');
-        $expense = (int) Expense::query()->whereDate('transaction_date', '<', $fromDate)->sum('amount');
+
+        $expense = (int) Expense::query()
+            ->whereDate('transaction_date', '<', $fromDate)
+            ->sum('amount');
 
         return $income - $expense;
     }
@@ -106,6 +136,7 @@ class FinancialReportService
 
         while ($cursor->lessThanOrEqualTo($last)) {
             $key = $cursor->format('Y-m');
+
             $months->put($key, [
                 'key' => $key,
                 'label' => $cursor->translatedFormat('M Y'),
@@ -113,6 +144,7 @@ class FinancialReportService
                 'expense' => 0,
                 'net' => 0,
             ]);
+
             $cursor = $cursor->addMonth();
         }
 
