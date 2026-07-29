@@ -48,21 +48,9 @@ Tidak ada file yang perlu dihapus.
    SEED_DATABASE=false
    ```
 
-4. Tambahkan atau ubah:
-
-   ```dotenv
-   SEED_KBLI_DATABASE=true
-   ```
-
-5. Redeploy dan tunggu sampai container berstatus `healthy`. Migrasi dan seeder khusus KBLI akan dijalankan otomatis.
-6. Periksa pencarian `/cek-risiko-kbli` dan buka beberapa halaman detail.
-7. Setelah berhasil, ubah:
-
-   ```dotenv
-   SEED_KBLI_DATABASE=false
-   ```
-
-8. Save dan redeploy sekali lagi. Dataset tetap tersimpan di database dan tidak akan disemai ulang pada deployment berikutnya.
+4. Redeploy dan tunggu sampai container berstatus `healthy`. Entrypoint menjalankan `php artisan kbli:ensure` otomatis.
+5. Periksa pencarian `/cek-risiko-kbli` dan buka beberapa halaman detail.
+6. Dataset tidak disemai ulang jika tabel sudah berisi tepat 1.559 kode KBLI 2025.
 
 Jangan mengaktifkan `SEED_DATABASE=true` pada pembaruan ini karena opsi tersebut menjalankan seluruh seeder dan dapat menimpa data layanan yang pernah diubah melalui admin.
 
@@ -72,5 +60,6 @@ Jangan mengaktifkan `SEED_DATABASE=true` pada pembaruan ini karena opsi tersebut
 - Pastikan pilihan skala usaha dan tingkat risiko muncul.
 - Pastikan tautan **Bandingkan di OSS** membuka halaman sumber resmi.
 - Pastikan `/up` tetap memberikan status sehat.
+- Jalankan `php artisan kbli:ensure` dan pastikan keluar dengan status berhasil.
 
 Hasil pada website merupakan pemeriksaan awal. Penetapan perizinan resmi tetap mengikuti data proyek dan proses pada OSS, termasuk ruang lingkup, skala usaha, lokasi, luas lahan, persyaratan dasar, dan ketentuan sektoral.

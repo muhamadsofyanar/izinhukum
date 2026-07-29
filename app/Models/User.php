@@ -66,6 +66,16 @@ class User extends Model
         return $this->hasMany(CourseEnrollment::class);
     }
 
+    public function recordedPayments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'created_by');
+    }
+
+    public function recordedExpenses(): HasMany
+    {
+        return $this->hasMany(Expense::class, 'created_by');
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

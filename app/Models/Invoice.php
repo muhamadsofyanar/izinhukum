@@ -59,6 +59,25 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function amountPaid(): int
+    {
+        if ($this->relationLoaded('payments')) {
+            return (int) $this->payments->sum('amount');
+        }
+
+        return (int) $this->payments()->sum('amount');
+    }
+
+    public function remainingAmount(): int
+    {
+        return max(0, (int) $this->total - $this->amountPaid());
+    }
+
     public function formattedTotal(): string
     {
         return 'Rp'.number_format($this->total, 0, ',', '.');

@@ -12,7 +12,7 @@
 <section class="community-feed">@forelse($posts as $post)
 <article class="admin-panel community-post"><header><span class="avatar">{{ strtoupper(substr($post->user->name,0,2)) }}</span><div><strong>{{ $post->user->name }}</strong><small>{{ $post->created_at->diffForHumans() }}</small></div></header>
 @if($post->title)<h2>{{ $post->title }}</h2>@endif<p>{{ $post->body }}</p>
-@if($post->attachment_path)<a href="{{ asset('storage/'.$post->attachment_path) }}" target="_blank">Buka lampiran ↗</a>@endif
+@if($post->attachment_path)<a href="{{ route(($currentUser->isAdmin()?'admin':'partner').'.community.attachment',$post) }}" target="_blank">Buka lampiran ↗</a>@endif
 <div class="community-comments">@foreach($post->comments as $comment)<p><strong>{{ $comment->user->name }}</strong> {{ $comment->body }}</p>@endforeach</div>
 <form class="inline-admin-form" method="post" action="{{ route(($currentUser->isAdmin()?'admin':'partner').'.community.comment',$post) }}">@csrf<input class="form-control" name="body" placeholder="Tulis komentar..." required><button class="btn btn-secondary">Kirim</button></form>
 </article>@empty<div class="empty-state">Belum ada diskusi.</div>@endforelse {{ $posts->links() }}</section>

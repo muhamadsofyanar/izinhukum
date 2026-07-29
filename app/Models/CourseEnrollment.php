@@ -15,6 +15,6 @@ class CourseEnrollment extends Model
     {
         return ['started_at' => 'datetime', 'completed_at' => 'datetime'];
     }
-    public function course(): BelongsTo { return $this->belongsTo(Course::class); }
+    public function course(): BelongsTo { return $this->belongsTo(Course::class)->withTrashed(); }
     public function user(): BelongsTo { return $this->belongsTo(User::class); }
 }

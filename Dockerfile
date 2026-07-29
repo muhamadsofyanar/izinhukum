@@ -8,7 +8,7 @@ RUN mkdir -p public && npm run build
 
 FROM composer:2.8 AS vendor
 WORKDIR /app
-COPY composer.json ./
+COPY composer.* ./
 RUN composer install \
     --no-dev \
     --no-interaction \

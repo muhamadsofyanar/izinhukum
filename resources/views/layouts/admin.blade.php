@@ -37,6 +37,7 @@
             <a class="{{ request()->routeIs($prefix.'.inbox.*') ? 'active' : '' }}" href="{{ route($prefix.'.inbox.index') }}">Inbox</a>
             <a class="{{ request()->routeIs($prefix.'.invoices.*') ? 'active' : '' }}" href="{{ route($prefix.'.invoices.index') }}">Invoice</a>
             @if($isAdmin)
+                <a class="{{ request()->routeIs('admin.finance.*') ? 'active' : '' }}" href="{{ route('admin.finance.index') }}">Laporan keuangan</a>
                 <a class="{{ request()->routeIs('admin.articles.*') ? 'active' : '' }}" href="{{ route('admin.articles.index') }}">Artikel</a>
                 <a href="{{ route('admin.operations.index', 'announcements') }}">Pengumuman</a>
                 <a href="{{ route('admin.operations.index', 'materials') }}">Materi pemasaran</a>
@@ -68,6 +69,7 @@
             @yield('header_action')
         </header>
         @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+        @if(session('receipt_url'))<div class="alert alert-info"><a href="{{ session('receipt_url') }}" target="_blank">Buka kwitansi pembayaran ↗</a></div>@endif
         @if(session('activation_url'))
             <div class="alert alert-warning">
                 <strong>Tautan aktivasi (berlaku 7 hari):</strong>

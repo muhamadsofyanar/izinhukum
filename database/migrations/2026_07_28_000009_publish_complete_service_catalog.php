@@ -1,8 +1,6 @@
 <?php
 
-use Database\Seeders\ServiceSeeder;
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -13,17 +11,8 @@ return new class extends Migration
             return;
         }
 
-        (new ServiceSeeder())->run();
-
-        DB::table('services')->update([
-            'is_active' => true,
-            'updated_at' => now(),
-        ]);
-
-        DB::table('service_packages')->update([
-            'is_active' => true,
-            'updated_at' => now(),
-        ]);
+        // Migrasi tidak boleh mengubah harga atau status katalog yang telah
+        // diputuskan admin. Katalog awal hanya dipasang melalui seeder eksplisit.
     }
 
     public function down(): void

@@ -14,6 +14,11 @@ Website legaltech **PT Praktisi Izin Hukum** berbasis Laravel 12, Bootstrap 5, M
 - Harga tiga tingkat: website, minimum end user, dan Mitra LegaOne.
 - Portal mitra dengan aktivasi akun, katalog harga khusus, profil, dan invoice end user.
 - Invoice untuk mitra/end user, email transaksi, tautan publik, dan tampilan cetak/PDF.
+- Branding dokumen terpusat untuk logo, kontak, rekening, tanda tangan, dan stempel.
+- Pembayaran sebagian/penuh dengan status invoice otomatis dan kwitansi unik.
+- Laporan keuangan operasional basis kas: pemasukan, pengeluaran, kategori, piutang, arus kas, cetak, dan CSV.
+- LMS internal dengan video YouTube tertanam, PDF privat, progres belajar, dan sertifikat khusus.
+- Community dan inbox untuk komunikasi admin dengan mitra.
 - Pendaftaran kemitraan dengan alur persetujuan admin.
 - Artikel publik dengan pengelolaan draf, publikasi, dan metadata SEO.
 - Pengaturan SMTP Mailketing dan sender dari panel admin.
@@ -73,10 +78,9 @@ Untuk website yang sudah berjalan, pertahankan:
 
 ```dotenv
 SEED_DATABASE=false
-SEED_KBLI_DATABASE=false
 ```
 
-Commit pembaruan lalu redeploy. Entrypoint akan menjalankan migrasi secara otomatis. Migrasi membuat akun admin database dari `ADMIN_EMAIL` dan `ADMIN_PASSWORD` yang sudah ada, menambahkan tujuh harga yang ditetapkan, serta tidak menjalankan ulang seeder layanan/KBLI.
+Commit pembaruan lalu redeploy. Entrypoint menjalankan migrasi dan `php artisan kbli:ensure` secara otomatis. KBLI hanya disinkronkan jika jumlah data 2025 bukan 1.559. Migrasi tidak menjalankan ulang `ServiceSeeder`, tidak mengaktifkan kembali paket, dan tidak menimpa harga admin.
 
 Sesudah login:
 
@@ -87,7 +91,7 @@ Sesudah login:
 
 Password SMTP disimpan terenkripsi menggunakan `APP_KEY`. Jangan mengganti `APP_KEY` setelah password SMTP tersimpan.
 
-MariaDB dan folder storage menggunakan persistent volume. Jangan menghapus volume saat melakukan redeploy.
+MariaDB, folder storage privat, dan unggahan publik menggunakan persistent volume. Jangan menghapus volume saat melakukan redeploy.
 
 ## Pengembangan lokal tanpa Docker
 
@@ -115,13 +119,27 @@ DB_DATABASE=/path/absolut/ke/database/database.sqlite
 
 Dataset memuat 1.559 kelompok KBLI 2025 dari Peraturan BPS Nomor 7 Tahun 2025/publikasi KBLI 2025 dan profil risiko publik OSS-RBA berdasarkan PP Nomor 28 Tahun 2025. Data menyimpan tanggal pembaruan dan URL detail OSS pada setiap kode.
 
-Untuk memasang atau memperbarui dataset pada server, jalankan seeder satu kali:
+Untuk memeriksa dan memperbaiki dataset pada server, jalankan:
 
 ```bash
-php artisan db:seed --class=KbliSeeder --force
+php artisan kbli:ensure
 ```
 
-Pada Coolify, pertahankan `SEED_DATABASE=false` agar data layanan yang pernah diubah melalui admin tidak disemai ulang. Aktifkan `SEED_KBLI_DATABASE=true` untuk satu kali redeploy, pastikan data berhasil masuk, lalu kembalikan menjadi `false` dan redeploy lagi.
+Perintah tersebut tidak mengubah data jika 1.559 kode sudah tersedia. Pada Coolify, pertahankan `SEED_DATABASE=false` setelah pemasangan awal agar data layanan yang pernah diubah admin tidak disemai ulang.
+
+## Modul keuangan dan dokumen
+
+Admin dapat membuka:
+
+- **Logo & branding** untuk identitas invoice, kwitansi, dan sertifikat.
+- **Invoice** untuk mencatat pembayaran serta membuat kwitansi.
+- **Laporan keuangan** untuk pemasukan lain, pengeluaran, kategori, arus kas, piutang, laporan cetak, dan CSV.
+
+Laporan menggunakan basis kas. Nilai invoice belum dihitung sebagai pemasukan sampai pembayaran dicatat.
+
+## Keamanan file portal
+
+Materi PDF LMS dan lampiran community disimpan pada disk privat. File hanya dikirim melalui controller setelah pengguna melewati middleware portal dan pemeriksaan enrollment untuk materi LMS. Saat deployment, `php artisan portal:secure-files` memindahkan file lama dari disk publik apabila file tersebut masih tersedia.
 
 Skrip `scripts/sync-kbli-2025.mjs` digunakan untuk membangun ulang snapshot dari sumber resmi. Hasil pemeriksaan pada website tetap merupakan informasi awal karena penetapan resmi dipengaruhi data proyek, lokasi, persyaratan dasar, dan ketentuan sektoral pada OSS.
 
@@ -131,3 +149,5 @@ Skrip `scripts/sync-kbli-2025.mjs` digunakan untuk membangun ulang snapshot dari
 php artisan test
 npm run build
 ```
+
+Panduan upgrade produksi tersedia pada `PETUNJUK-UPGRADE-KEUANGAN-LMS-KBLI.md`.

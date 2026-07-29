@@ -17,15 +17,10 @@ Pertahankan nilai rahasia yang sudah aktif dan gunakan:
 ```env
 RUN_MIGRATIONS=true
 SEED_DATABASE=false
-SEED_KBLI_DATABASE=true
 ```
 
-Simpan lalu redeploy di Coolify. Setelah deployment sehat dan data KBLI sudah tersedia, ubah:
-
-```env
-SEED_KBLI_DATABASE=false
-```
-
-Simpan dan redeploy sekali lagi.
+Simpan lalu redeploy di Coolify. Entrypoint menjalankan `php artisan kbli:ensure` pada setiap deployment. Perintah ini hanya menyinkronkan dataset jika data KBLI 2025 belum berjumlah 1.559.
 
 Jangan mengosongkan atau mengganti `APP_KEY`, `DB_PASSWORD`, `DB_ROOT_PASSWORD`, dan `ADMIN_PASSWORD` tanpa kebutuhan.
+
+Untuk pembaruan dari V5, ikuti `PETUNJUK-UPGRADE-KEUANGAN-LMS-KBLI.md` agar database dan file unggahan lama dicadangkan sebelum container diganti.

@@ -24,7 +24,6 @@
 
    ```dotenv
    SEED_DATABASE=false
-   SEED_KBLI_DATABASE=false
    RUN_MIGRATIONS=true
    ```
 

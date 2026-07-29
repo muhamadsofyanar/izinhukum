@@ -1,7 +1,7 @@
 <header class="invoice-head">
     <div>
-        <div class="invoice-brand"><span>IH</span><div><strong>IzinHukum</strong><small>{{ config('company.name') }}</small></div></div>
-        <p>{{ config('company.address') }}<br>{{ config('company.email') }} · {{ config('company.phone') }}</p>
+        <div class="invoice-brand">@if($branding['logo'])<img class="invoice-logo" src="{{ asset('storage/'.$branding['logo']) }}" alt="{{ $branding['name'] }}">@else<span>IH</span>@endif<div><strong>{{ $branding['name'] }}</strong><small>{{ $branding['tagline'] }}</small></div></div>
+        <p>{{ $branding['address'] }}<br>{{ $branding['email'] }} · {{ $branding['phone'] }}</p>
     </div>
     <div class="invoice-title">
         <span>INVOICE</span>
@@ -24,11 +24,14 @@
     </table>
 </div>
 <div class="invoice-total">
-    <span>Total tagihan</span>
-    <strong>{{ $invoice->formattedTotal() }}</strong>
+    <div><span>Total tagihan</span><strong>{{ $invoice->formattedTotal() }}</strong></div>
+    @if($invoice->amountPaid() > 0)
+        <div><span>Sudah dibayar</span><strong>Rp{{ number_format($invoice->amountPaid(), 0, ',', '.') }}</strong></div>
+        <div><span>Sisa tagihan</span><strong>Rp{{ number_format($invoice->remainingAmount(), 0, ',', '.') }}</strong></div>
+    @endif
 </div>
 <div class="invoice-foot">
-    <div><span>Pembayaran resmi</span><strong>{{ config('company.bank.name') }} {{ config('company.bank.account') }}</strong><small>a.n. {{ config('company.bank.holder') }}</small></div>
+    <div><span>Pembayaran resmi</span><strong>{{ $branding['bank_name'] }} {{ $branding['bank_account_number'] }}</strong><small>a.n. {{ $branding['bank_account_holder'] }}</small></div>
     <div>@if($invoice->notes)<span>Catatan</span><p>{{ $invoice->notes }}</p>@endif</div>
 </div>
-<p class="invoice-disclaimer">Mohon konfirmasi pembayaran hanya melalui kontak resmi IzinHukum. Invoice ini dibuat secara elektronik dan sah tanpa tanda tangan basah.</p>
+<p class="invoice-disclaimer">Mohon konfirmasi pembayaran hanya melalui kontak resmi {{ $branding['name'] }}. Invoice ini dibuat secara elektronik.</p>

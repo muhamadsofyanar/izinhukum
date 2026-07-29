@@ -26,7 +26,7 @@ class CommunityController extends Controller
             'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:10240'],
         ]);
         $data['user_id'] = $request->attributes->get('currentUser')->id;
-        $data['attachment_path'] = $request->file('attachment')?->store('community', 'public');
+        $data['attachment_path'] = $request->file('attachment')?->store('community', 'local');
         unset($data['attachment']);
         CommunityPost::create($data);
         return back()->with('success', 'Postingan diterbitkan ke komunitas.');

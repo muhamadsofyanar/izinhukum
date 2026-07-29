@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\Lesson;
+use App\Support\VideoEmbed;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,8 +31,15 @@ class LearningController extends Controller
             ->firstOrFail();
         $course->load('sections.lessons');
         $completed = DB::table('lesson_progress')->where('enrollment_id', $enrollment->id)->pluck('lesson_id');
+        $videoEmbeds = $course->sections
+            ->flatMap->lessons
+            ->mapWithKeys(fn (Lesson $lesson): array => [
+                $lesson->id => $lesson->type === 'video'
+                    ? VideoEmbed::url($lesson->resource_url)
+                    : null,
+            ]);
 
-        return view('partner.learning.show', compact('course', 'enrollment', 'completed'));
+        return view('partner.learning.show', compact('course', 'enrollment', 'completed', 'videoEmbeds'));
     }
 
     public function complete(Request $request, Course $course, Lesson $lesson): RedirectResponse

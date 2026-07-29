@@ -8,6 +8,8 @@ use App\Models\Invoice;
 use App\Models\ServicePackage;
 use App\Models\User;
 use App\Services\MailConfigurator;
+use App\Services\BrandingService;
+use App\Models\FinancialCategory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,6 +28,7 @@ class InvoiceController extends Controller
         $status = $request->query('status');
         $invoices = $this->visibleInvoices($user)
             ->with(['creator', 'partner'])
+            ->withSum('payments as amount_paid', 'amount')
             ->when($status, fn ($query) => $query->where('status', $status))
             ->latest()
             ->paginate(20)
@@ -185,13 +188,24 @@ class InvoiceController extends Controller
             ->with('success', 'Invoice berhasil dibuat.');
     }
 
-    public function show(Request $request, Invoice $invoice): View
+    public function show(
+        Request $request,
+        Invoice $invoice,
+        BrandingService $brandingService,
+    ): View
     {
         $user = $request->attributes->get('currentUser');
         $this->authorizeInvoice($user, $invoice);
-        $invoice->load(['items.package.service', 'creator', 'partner']);
+        $invoice->load(['items.package.service', 'creator', 'partner', 'payments.creator', 'payments.category']);
 
-        return view('portal.invoices.show', compact('invoice', 'user'));
+        return view('portal.invoices.show', [
+            'invoice' => $invoice,
+            'user' => $user,
+            'branding' => $brandingService->document(),
+            'incomeCategories' => $user->isAdmin()
+                ? FinancialCategory::query()->where('type', 'income')->where('is_active', true)->orderBy('name')->get()
+                : collect(),
+        ]);
     }
 
     public function updateStatus(Request $request, Invoice $invoice): RedirectResponse
@@ -204,16 +218,18 @@ class InvoiceController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => ['required', Rule::in(['draft', 'sent', 'paid', 'cancelled'])],
+            'status' => ['required', Rule::in(['draft', 'sent', 'cancelled'])],
         ]);
+
+        if ($invoice->payments()->exists()) {
+            throw ValidationException::withMessages([
+                'status' => 'Status invoice yang sudah memiliki pembayaran ditentukan otomatis oleh total pembayaran.',
+            ]);
+        }
+
         $updates = ['status' => $validated['status']];
         if ($validated['status'] === 'sent' && ! $invoice->sent_at) {
             $updates['sent_at'] = now();
-        }
-        if ($validated['status'] === 'paid') {
-            $updates['paid_at'] = now();
-        } elseif ($invoice->status === 'paid') {
-            $updates['paid_at'] = null;
         }
         $invoice->update($updates);
 
@@ -239,7 +255,10 @@ class InvoiceController extends Controller
             $invoice->load(['items.package.service', 'creator']);
             $mailConfigurator->apply();
             Mail::to($invoice->recipient_email)->send(new InvoiceMail($invoice));
-            $invoice->update(['status' => 'sent', 'sent_at' => now()]);
+            $invoice->update([
+                'status' => $invoice->status === 'draft' ? 'sent' : $invoice->status,
+                'sent_at' => now(),
+            ]);
         } catch (\Throwable $exception) {
             report($exception);
 

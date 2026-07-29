@@ -118,7 +118,7 @@ class AcademyController extends Controller
         unset($data['material_file']);
         $section->lessons()->create([
             ...$data,
-            'file_path' => $file?->store('academy/materials', 'public'),
+            'file_path' => $file?->store('academy/materials', 'local'),
             'original_filename' => $file?->getClientOriginalName(),
             'sort_order' => ((int) $section->lessons()->max('sort_order')) + 1,
         ]);
@@ -128,6 +128,7 @@ class AcademyController extends Controller
     public function destroyLesson(Lesson $lesson): RedirectResponse
     {
         if ($lesson->file_path) {
+            Storage::disk('local')->delete($lesson->file_path);
             Storage::disk('public')->delete($lesson->file_path);
         }
         $lesson->delete();

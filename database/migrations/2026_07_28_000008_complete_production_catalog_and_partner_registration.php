@@ -1,6 +1,5 @@
 <?php
 
-use Database\Seeders\ServiceSeeder;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -17,8 +16,6 @@ return new class extends Migration
                 $table->string('password')->nullable()->after('email');
             });
         }
-
-        (new ServiceSeeder())->run();
 
         $now = now();
         $adminEmail = mb_strtolower(trim((string) env('ADMIN_EMAIL', '')));

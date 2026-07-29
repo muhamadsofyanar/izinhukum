@@ -38,10 +38,10 @@ fi
 
 if [ "${SEED_DATABASE:-false}" = "true" ]; then
     php artisan db:seed --force
-elif [ "${SEED_KBLI_DATABASE:-false}" = "true" ]; then
-    php artisan db:seed --class='Database\Seeders\KbliSeeder' --force
 fi
 
+php artisan kbli:ensure
+php artisan portal:secure-files
 php artisan optimize
 
 exec "$@"
