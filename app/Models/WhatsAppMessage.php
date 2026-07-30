@@ -19,7 +19,6 @@ class WhatsAppMessage extends Model
         'scheduled_at', 'accepted_at', 'sent_at', 'failed_at', 'last_error',
         'provider_response', 'metadata',
     ];
-
     protected function casts(): array
     {
         return [
