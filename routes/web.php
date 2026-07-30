@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\WhatsAppCampaignController;
 use App\Http\Controllers\Admin\WhatsAppDashboardController;
 use App\Http\Controllers\Admin\WhatsAppDeviceController;
 use App\Http\Controllers\Admin\WhatsAppInboxController;
+use App\Http\Controllers\Admin\WhatsAppGroupController;
 use App\Http\Controllers\Admin\WhatsAppMessageController;
 use App\Http\Controllers\Admin\WhatsAppProviderToolController;
 use App\Http\Controllers\Admin\WhatsAppSettingsController;
@@ -183,6 +184,10 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             Route::post('/pengaturan/cek-nomor', [WhatsAppSettingsController::class, 'checkNumber'])->middleware('throttle:20,1')->name('settings.check-number');
             Route::post('/pengaturan/consent', [WhatsAppSettingsController::class, 'storeConsent'])->name('settings.consents.store');
             Route::delete('/pengaturan/consent/{consent}', [WhatsAppSettingsController::class, 'revokeConsent'])->name('settings.consents.revoke');
+
+            Route::get('/grup', [WhatsAppGroupController::class, 'index'])->name('groups.index');
+            Route::post('/grup/sinkronkan', [WhatsAppGroupController::class, 'sync'])->middleware('throttle:5,1')->name('groups.sync');
+            Route::post('/grup/kirim-banyak', [WhatsAppGroupController::class, 'sendMany'])->middleware('throttle:10,1')->name('groups.send-many');
 
             Route::get('/pesan', [WhatsAppMessageController::class, 'index'])->name('messages.index');
             Route::post('/pesan', [WhatsAppMessageController::class, 'store'])->middleware('throttle:30,1')->name('messages.store');

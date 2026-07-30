@@ -3,6 +3,7 @@
 @section('heading', 'Pengaturan WhatsApp')
 @section('content')
 @include('admin.whatsapp._nav')
+@if($settingsWarning)<div class="alert alert-warning"><strong>Pengaturan dibuka dalam mode aman.</strong> {{ $settingsWarning }}</div>@endif
 <div class="wa-grid">
     <section class="wa-card wa-span-7">
         <h2>Konfigurasi Coolify</h2>
@@ -25,7 +26,11 @@
             @endforeach
             <tr><td>Base URL</td><td><code>{{ $integration['base_url'] }}</code></td></tr>
         </tbody></table></div>
-        @if($webhookUrl)<p class="mt-3 mb-1"><strong>URL webhook</strong></p><code class="wa-code">{{ $webhookUrl }}</code>@endif
+        @if($webhookUrl)
+            <p class="mt-3 mb-1"><strong>URL webhook pesan personal</strong></p>
+            <code class="wa-code">{{ $webhookUrl }}</code>
+            <p class="wa-muted mt-2">Pasang URL yang sama pada pengaturan Webhook device StarSender. Untuk pesan grup, aktifkan Add-On Webhook Group dan gunakan URL ini pada kolom webhook grup.</p>
+        @endif
     </section>
 
     <section class="wa-card wa-span-5">

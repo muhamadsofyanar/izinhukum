@@ -6,11 +6,13 @@ use App\Models\WhatsAppAutomation;
 use App\Models\WhatsAppCampaign;
 use App\Models\WhatsAppCampaignRecipient;
 use App\Models\WhatsAppConsent;
+use App\Models\WhatsAppGroup;
 use App\Models\WhatsAppMessage;
 use App\Models\WhatsAppOptOut;
 use App\Models\WhatsAppWebhookEvent;
 use App\Services\FeatureFlagService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Throwable;
 
 class WhatsAppWebhookService
@@ -60,10 +62,14 @@ class WhatsAppWebhookService
                 return;
             }
 
-            $chatType = (string) ($payload['chat_type'] ?? 'personal');
-            $isGroup = filter_var($payload['is_group'] ?? false, FILTER_VALIDATE_BOOL) || $chatType === 'group';
+            $chatType = strtolower((string) ($payload['chat_type'] ?? $payload['chatType'] ?? 'personal'));
+            $groupFrom = trim((string) ($payload['from'] ?? $payload['phone'] ?? ''));
+            $isGroup = filter_var($payload['_detected_is_group'] ?? $payload['is_group'] ?? false, FILTER_VALIDATE_BOOL)
+                || $chatType === 'group'
+                || trim((string) ($payload['group_name'] ?? '')) !== ''
+                || str_ends_with(strtolower($groupFrom), '@g.us');
             if ($isGroup) {
-                if (! config('starsender.group_webhook_enabled')) {
+                if (! config('starsender.group_webhook_enabled') || ! $this->features->enabled('whatsapp_inbox')) {
                     $this->complete($event);
                     return;
                 }
@@ -144,22 +150,78 @@ class WhatsAppWebhookService
 
     private function storeGroupInbound(WhatsAppWebhookEvent $event, array $payload, string $providerMessageId): void
     {
+        $groupJid = trim((string) ($payload['from'] ?? $payload['phone'] ?? ''));
+        if ($groupJid === '') {
+            throw new \RuntimeException('Webhook grup tidak memiliki JID grup.');
+        }
+
+        $groupName = trim((string) ($payload['group_name'] ?? $payload['name'] ?? '')) ?: 'Grup WhatsApp';
+        $deviceAlias = trim((string) ($payload['device_alias'] ?? 'support')) ?: 'support';
+        if (! in_array($deviceAlias, ['default', 'transaction', 'support', 'partner', 'campaign'], true)) {
+            $deviceAlias = 'support';
+        }
+
+        if (Schema::hasTable('whatsapp_groups')) {
+            WhatsAppGroup::query()->updateOrCreate(
+                ['device_alias' => $deviceAlias, 'group_jid' => $groupJid],
+                [
+                    'name' => $groupName,
+                    'is_active' => true,
+                    'last_synced_at' => now(),
+                    'metadata' => [
+                        'source' => 'webhook',
+                        'device' => $payload['device'] ?? null,
+                    ],
+                ],
+            );
+        }
+
+        $conversation = $this->messages->groupConversation(
+            $groupJid,
+            $groupName,
+            $deviceAlias,
+            [
+                'device' => $payload['device'] ?? null,
+                'device_id' => $payload['device_id'] ?? null,
+            ],
+        );
+
+        $body = trim((string) ($payload['message'] ?? $payload['body'] ?? ''));
+        $media = trim((string) ($payload['file'] ?? '')) ?: null;
+        $senderName = trim((string) ($payload['push_name'] ?? $payload['sender_name'] ?? $payload['participant_name'] ?? '')) ?: null;
+        $senderPhone = trim((string) ($payload['sender'] ?? $payload['author'] ?? $payload['participant'] ?? '')) ?: null;
+
         WhatsAppMessage::query()->firstOrCreate(
             ['idempotency_key' => 'webhook:'.$event->fingerprint],
             [
+                'conversation_id' => $conversation->id,
                 'direction' => 'inbound',
                 'channel' => 'group',
-                'phone' => (string) ($payload['from'] ?? 'group'),
-                'recipient_name' => $payload['push_name'] ?? null,
-                'message_type' => ! empty($payload['file']) ? 'media' : 'text',
-                'body' => $payload['message'] ?? null,
-                'media_url' => $payload['file'] ?? null,
+                'phone' => $groupJid,
+                'recipient_name' => $groupName,
+                'device_alias' => $deviceAlias,
+                'message_type' => $media ? 'media' : 'text',
+                'body' => $body,
+                'media_url' => $media,
                 'status' => 'received',
                 'provider_message_id' => $providerMessageId ?: null,
                 'sent_at' => now(),
-                'metadata' => $payload,
+                'metadata' => [
+                    'sender_name' => $senderName,
+                    'sender_phone' => $senderPhone,
+                    'device' => $payload['device'] ?? null,
+                    'payload' => $payload,
+                ],
             ],
         );
+
+        $conversation->forceFill([
+            'display_name' => $groupName,
+            'unread_count' => $conversation->unread_count + 1,
+            'last_message_at' => now(),
+            'last_inbound_at' => now(),
+            'status' => $conversation->status === 'closed' ? 'open' : $conversation->status,
+        ])->save();
     }
 
     private function handleCommand(string $phone, string $body, int $conversationId): void

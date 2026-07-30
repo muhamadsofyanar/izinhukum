@@ -11,9 +11,9 @@ class WhatsAppConversation extends Model
     protected $table = 'whatsapp_conversations';
 
     protected $fillable = [
-        'phone', 'display_name', 'contact_type', 'partner_id', 'inquiry_id',
+        'phone', 'channel', 'device_alias', 'display_name', 'contact_type', 'partner_id', 'inquiry_id',
         'service_order_id', 'assigned_to', 'status', 'unread_count', 'is_ai_blocked',
-        'labels', 'last_message_at', 'last_inbound_at', 'last_outbound_at',
+        'labels', 'metadata', 'last_message_at', 'last_inbound_at', 'last_outbound_at',
     ];
 
     protected function casts(): array
@@ -22,6 +22,7 @@ class WhatsAppConversation extends Model
             'unread_count' => 'integer',
             'is_ai_blocked' => 'boolean',
             'labels' => 'array',
+            'metadata' => 'array',
             'last_message_at' => 'datetime',
             'last_inbound_at' => 'datetime',
             'last_outbound_at' => 'datetime',

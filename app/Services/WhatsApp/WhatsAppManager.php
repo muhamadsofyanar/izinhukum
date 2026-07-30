@@ -103,7 +103,12 @@ class WhatsAppManager
 
         $conversation = $channel === 'personal'
             ? $this->conversation($phone, $data['recipient_name'] ?? null, $data)
-            : null;
+            : $this->groupConversation(
+                $phone,
+                $data['recipient_name'] ?? null,
+                $data['device_alias'] ?? 'support',
+                (array) ($data['metadata'] ?? []),
+            );
         $scheduledAt = $data['scheduled_at'] ?? null;
         $isFuture = $scheduledAt instanceof CarbonInterface && $scheduledAt->isFuture();
 
@@ -173,12 +178,32 @@ class WhatsAppManager
     public function conversation(string $phone, ?string $name = null, array $relations = []): WhatsAppConversation
     {
         $conversation = WhatsAppConversation::query()->firstOrNew(['phone' => $phone]);
+        $conversation->channel = 'personal';
+        $conversation->device_alias = $relations['device_alias'] ?? ($conversation->device_alias ?: 'support');
         $conversation->display_name = $name ?: $conversation->display_name;
         $conversation->partner_id = $relations['partner_id'] ?? $conversation->partner_id;
         $conversation->inquiry_id = $relations['inquiry_id'] ?? $conversation->inquiry_id;
         $conversation->service_order_id = $relations['service_order_id'] ?? $conversation->service_order_id;
         $conversation->contact_type = $this->contactType($relations, $conversation->contact_type);
         $conversation->status = $conversation->status ?: 'open';
+        $conversation->save();
+
+        return $conversation;
+    }
+
+    public function groupConversation(
+        string $groupJid,
+        ?string $name = null,
+        string $deviceAlias = 'support',
+        array $metadata = [],
+    ): WhatsAppConversation {
+        $conversation = WhatsAppConversation::query()->firstOrNew(['phone' => trim($groupJid)]);
+        $conversation->channel = 'group';
+        $conversation->device_alias = $deviceAlias;
+        $conversation->display_name = $name ?: $conversation->display_name ?: 'Grup WhatsApp';
+        $conversation->contact_type = 'group';
+        $conversation->status = $conversation->status ?: 'open';
+        $conversation->metadata = array_replace((array) $conversation->metadata, $metadata);
         $conversation->save();
 
         return $conversation;

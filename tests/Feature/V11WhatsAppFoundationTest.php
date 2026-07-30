@@ -19,7 +19,7 @@ class V11WhatsAppFoundationTest extends TestCase
             'jobs', 'failed_jobs', 'whatsapp_devices', 'whatsapp_templates',
             'whatsapp_conversations', 'whatsapp_messages', 'whatsapp_message_attempts',
             'whatsapp_automations', 'whatsapp_campaigns', 'whatsapp_campaign_recipients',
-            'whatsapp_consents', 'whatsapp_opt_outs', 'whatsapp_webhook_events',
+            'whatsapp_consents', 'whatsapp_opt_outs', 'whatsapp_webhook_events', 'whatsapp_groups',
         ] as $table) {
             self::assertTrue(Schema::hasTable($table), $table.' should exist');
         }
@@ -53,6 +53,24 @@ class V11WhatsAppFoundationTest extends TestCase
             $request->url() === 'https://api.starsender.online/api/check-number'
             && $request->header('Authorization')[0] === 'device-test-key'
             && $request['number'] === '6281234567890'
+        );
+    }
+
+    public function test_group_list_uses_device_api_key(): void
+    {
+        config()->set('starsender.enabled', true);
+        config()->set('starsender.base_url', 'https://api.starsender.online');
+        config()->set('starsender.device_keys.support', 'support-device-key');
+        Http::fake(['https://api.starsender.online/api/whatsapp/groups' => Http::response([
+            'success' => true,
+            'data' => [['id' => '120363000000000000@g.us', 'name' => 'Tim Legal']],
+        ], 200)]);
+
+        app(StarSenderClient::class)->listWhatsAppGroups('support');
+
+        Http::assertSent(fn ($request): bool =>
+            $request->url() === 'https://api.starsender.online/api/whatsapp/groups'
+            && $request->header('Authorization')[0] === 'support-device-key'
         );
     }
 }

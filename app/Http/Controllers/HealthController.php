@@ -57,7 +57,7 @@ class HealthController extends Controller
 
         return response()->json([
             'status' => $status === 200 ? 'healthy' : 'unhealthy',
-            'version' => '11.0.0',
+            'version' => '11.3.0',
             'checks' => $checks,
             'integrations' => ['starsender' => $whatsapp],
             'time' => now()->toIso8601String(),

@@ -22,6 +22,7 @@ class WhatsAppInboxController extends Controller
     {
         $search = trim((string) $request->query('q'));
         $status = trim((string) $request->query('status'));
+        $channel = trim((string) $request->query('channel'));
         $conversations = WhatsAppConversation::query()
             ->with(['assignee', 'serviceOrder'])
             ->when($search !== '', function (Builder $query) use ($search): void {
@@ -30,11 +31,12 @@ class WhatsAppInboxController extends Controller
                     ->orWhere('display_name', 'like', '%'.$search.'%'));
             })
             ->when($status !== '', fn (Builder $query) => $query->where('status', $status))
+            ->when($channel !== '', fn (Builder $query) => $query->where('channel', $channel))
             ->orderByDesc('last_message_at')
             ->paginate(30)
             ->withQueryString();
 
-        return view('admin.whatsapp.inbox', compact('conversations', 'search', 'status'));
+        return view('admin.whatsapp.inbox', compact('conversations', 'search', 'status', 'channel'));
     }
 
     public function show(WhatsAppConversation $conversation): View
@@ -64,27 +66,29 @@ class WhatsAppInboxController extends Controller
             return back()->withErrors(['body' => 'Isi balasan atau URL media wajib diisi.']);
         }
 
+        $isGroup = $conversation->channel === 'group' || $conversation->contact_type === 'group';
         $message = $manager->queueRaw([
             'phone' => $conversation->phone,
             'recipient_name' => $conversation->display_name,
+            'channel' => $isGroup ? 'group' : 'personal',
             'body' => $data['body'] ?? null,
             'media_url' => $data['media_url'] ?? null,
             'message_type' => $data['message_type'],
-            'device_alias' => 'support',
+            'device_alias' => $conversation->device_alias ?: 'support',
             'conversation_id' => $conversation->id,
             'partner_id' => $conversation->partner_id,
             'inquiry_id' => $conversation->inquiry_id,
             'service_order_id' => $conversation->service_order_id,
             'created_by' => $request->attributes->get('currentUser')?->id,
             'idempotency_key' => 'reply:'.$conversation->id.':'.hash('sha256', json_encode($data).'|'.microtime(true)),
-            'metadata' => ['source' => 'admin_inbox'],
+            'metadata' => ['source' => 'admin_inbox', 'conversation_channel' => $isGroup ? 'group' : 'personal'],
         ]);
 
         if (! $message) {
             return back()->withErrors(['body' => 'Balasan tidak dibuat. Periksa integrasi dan daftar opt-out.']);
         }
 
-        $conversation->forceFill(['status' => 'waiting_customer'])->save();
+        $conversation->forceFill(['status' => $isGroup ? 'open' : 'waiting_customer'])->save();
         $audit->record($request, 'whatsapp.conversation_replied', $conversation, ['message_id' => $message->id]);
         return back()->with('success', 'Balasan masuk antrean.');
     }
@@ -124,6 +128,10 @@ class WhatsAppInboxController extends Controller
         WhatsAppAuditService $audit,
         FeatureFlagService $features,
     ): RedirectResponse {
+        if ($conversation->channel === 'group' || $conversation->contact_type === 'group') {
+            return back()->withErrors(['ai' => 'Blacklist AI provider hanya berlaku untuk percakapan personal.']);
+        }
+
         if (! $features->enabled('whatsapp_ai_assistant')) {
             return back()->withErrors(['ai' => 'Feature flag AI Assistant WhatsApp belum diaktifkan.']);
         }

@@ -21,7 +21,10 @@ class WhatsAppDiagnostics extends Command
             ['Account API Key', $client->hasAccountKey() ? 'tersedia' : 'belum diisi'],
             ['Device key transaksi', $client->hasDeviceKey('transaction') ? 'tersedia' : 'belum diisi'],
             ['Webhook secret', trim((string) config('starsender.webhook_secret')) !== '' ? 'tersedia' : 'belum diisi'],
+            ['Feature Inbox', $features->enabled('whatsapp_inbox') ? 'aktif' : 'nonaktif'],
+            ['Webhook grup', config('starsender.group_webhook_enabled') ? 'aktif' : 'nonaktif'],
             ['Tabel pesan', Schema::hasTable('whatsapp_messages') ? 'tersedia' : 'belum migrasi'],
+            ['Tabel grup', Schema::hasTable('whatsapp_groups') ? 'tersedia' : 'belum migrasi'],
             ['Tabel jobs', Schema::hasTable('jobs') ? 'tersedia' : 'belum tersedia'],
         ];
         $this->table(['Pemeriksaan', 'Status'], $rows);

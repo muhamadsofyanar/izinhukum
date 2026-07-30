@@ -13,6 +13,9 @@ use App\Services\WhatsApp\WhatsAppManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 use Throwable;
 
@@ -20,11 +23,34 @@ class WhatsAppSettingsController extends Controller
 {
     public function index(FeatureFlagService $features, StarSenderClient $client): View
     {
-        return view('admin.whatsapp.settings', [
-            'features' => collect($features->all())->whereIn('key', [
+        $settingsWarning = null;
+        $featureRows = collect();
+        $consents = new LengthAwarePaginator([], 0, 20, 1, [
+            'path' => request()->url(),
+            'query' => request()->query(),
+        ]);
+
+        try {
+            $featureRows = collect($features->all())->whereIn('key', [
                 'whatsapp', 'whatsapp_transactional', 'whatsapp_inbox', 'whatsapp_campaigns',
                 'whatsapp_autoreply', 'whatsapp_ai_assistant', 'whatsapp_rotator', 'whatsapp_provider_tools',
-            ])->values(),
+            ])->values();
+        } catch (Throwable $exception) {
+            $settingsWarning = 'Feature flag belum dapat dibaca: '.$exception->getMessage();
+            Log::warning('Halaman pengaturan WhatsApp gagal membaca feature flag.', ['error' => $exception->getMessage()]);
+        }
+
+        try {
+            if (Schema::hasTable('whatsapp_consents')) {
+                $consents = WhatsAppConsent::query()->latest('consented_at')->paginate(20);
+            }
+        } catch (Throwable $exception) {
+            $settingsWarning = trim(($settingsWarning ? $settingsWarning.' ' : '').'Consent belum dapat dibaca: '.$exception->getMessage());
+            Log::warning('Halaman pengaturan WhatsApp gagal membaca consent.', ['error' => $exception->getMessage()]);
+        }
+
+        return view('admin.whatsapp.settings', [
+            'features' => $featureRows,
             'integration' => [
                 'enabled' => (bool) config('starsender.enabled'),
                 'base_url' => config('starsender.base_url'),
@@ -39,7 +65,8 @@ class WhatsAppSettingsController extends Controller
                 'media_webhook' => (bool) config('starsender.media_webhook_enabled'),
                 'group_webhook' => (bool) config('starsender.group_webhook_enabled'),
             ],
-            'consents' => WhatsAppConsent::query()->latest('consented_at')->paginate(20),
+            'consents' => $consents,
+            'settingsWarning' => $settingsWarning,
             'webhookUrl' => trim((string) config('starsender.webhook_secret')) !== ''
                 ? route('webhooks.starsender', config('starsender.webhook_secret'))
                 : null,

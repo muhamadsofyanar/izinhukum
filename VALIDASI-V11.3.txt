@@ -1,0 +1,14 @@
+VALIDASI PATCH V11.3
+
+- PHP syntax check seluruh file: LULUS
+- Nama tabel model WhatsAppConversation tetap eksplisit: whatsapp_conversations
+- Model WhatsAppGroup eksplisit: whatsapp_groups
+- Endpoint daftar grup: GET /api/whatsapp/groups
+- Endpoint kirim grup: POST /api/send/grup
+- API key daftar/kirim grup: Device API Key
+- Batas multi-group panel: 50 grup
+- Webhook personal: didukung
+- Webhook grup: didukung jika Add-On dan environment aktif
+- Secret/API key/password di patch: TIDAK ADA
+
+Catatan: full PHPUnit dan integrasi langsung ke akun StarSender tidak dijalankan karena source repository lengkap dan kredensial production tidak tersedia di lingkungan pembuatan patch.

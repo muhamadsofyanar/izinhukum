@@ -44,6 +44,11 @@ class StarSenderClient
         return $this->request('post', '/api/check-number', $this->deviceKey($deviceAlias), ['number' => $number]);
     }
 
+    public function listWhatsAppGroups(string $deviceAlias = 'support'): array
+    {
+        return $this->request('get', '/api/whatsapp/groups', $this->deviceKey($deviceAlias));
+    }
+
     public function messageDetail(string|int $id): array
     {
         return $this->request('get', '/api/messages/'.rawurlencode((string) $id), $this->accountKey());
