@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WhatsAppConversation extends Model
 {
+    protected $table = 'whatsapp_conversations';
+
     protected $fillable = [
         'phone', 'display_name', 'contact_type', 'partner_id', 'inquiry_id',
         'service_order_id', 'assigned_to', 'status', 'unread_count', 'is_ai_blocked',

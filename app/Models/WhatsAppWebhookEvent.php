@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class WhatsAppWebhookEvent extends Model
 {
+    protected $table = 'whatsapp_webhook_events';
+
     protected $fillable = [
         'fingerprint', 'event_type', 'provider_message_id', 'phone', 'payload',
         'processed', 'processed_at', 'processing_error',

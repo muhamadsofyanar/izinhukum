@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WhatsAppOptOut extends Model
 {
+    protected $table = 'whatsapp_opt_outs';
+
     protected $fillable = [
         'phone', 'block_marketing', 'block_ai', 'block_all', 'source', 'reason',
         'opted_out_at', 'created_by',

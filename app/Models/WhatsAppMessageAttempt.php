@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WhatsAppMessageAttempt extends Model
 {
+    protected $table = 'whatsapp_message_attempts';
+
     protected $fillable = [
         'whatsapp_message_id', 'attempt_number', 'http_status', 'success',
         'request_payload', 'response_payload', 'error', 'attempted_at',

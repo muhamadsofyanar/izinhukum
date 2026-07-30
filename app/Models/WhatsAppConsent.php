@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WhatsAppConsent extends Model
 {
+    protected $table = 'whatsapp_consents';
+
     protected $fillable = [
         'phone', 'allow_transactional', 'allow_marketing', 'source', 'evidence',
         'consented_at', 'revoked_at', 'created_by',

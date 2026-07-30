@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WhatsAppCampaign extends Model
 {
+    protected $table = 'whatsapp_campaigns';
+
     protected $fillable = [
         'name', 'template_id', 'created_by', 'audience_type', 'status', 'use_rotator',
         'rotator_mode', 'delay_seconds', 'scheduled_at', 'started_at', 'completed_at',

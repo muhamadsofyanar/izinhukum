@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class WhatsAppDevice extends Model
 {
+    protected $table = 'whatsapp_devices';
+
     protected $fillable = [
         'provider_id', 'name', 'phone', 'role', 'status', 'is_default', 'is_enabled',
         'daily_limit', 'last_checked_at', 'metadata',

@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WhatsAppTemplate extends Model
 {
+    protected $table = 'whatsapp_templates';
+
     protected $fillable = [
         'key', 'name', 'category', 'description', 'body', 'message_type', 'media_url',
         'variables', 'is_enabled', 'is_marketing', 'version', 'updated_by',

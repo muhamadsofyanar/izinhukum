@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WhatsAppAutomation extends Model
 {
+    protected $table = 'whatsapp_automations';
+
     protected $fillable = [
         'key', 'name', 'trigger', 'template_id', 'recipient_type', 'is_enabled',
         'delay_minutes', 'conditions', 'last_run_at',
