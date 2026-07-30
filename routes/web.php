@@ -63,10 +63,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/healthz', HealthController::class)->name('healthz');
 Route::get('/crm-document/{link}/{token}', CrmDocumentProviderController::class)
-    ->middleware('throttle:60,1')
+    ->middleware(['feature:whatsapp_crm', 'throttle:60,1'])
     ->name('crm.documents.provider-download');
 Route::post('/webhooks/starsender/{secret}', StarSenderWebhookController::class)
-    ->middleware('throttle:120,1')
+    ->middleware(['feature:whatsapp_crm', 'throttle:120,1'])
     ->name('webhooks.starsender');
 Route::get('/', HomeController::class)->name('home');
 Route::get('/layanan', [ServiceController::class, 'index'])->name('services.index');
@@ -160,6 +160,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/keuangan/ekspor.csv', [AdminFinanceController::class, 'export'])->name('finance.export');
         Route::get('/keuangan/cetak', [AdminFinanceController::class, 'print'])->name('finance.print');
         Route::resource('/artikel', AdminArticleController::class)
+            ->middleware('feature:public_articles')
             ->parameters(['artikel' => 'article'])
             ->except('show')
             ->names([
@@ -177,18 +178,18 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::put('/pengaturan-email/sender/{sender}', [AdminMailSettingController::class, 'updateSender'])->name('mail.senders.update');
         Route::get('/profil', [PortalProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profil', [PortalProfileController::class, 'update'])->name('profile.update');
-        Route::get('/komunitas', [CommunityController::class, 'index'])->name('community.index');
-        Route::post('/komunitas', [CommunityController::class, 'store'])->name('community.store');
-        Route::get('/komunitas/{post}/lampiran', CommunityAttachmentController::class)->name('community.attachment');
-        Route::post('/komunitas/{post}/komentar', [CommunityController::class, 'comment'])->name('community.comment');
-        Route::get('/inbox', [InboxController::class, 'index'])->name('inbox.index');
-        Route::post('/inbox', [InboxController::class, 'store'])->name('inbox.store');
+        Route::get('/komunitas', [CommunityController::class, 'index'])->middleware('feature:partner_community')->name('community.index');
+        Route::post('/komunitas', [CommunityController::class, 'store'])->middleware('feature:partner_community')->name('community.store');
+        Route::get('/komunitas/{post}/lampiran', CommunityAttachmentController::class)->middleware('feature:partner_community')->name('community.attachment');
+        Route::post('/komunitas/{post}/komentar', [CommunityController::class, 'comment'])->middleware('feature:partner_community')->name('community.comment');
+        Route::get('/inbox', [InboxController::class, 'index'])->middleware('feature:partner_inbox')->name('inbox.index');
+        Route::post('/inbox', [InboxController::class, 'store'])->middleware('feature:partner_inbox')->name('inbox.store');
         Route::get('/branding', [AdminBrandingController::class, 'edit'])->name('branding.edit');
         Route::put('/branding', [AdminBrandingController::class, 'update'])->name('branding.update');
         Route::get('/pengaturan-fitur', [AdminFeatureSettingController::class, 'edit'])->name('features.edit');
         Route::put('/pengaturan-fitur', [AdminFeatureSettingController::class, 'update'])->name('features.update');
 
-        Route::prefix('whatsapp')->name('whatsapp.')->group(function (): void {
+        Route::prefix('whatsapp')->name('whatsapp.')->middleware('feature:whatsapp_crm')->group(function (): void {
             Route::get('/', WhatsAppDashboardController::class)->name('dashboard');
             Route::get('/pengaturan', [WhatsAppSettingsController::class, 'index'])->name('settings.index');
             Route::post('/pengaturan/pesan-uji', [WhatsAppSettingsController::class, 'testMessage'])->middleware('throttle:10,1')->name('settings.test-message');

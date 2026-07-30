@@ -48,7 +48,21 @@ class SendWhatsAppMessage implements ShouldQueue, ShouldBeUnique
             return;
         }
 
-        if (! config('starsender.enabled') || ! $features->enabled('whatsapp')) {
+        if (
+            ! config('starsender.enabled')
+            || ! $features->enabled('whatsapp')
+            || ! $features->enabled('whatsapp_transactional')
+        ) {
+            return;
+        }
+
+        if ($this->belongsToDisabledMarketingFlow($message)) {
+            $message->forceFill([
+                'status' => 'cancelled',
+                'last_error' => 'Pengiriman marketing dinonaktifkan pada mode fokus IzinHukum.',
+                'scheduled_at' => null,
+            ])->save();
+
             return;
         }
 
@@ -201,5 +215,22 @@ class SendWhatsAppMessage implements ShouldQueue, ShouldBeUnique
         if ($campaign) {
             $campaignProgress->refresh($campaign);
         }
+    }
+
+    private function belongsToDisabledMarketingFlow(WhatsAppMessage $message): bool
+    {
+        if ($message->channel !== 'personal') {
+            return true;
+        }
+
+        if (WhatsAppCampaignRecipient::query()->where('whatsapp_message_id', $message->id)->exists()) {
+            return true;
+        }
+
+        return empty($message->inquiry_id)
+            && empty($message->service_order_id)
+            && empty($message->invoice_id)
+            && empty($message->payment_id)
+            && empty($message->partner_id);
     }
 }

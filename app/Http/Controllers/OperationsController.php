@@ -19,8 +19,7 @@ class OperationsController extends Controller
     {
         $user = $request->attributes->get('currentUser');
         $isAdmin = $user->isAdmin();
-        abort_unless(in_array($module, ['announcements', 'materials', 'tickets', 'commissions', 'audit'], true), 404);
-        abort_if(!$isAdmin && $module === 'audit', 403);
+        abort_unless(in_array($module, ['materials', 'commissions'], true), 404);
 
         $data = match ($module) {
             'announcements' => Announcement::whereNotNull('published_at')
@@ -41,6 +40,7 @@ class OperationsController extends Controller
     public function store(Request $request, string $module): RedirectResponse
     {
         $user = $request->attributes->get('currentUser');
+        abort_unless(in_array($module, ['materials', 'commissions'], true), 404);
 
         if ($module === 'tickets') {
             $data = $request->validate([

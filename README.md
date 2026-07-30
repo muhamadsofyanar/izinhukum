@@ -10,7 +10,7 @@ Website legaltech **PT Praktisi Izin Hukum** berbasis Laravel 12, Bootstrap 5, M
 - Form permintaan proposal yang tersimpan ke database.
 - Pencarian 1.559 kode resmi KBLI 2025.
 - Detail risiko OSS-RBA per ruang lingkup dan skala usaha, termasuk perizinan, persyaratan, kewajiban, kewenangan, dan jangka waktu.
-- Dashboard admin untuk melihat lead, mengubah status, harga, harga coret, dan label perkiraan.
+- Dashboard admin fokus untuk pesanan, tenggat, pembayaran, dan mitra.
 - Harga tiga tingkat: website, minimum end user, dan Mitra LegaOne.
 - Portal mitra dengan aktivasi akun, katalog harga khusus, profil, dan invoice end user.
 - Invoice untuk mitra/end user, email transaksi, tautan publik, dan tampilan cetak/PDF.
@@ -18,14 +18,16 @@ Website legaltech **PT Praktisi Izin Hukum** berbasis Laravel 12, Bootstrap 5, M
 - Pembayaran sebagian/penuh dengan status invoice otomatis dan kwitansi unik.
 - Laporan keuangan operasional basis kas: pemasukan, pengeluaran, kategori, piutang, arus kas, cetak, dan CSV.
 - LMS internal dengan video YouTube tertanam, PDF privat, progres belajar, dan sertifikat khusus.
-- Community dan inbox untuk komunikasi admin dengan mitra.
+- Bank konten untuk materi iklan dan promosi mitra.
 - Pendaftaran kemitraan dengan alur persetujuan admin.
 - Tiga paket mitra, tautan referral, atribusi proposal, dan komisi berbasis pembayaran aktif.
 - Rekonsiliasi otomatis invoice lama berstatus lunas tanpa kwitansi.
-- Artikel publik dengan pengelolaan draf, publikasi, dan metadata SEO.
-- Pengaturan SMTP Mailketing dan sender dari panel admin.
+- Notifikasi pesanan baru ke WhatsApp dan email admin melalui antrean terpisah.
+- Pengaturan SMTP Mailketing dan sender untuk email transaksi.
 - Pelacakan status permintaan, kebijakan privasi, dan syarat layanan.
 - Sitemap, robots.txt, health check, konfigurasi Nginx/PHP-FPM, dan container MariaDB.
+
+WhatsApp CRM, inbox, campaign, sequence, autoresponder, webhook masuk, community, dan inbox internal dinonaktifkan pada mode fokus. Tabel lama tidak dihapus agar pembaruan aman dan dapat diaudit.
 
 ## Identitas perusahaan
 
@@ -74,7 +76,7 @@ Data tersebut dapat diubah melalui environment variables tanpa mengedit kode.
 6. Pastikan halaman publik, `/up`, dan `/admin/masuk` dapat dibuka.
 7. Ubah `SEED_DATABASE=false`, lalu redeploy.
 
-### Memasang pembaruan portal mitra
+### Memasang pembaruan mode fokus V13
 
 Untuk website yang sudah berjalan, pertahankan:
 
@@ -82,14 +84,24 @@ Untuk website yang sudah berjalan, pertahankan:
 SEED_DATABASE=false
 ```
 
-Commit pembaruan lalu redeploy. Entrypoint menjalankan migrasi dan `php artisan kbli:ensure` secara otomatis. KBLI hanya disinkronkan jika jumlah data 2025 bukan 1.559. Migrasi tidak menjalankan ulang `ServiceSeeder`, tidak mengaktifkan kembali paket, dan tidak menimpa harga admin.
+Commit pembaruan lalu lakukan satu kali redeploy. Entrypoint menjalankan migrasi mode fokus, rekonsiliasi keuangan, backfill order, dan `php artisan kbli:ensure` secara otomatis. Migrasi tidak menghapus data CRM lama, tidak menjalankan ulang `ServiceSeeder`, dan tidak menimpa harga admin.
 
-Sesudah login:
+Environment minimal untuk notifikasi:
 
-1. Buka **Email & SMTP** dan simpan kredensial Mailketing.
-2. Tambahkan sender yang sudah berstatus approved di Mailketing.
-3. Kirim email tes.
-4. Buka **Mitra** untuk menyetujui pendaftaran atau membuat akun mitra.
+```dotenv
+ORDER_NOTIFICATION_EMAIL_ENABLED=true
+ORDER_NOTIFICATION_EMAIL=operasional@izinhukum.com
+ORDER_NOTIFICATION_WHATSAPP_ENABLED=true
+ORDER_NOTIFICATION_WHATSAPP=628xxxxxxxxxx
+
+STARSENDER_ENABLED=true
+STARSENDER_TRANSACTION_DEVICE_KEY=isi-device-api-key
+QUEUE_CONNECTION=database
+```
+
+`ORDER_NOTIFICATION_EMAIL` dapat dikosongkan untuk memakai `ADMIN_EMAIL`. `ORDER_NOTIFICATION_WHATSAPP` dapat dikosongkan untuk memakai `COMPANY_WHATSAPP`. Gateway satu arah tidak memerlukan account API key atau webhook secret StarSender.
+
+Sesudah login, buka **Notifikasi email** untuk menyimpan kredensial SMTP, memastikan sender berstatus approved, dan mengirim email tes.
 
 ### Memasang integrasi referral dan keuangan V8
 
@@ -149,7 +161,7 @@ Laporan menggunakan basis kas. Nilai invoice belum dihitung sebagai pemasukan sa
 
 ## Keamanan file portal
 
-Materi PDF LMS dan lampiran community disimpan pada disk privat. File hanya dikirim melalui controller setelah pengguna melewati middleware portal dan pemeriksaan enrollment untuk materi LMS. Saat deployment, `php artisan portal:secure-files` memindahkan file lama dari disk publik apabila file tersebut masih tersedia.
+Materi PDF LMS disimpan pada disk privat. File hanya dikirim melalui controller setelah pengguna melewati middleware portal dan pemeriksaan enrollment. Saat deployment, `php artisan portal:secure-files` memindahkan file lama dari disk publik apabila file tersebut masih tersedia.
 
 Skrip `scripts/sync-kbli-2025.mjs` digunakan untuk membangun ulang snapshot dari sumber resmi. Hasil pemeriksaan pada website tetap merupakan informasi awal karena penetapan resmi dipengaruhi data proyek, lokasi, persyaratan dasar, dan ketentuan sektoral pada OSS.
 
@@ -160,4 +172,4 @@ php artisan test
 npm run build
 ```
 
-Panduan upgrade produksi tersedia pada `PETUNJUK-UPGRADE-KEUANGAN-LMS-KBLI.md`.
+Panduan satu kali redeploy tersedia pada `PETUNJUK-REDEPLOY-V13.md`.

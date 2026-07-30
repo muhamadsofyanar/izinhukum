@@ -31,7 +31,8 @@ class WhatsAppManager
     {
         return Schema::hasTable('whatsapp_messages')
             && config('starsender.enabled')
-            && $this->features->enabled('whatsapp');
+            && $this->features->enabled('whatsapp')
+            && $this->features->enabled('whatsapp_transactional');
     }
 
     public function queueTemplate(
@@ -101,14 +102,16 @@ class WhatsAppManager
             }
         }
 
-        $conversation = $channel === 'personal'
-            ? $this->conversation($phone, $data['recipient_name'] ?? null, $data)
-            : $this->groupConversation(
-                $phone,
-                $data['recipient_name'] ?? null,
-                $data['device_alias'] ?? 'support',
-                (array) ($data['metadata'] ?? []),
-            );
+        $conversation = ! empty($data['skip_conversation'])
+            ? null
+            : ($channel === 'personal'
+                ? $this->conversation($phone, $data['recipient_name'] ?? null, $data)
+                : $this->groupConversation(
+                    $phone,
+                    $data['recipient_name'] ?? null,
+                    $data['device_alias'] ?? 'support',
+                    (array) ($data['metadata'] ?? []),
+                ));
         $scheduledAt = $data['scheduled_at'] ?? null;
         $isFuture = $scheduledAt instanceof CarbonInterface && $scheduledAt->isFuture();
 

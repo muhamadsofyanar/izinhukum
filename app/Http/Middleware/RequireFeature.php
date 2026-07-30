@@ -15,8 +15,7 @@ class RequireFeature
 
     public function handle(Request $request, Closure $next, string $feature): Response
     {
-        $currentUser = $request->attributes->get('currentUser');
-        if ($currentUser?->isAdmin() || $this->features->enabled($feature)) {
+        if ($this->features->enabled($feature)) {
             return $next($request);
         }
 

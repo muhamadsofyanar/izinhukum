@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendNewInquiryEmailNotification;
+use App\Jobs\SendNewInquiryWhatsAppNotification;
 use App\Models\Inquiry;
 use App\Models\ServicePackage;
 use App\Services\FeatureFlagService;
@@ -62,6 +64,8 @@ class InquiryController extends Controller
 
         $events->recordInquiry($inquiry);
         $orders->createFromInquiry($inquiry);
+        SendNewInquiryEmailNotification::dispatch($inquiry->id)->onQueue('default');
+        SendNewInquiryWhatsAppNotification::dispatch($inquiry->id)->onQueue('whatsapp');
 
         return redirect()
             ->route('proposal.success', $inquiry)

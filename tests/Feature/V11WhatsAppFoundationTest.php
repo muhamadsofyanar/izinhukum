@@ -26,10 +26,13 @@ class V11WhatsAppFoundationTest extends TestCase
         }
     }
 
-    public function test_whatsapp_features_are_disabled_by_default(): void
+    public function test_only_transactional_whatsapp_gateway_is_enabled_in_focus_mode(): void
     {
         $features = app(FeatureFlagService::class);
-        foreach (['whatsapp', 'whatsapp_transactional', 'whatsapp_inbox', 'whatsapp_campaigns', 'whatsapp_autoreply', 'whatsapp_ai_assistant', 'whatsapp_rotator', 'whatsapp_provider_tools'] as $feature) {
+        self::assertTrue($features->enabled('whatsapp'));
+        self::assertTrue($features->enabled('whatsapp_transactional'));
+
+        foreach (['whatsapp_crm', 'whatsapp_inbox', 'whatsapp_campaigns', 'whatsapp_autoreply', 'whatsapp_ai_assistant', 'whatsapp_rotator', 'whatsapp_provider_tools'] as $feature) {
             self::assertFalse($features->enabled($feature));
         }
     }

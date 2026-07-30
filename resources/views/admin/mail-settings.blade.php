@@ -1,12 +1,16 @@
 @extends('layouts.admin')
 
-@section('title', 'Email & SMTP')
-@section('heading', 'Email & SMTP Mailketing')
+@section('title', 'Notifikasi Email')
+@section('heading', 'Notifikasi Email')
 
 @section('content')
-<div class="admin-note">Password SMTP disimpan terenkripsi menggunakan APP_KEY. Sender harus sudah diverifikasi/approved di dashboard Mailketing sebelum digunakan.</div>
+<div class="admin-note">
+    Email dipakai hanya untuk notifikasi transaksi, termasuk pesanan baru, invoice, dan aktivasi mitra.
+    Pesanan baru dikirim ke <strong>{{ config('business-notifications.new_order.email.recipient') ?: 'alamat yang diatur pada environment' }}</strong>.
+    Password SMTP disimpan terenkripsi menggunakan APP_KEY.
+</div>
 <section class="admin-panel portal-section">
-    <div class="admin-panel-head"><h2>SMTP Account Configuration</h2></div>
+    <div class="admin-panel-head"><h2>Konfigurasi SMTP</h2></div>
     <form class="p-4" action="{{ route('admin.mail.update') }}" method="post">
         @csrf @method('PUT')
         <div class="row g-3">
@@ -24,7 +28,7 @@
     <form class="p-4 d-flex flex-wrap gap-2" action="{{ route('admin.mail.test') }}" method="post">@csrf<input class="form-control flex-grow-1" name="test_email" type="email" value="{{ $currentUser->email }}" required><button class="btn btn-outline-primary" type="submit">Kirim email tes</button></form>
 </section>
 <section class="admin-panel mt-3">
-    <div class="admin-panel-head"><h2>Sender List</h2></div>
+    <div class="admin-panel-head"><h2>Daftar pengirim</h2></div>
     <div class="d-none">@foreach($senders as $sender)<form id="sender-form-{{ $sender->id }}" action="{{ route('admin.mail.senders.update', $sender) }}" method="post">@csrf @method('PUT')</form>@endforeach</div>
     <div class="table-responsive">
         <table class="table admin-table">
@@ -45,7 +49,7 @@
     </div>
 </section>
 <section class="admin-panel portal-section mt-3">
-    <div class="admin-panel-head"><h2>Tambah sender</h2></div>
+    <div class="admin-panel-head"><h2>Tambah pengirim</h2></div>
     <form class="p-4" action="{{ route('admin.mail.senders.store') }}" method="post">@csrf
         <div class="row g-3">
             <div class="col-md-3"><input class="form-control" name="name" placeholder="Nama pengirim" required></div>

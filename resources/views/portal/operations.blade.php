@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 @php
-$labels=['announcements'=>'Pengumuman','materials'=>'Materi Pemasaran','tickets'=>'Tiket Bantuan','commissions'=>'Komisi Mitra','audit'=>'Audit Log'];
+$labels=['announcements'=>'Pengumuman','materials'=>'Bank Konten','tickets'=>'Tiket Bantuan','commissions'=>'Komisi Mitra','audit'=>'Audit Log'];
 @endphp
 @section('title',$labels[$module])
 @section('heading',$labels[$module])
@@ -10,7 +10,7 @@ $labels=['announcements'=>'Pengumuman','materials'=>'Materi Pemasaran','tickets'
 <h2>Terbitkan pengumuman</h2><input class="form-control" name="title" placeholder="Judul" required><textarea class="form-control" name="body" rows="4" placeholder="Isi pengumuman" required></textarea><label><input type="checkbox" name="is_pinned" value="1"> Sematkan</label><button class="btn btn-primary">Terbitkan</button></form>
 @elseif($module==='materials' && $isAdmin)
 <form class="admin-panel mb-4 stack-form" method="post" action="{{ route('admin.operations.store',$module) }}">@csrf
-<h2>Tambah materi pemasaran</h2><input class="form-control" name="title" placeholder="Judul" required><input class="form-control" name="category" placeholder="Kategori" required><textarea class="form-control" name="description" placeholder="Deskripsi"></textarea><input class="form-control" type="url" name="file_url" placeholder="URL file Google Drive/Canva/penyimpanan" required><button class="btn btn-primary">Simpan materi</button></form>
+<h2>Tambah konten untuk mitra</h2><input class="form-control" name="title" placeholder="Judul konten" required><input class="form-control" name="category" placeholder="Kategori layanan / format" required><textarea class="form-control" name="description" placeholder="Deskripsi dan petunjuk penggunaan"></textarea><input class="form-control" type="url" name="file_url" placeholder="URL file Google Drive/Canva/penyimpanan" required><button class="btn btn-primary">Simpan ke bank konten</button></form>
 @elseif($module==='tickets' && !$isAdmin)
 <form class="admin-panel mb-4 stack-form" method="post" action="{{ route('partner.operations.store',$module) }}">@csrf
 <h2>Buat tiket baru</h2><input class="form-control" name="subject" placeholder="Subjek" required><select class="form-select" name="category"><option value="general">Umum</option><option value="service">Layanan</option><option value="invoice">Invoice</option><option value="technical">Teknis</option></select><select class="form-select" name="priority"><option value="normal">Normal</option><option value="high">Tinggi</option><option value="urgent">Mendesak</option><option value="low">Rendah</option></select><textarea class="form-control" name="message" rows="4" required></textarea><button class="btn btn-primary">Kirim tiket</button></form>
@@ -23,7 +23,7 @@ $labels=['announcements'=>'Pengumuman','materials'=>'Materi Pemasaran','tickets'
 @if($module==='announcements')
 <div class="announcement-list">@forelse($data as $item)<article><small>{{ $item->published_at?->format('d/m/Y H:i') }} @if($item->is_pinned) · Disematkan @endif</small><h2>{{ $item->title }}</h2><p>{{ $item->body }}</p></article>@empty<p>Belum ada pengumuman.</p>@endforelse</div>
 @elseif($module==='materials')
-<div class="course-grid">@forelse($data as $item)<article class="course-card"><small>{{ $item->category }}</small><h2>{{ $item->title }}</h2><p>{{ $item->description }}</p><a class="btn btn-outline-primary" href="{{ $item->file_url }}" target="_blank" rel="noopener">Unduh / buka materi</a></article>@empty<p>Belum ada materi pemasaran.</p>@endforelse</div>
+<div class="course-grid">@forelse($data as $item)<article class="course-card"><small>{{ $item->category }}</small><h2>{{ $item->title }}</h2><p>{{ $item->description }}</p><a class="btn btn-outline-primary" href="{{ $item->file_url }}" target="_blank" rel="noopener">Unduh / buka konten</a></article>@empty<p>Belum ada konten untuk mitra.</p>@endforelse</div>
 @elseif($module==='tickets')
 <div class="table-responsive"><table class="table admin-table"><thead><tr><th>Referensi</th><th>Mitra/Subjek</th><th>Prioritas</th><th>Status/Tanggapan</th></tr></thead><tbody>@forelse($data as $item)<tr><td>{{ $item->reference }}</td><td>@if($isAdmin)<small>{{ $item->user->name }}</small>@endif<strong>{{ $item->subject }}</strong><small>{{ $item->message }}</small></td><td>{{ ucfirst($item->priority) }}</td><td>@if($isAdmin)<form method="post" action="{{ route('admin.tickets.update',$item) }}" class="stack-form">@csrf @method('put')<select class="form-select form-select-sm" name="status">@foreach(['open','in_progress','resolved','closed'] as $status)<option @selected($item->status===$status)>{{ $status }}</option>@endforeach</select><textarea class="form-control" name="admin_response" placeholder="Tanggapan">{{ $item->admin_response }}</textarea><button class="btn btn-sm btn-secondary">Simpan</button></form>@else<strong>{{ ucfirst($item->status) }}</strong><small>{{ $item->admin_response ?: 'Menunggu tanggapan admin.' }}</small>@endif</td></tr>@empty<tr><td colspan="4">Belum ada tiket.</td></tr>@endforelse</tbody></table></div>
 @elseif($module==='commissions')

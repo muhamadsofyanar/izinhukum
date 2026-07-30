@@ -14,7 +14,7 @@ class HealthController extends Controller
 {
     public function __invoke(FeatureFlagService $features, StarSenderClient $starSender): JsonResponse
     {
-        $checks = ['database' => 'ok', 'storage' => 'ok', 'queue' => 'ok', 'crm' => 'ok'];
+        $checks = ['database' => 'ok', 'storage' => 'ok', 'queue' => 'ok'];
         $status = 200;
 
         try {
@@ -44,22 +44,11 @@ class HealthController extends Controller
         }
 
         try {
-            foreach (['crm_contacts', 'crm_labels', 'crm_leads', 'crm_sequences', 'crm_documents', 'crm_document_share_links'] as $table) {
-                if (! Schema::hasTable($table)) {
-                    $checks['crm'] = 'missing_table';
-                    $status = 503;
-                    break;
-                }
-            }
-        } catch (\Throwable) {
-            $checks['crm'] = 'error';
-            $status = 503;
-        }
-
-        try {
             $whatsapp = match (true) {
+                ! config('business-notifications.new_order.whatsapp.enabled') => 'disabled',
                 ! config('starsender.enabled') => 'disabled',
                 ! $features->enabled('whatsapp') => 'feature_disabled',
+                ! $features->enabled('whatsapp_transactional') => 'feature_disabled',
                 ! $starSender->hasDeviceKey('transaction') => 'missing_device_key',
                 default => 'configured',
             };
@@ -68,11 +57,20 @@ class HealthController extends Controller
             $status = 503;
         }
 
+        $email = match (true) {
+            ! config('business-notifications.new_order.email.enabled') => 'disabled',
+            trim((string) config('business-notifications.new_order.email.recipient')) === '' => 'missing_recipient',
+            default => 'configured',
+        };
+
         return response()->json([
             'status' => $status === 200 ? 'healthy' : 'unhealthy',
-            'version' => '12.1.0',
+            'version' => '13.0.0',
             'checks' => $checks,
-            'integrations' => ['starsender' => $whatsapp],
+            'integrations' => [
+                'email_notifications' => $email,
+                'whatsapp_notifications' => $whatsapp,
+            ],
             'time' => now()->toIso8601String(),
         ], $status);
     }

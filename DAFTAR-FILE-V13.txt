@@ -1,0 +1,42 @@
+IzinHukum V13 - Mode Fokus
+
+FILE BARU
+CHANGELOG-V13.md
+PETUNJUK-REDEPLOY-V13.md
+DAFTAR-FILE-V13.txt
+app/Jobs/SendNewInquiryEmailNotification.php
+app/Jobs/SendNewInquiryWhatsAppNotification.php
+app/Mail/NewInquiryAdminMail.php
+config/business-notifications.php
+database/migrations/2026_07_30_000021_activate_izinhukum_focus_mode.php
+resources/views/emails/admin-new-inquiry.blade.php
+tests/Feature/FocusModeNotificationTest.php
+
+FILE DIPERBARUI
+.env.docker.example
+.env.example
+README.md
+app/Http/Controllers/HealthController.php
+app/Http/Controllers/InquiryController.php
+app/Http/Controllers/OperationsController.php
+app/Http/Middleware/RequireFeature.php
+app/Jobs/SendWhatsAppMessage.php
+app/Observers/InquiryObserver.php
+app/Providers/AppServiceProvider.php
+app/Services/FeatureFlagService.php
+app/Services/WhatsApp/WhatsAppManager.php
+bootstrap/app.php
+config/starsender.php
+docker/entrypoint.sh
+docker-compose.yml
+phpunit.xml
+resources/views/admin/mail-settings.blade.php
+resources/views/layouts/admin.blade.php
+resources/views/portal/operations.blade.php
+routes/console.php
+routes/web.php
+tests/Feature/V10FoundationTest.php
+tests/Feature/V11WhatsAppFoundationTest.php
+tests/Feature/PortalFileSecurityTest.php
+
+Tidak ada file yang wajib dihapus. Unggah seluruh source V13 agar semua perubahan terpasang bersama.

@@ -3,14 +3,12 @@
 namespace App\Providers;
 
 use App\Models\Commission;
-use App\Models\Inquiry;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Service;
 use App\Models\ServiceOrder;
 use App\Models\SystemSetting;
 use App\Observers\CommissionObserver;
-use App\Observers\InquiryObserver;
 use App\Observers\InvoiceObserver;
 use App\Observers\PaymentObserver;
 use App\Observers\ServiceOrderObserver;
@@ -30,7 +28,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFive();
 
-        Inquiry::observe(InquiryObserver::class);
         ServiceOrder::observe(ServiceOrderObserver::class);
         Invoice::observe(InvoiceObserver::class);
         Payment::observe(PaymentObserver::class);

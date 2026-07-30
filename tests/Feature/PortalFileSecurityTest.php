@@ -12,7 +12,7 @@ class PortalFileSecurityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_community_attachment_requires_an_authenticated_portal_user(): void
+    public function test_disabled_community_attachment_is_not_available_to_partner(): void
     {
         Storage::fake('local');
         Storage::disk('local')->put('community/lampiran.pdf', '%PDF-test');
@@ -37,7 +37,6 @@ class PortalFileSecurityTest extends TestCase
 
         $this->withSession(['portal_user_id' => $partner->id])
             ->get(route('partner.community.attachment', $post))
-            ->assertOk()
-            ->assertDownload('lampiran.pdf');
+            ->assertNotFound();
     }
 }
