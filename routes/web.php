@@ -188,6 +188,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             Route::get('/grup', [WhatsAppGroupController::class, 'index'])->name('groups.index');
             Route::post('/grup/sinkronkan', [WhatsAppGroupController::class, 'sync'])->middleware('throttle:5,1')->name('groups.sync');
             Route::post('/grup/kirim-banyak', [WhatsAppGroupController::class, 'sendMany'])->middleware('throttle:10,1')->name('groups.send-many');
+            Route::post('/grup/pilihan/hapus', [WhatsAppGroupController::class, 'clearSelection'])->name('groups.selection.clear');
 
             Route::get('/pesan', [WhatsAppMessageController::class, 'index'])->name('messages.index');
             Route::post('/pesan', [WhatsAppMessageController::class, 'store'])->middleware('throttle:30,1')->name('messages.store');

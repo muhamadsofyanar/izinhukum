@@ -20,6 +20,7 @@ class V11WhatsAppFoundationTest extends TestCase
             'whatsapp_conversations', 'whatsapp_messages', 'whatsapp_message_attempts',
             'whatsapp_automations', 'whatsapp_campaigns', 'whatsapp_campaign_recipients',
             'whatsapp_consents', 'whatsapp_opt_outs', 'whatsapp_webhook_events', 'whatsapp_groups',
+            'whatsapp_group_selections',
         ] as $table) {
             self::assertTrue(Schema::hasTable($table), $table.' should exist');
         }

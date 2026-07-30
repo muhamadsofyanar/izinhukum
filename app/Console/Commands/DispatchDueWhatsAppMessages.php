@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class DispatchDueWhatsAppMessages extends Command
 {
-    protected $signature = 'whatsapp:dispatch-due {--limit=200}';
+    protected $signature = 'whatsapp:dispatch-due {--limit=1000}';
 
     protected $description = 'Memasukkan pesan WhatsApp terjadwal yang sudah jatuh tempo ke antrean.';
 
