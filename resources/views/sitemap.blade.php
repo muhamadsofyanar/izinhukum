@@ -2,6 +2,9 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url><loc>{{ route('home') }}</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
     <url><loc>{{ route('services.index') }}</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+    <url><loc>{{ route('tools.index') }}</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+    <url><loc>{{ route('tools.name-generator') }}</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+    <url><loc>{{ route('tools.deed-simulator') }}</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
     <url><loc>{{ route('kbli.index') }}</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
     <url><loc>{{ route('articles.index') }}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
     <url><loc>{{ route('partnership.create') }}</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>

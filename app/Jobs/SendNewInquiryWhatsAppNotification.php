@@ -62,7 +62,15 @@ class SendNewInquiryWhatsAppNotification implements ShouldQueue, ShouldBeUnique
             $inquiry->email ? 'Email klien: '.$inquiry->email : null,
             $inquiry->company_name ? 'Perusahaan: '.$inquiry->company_name : null,
             $inquiry->city ? 'Kota: '.$inquiry->city : null,
+            'Sumber: '.match ($inquiry->source) {
+                'name_generator' => 'Generator nama',
+                'deed_simulator' => 'Simulasi akta',
+                'partner_referral' => 'Referral mitra',
+                default => 'Website',
+            },
+            $inquiry->message ? 'Kebutuhan: '.(string) str($inquiry->message)->squish()->limit(600) : null,
             '',
+            'Chat klien: https://wa.me/'.preg_replace('/\D/', '', $inquiry->phone),
             'Buka order: '.$orderUrl,
         ], fn (?string $line): bool => $line !== null));
 

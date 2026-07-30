@@ -49,6 +49,60 @@ class PublicPagesTest extends TestCase
         ]);
     }
 
+    public function test_public_legal_tools_are_available(): void
+    {
+        $this->get('/alat')
+            ->assertOk()
+            ->assertSee('Generator nama badan')
+            ->assertSee('Simulasi bahan akta')
+            ->assertSee('Cek KBLI dan risiko');
+
+        $this->get('/alat/generator-nama?jenis=pt&sektor=teknologi&kata=Lentera')
+            ->assertOk()
+            ->assertSee('PT Lentera')
+            ->assertSee('bukan persetujuan AHU');
+    }
+
+    public function test_deed_simulation_returns_an_educational_preview(): void
+    {
+        $this->post('/alat/simulasi-akta', [
+            'entity_type' => 'cv',
+            'proposed_name' => 'CV Lentera Teknik Nusantara',
+            'domicile' => 'Kota Bandung',
+            'activity' => 'Jasa konsultasi dan pelaksanaan teknik.',
+            'kbli_codes' => '71102',
+            'founder_names' => 'Andi, Budi',
+            'capital' => 25000000,
+            'primary_officer' => 'Andi',
+            'secondary_officer' => 'Budi',
+            'simulation_consent' => '1',
+        ])
+            ->assertOk()
+            ->assertSee('Ringkasan Bahan Penyusunan Akta Pendirian')
+            ->assertSee('CV Lentera Teknik Nusantara')
+            ->assertSee('Sekutu aktif/pengurus')
+            ->assertSee('SIMULASI EDUKATIF')
+            ->assertSee('Minta diperiksa & ditindaklanjuti');
+    }
+
+    public function test_individual_company_simulation_does_not_claim_a_notarial_deed(): void
+    {
+        $this->post('/alat/simulasi-akta', [
+            'entity_type' => 'pt_perorangan',
+            'proposed_name' => 'PT Lentera Digital Mandiri',
+            'domicile' => 'Kota Bandung',
+            'activity' => 'Pengembangan perangkat lunak.',
+            'kbli_codes' => '62010',
+            'founder_names' => 'Andi',
+            'capital' => 10000000,
+            'primary_officer' => 'Andi',
+            'simulation_consent' => '1',
+        ])
+            ->assertOk()
+            ->assertSee('Ringkasan Pernyataan Pendirian')
+            ->assertSee('bukan akta notaris');
+    }
+
     public function test_admin_requires_authentication(): void
     {
         $this->get('/admin')->assertRedirect('/admin/masuk');

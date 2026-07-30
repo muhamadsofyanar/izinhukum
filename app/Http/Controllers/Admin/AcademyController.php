@@ -104,16 +104,20 @@ class AcademyController extends Controller
         return back()->with('success', 'Bab ditambahkan.');
     }
 
-    public function storeLesson(Request $request, CourseSection $section): RedirectResponse
+    public function updateSection(Request $request, CourseSection $section): RedirectResponse
     {
         $data = $request->validate([
             'title' => ['required', 'string', 'max:180'],
-            'type' => ['required', 'in:text,video,pdf,link,assignment,quiz'],
-            'content' => ['nullable', 'string'],
-            'resource_url' => ['nullable', 'url', 'max:2048'],
-            'material_file' => ['nullable', 'file', 'mimes:pdf', 'max:25600'],
-            'duration_minutes' => ['nullable', 'integer', 'min:0', 'max:10000'],
         ]);
+
+        $section->update($data);
+
+        return back()->with('success', 'Judul bab diperbarui.');
+    }
+
+    public function storeLesson(Request $request, CourseSection $section): RedirectResponse
+    {
+        $data = $this->validateLesson($request);
         $file = $request->file('material_file');
         unset($data['material_file']);
         $section->lessons()->create([
@@ -123,6 +127,43 @@ class AcademyController extends Controller
             'sort_order' => ((int) $section->lessons()->max('sort_order')) + 1,
         ]);
         return back()->with('success', 'Materi ditambahkan.');
+    }
+
+    public function updateLesson(Request $request, Lesson $lesson): RedirectResponse
+    {
+        $data = $this->validateLesson($request, true);
+        $newFile = $request->file('material_file');
+        $oldPath = $lesson->file_path;
+        unset($data['material_file'], $data['remove_material_file']);
+
+        if ($newFile) {
+            $data['file_path'] = $newFile->store('academy/materials', 'local');
+            $data['original_filename'] = $newFile->getClientOriginalName();
+        } elseif ($request->boolean('remove_material_file')) {
+            $data['file_path'] = null;
+            $data['original_filename'] = null;
+        }
+
+        try {
+            $lesson->update($data);
+        } catch (\Throwable $exception) {
+            if ($newFile && isset($data['file_path'])) {
+                Storage::disk('local')->delete($data['file_path']);
+            }
+
+            throw $exception;
+        }
+
+        if (
+            $oldPath
+            && ($newFile || $request->boolean('remove_material_file'))
+            && $oldPath !== $lesson->file_path
+        ) {
+            Storage::disk('local')->delete($oldPath);
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        return back()->with('success', 'Materi diperbarui.');
     }
 
     public function destroyLesson(Lesson $lesson): RedirectResponse
@@ -183,6 +224,19 @@ class AcademyController extends Controller
             'auto_enroll' => ['nullable', 'boolean'],
             'passing_score' => ['required', 'integer', 'min:0', 'max:100'],
             'estimated_minutes' => ['required', 'integer', 'min:0', 'max:100000'],
+        ]);
+    }
+
+    private function validateLesson(Request $request, bool $updating = false): array
+    {
+        return $request->validate([
+            'title' => ['required', 'string', 'max:180'],
+            'type' => ['required', 'in:text,video,pdf,link,assignment,quiz'],
+            'content' => ['nullable', 'string'],
+            'resource_url' => ['nullable', 'url', 'max:2048'],
+            'material_file' => ['nullable', 'file', 'mimes:pdf', 'max:25600'],
+            'remove_material_file' => [$updating ? 'nullable' : 'prohibited', 'boolean'],
+            'duration_minutes' => ['nullable', 'integer', 'min:0', 'max:10000'],
         ]);
     }
 

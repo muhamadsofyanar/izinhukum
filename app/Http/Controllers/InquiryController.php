@@ -28,8 +28,19 @@ class InquiryController extends Controller
             ->get();
 
         $selectedPackage = $request->integer('paket');
+        $prefillMessage = Str::limit(trim((string) $request->query('pesan')), 3000, '');
+        $prefillCompanyName = Str::limit(trim((string) $request->query('nama_usaha')), 160, '');
+        $journeySource = in_array($request->query('asal'), ['name_generator', 'deed_simulator'], true)
+            ? (string) $request->query('asal')
+            : 'website';
 
-        return view('proposal', compact('packages', 'selectedPackage'));
+        return view('proposal', compact(
+            'packages',
+            'selectedPackage',
+            'prefillMessage',
+            'prefillCompanyName',
+            'journeySource',
+        ));
     }
 
     public function store(
@@ -47,9 +58,11 @@ class InquiryController extends Controller
             'company_name' => ['nullable', 'string', 'max:160'],
             'city' => ['nullable', 'string', 'max:120'],
             'message' => ['nullable', 'string', 'max:3000'],
+            'journey_source' => ['nullable', 'in:website,name_generator,deed_simulator'],
             'privacy_consent' => ['accepted'],
         ]);
-        unset($validated['privacy_consent']);
+        $journeySource = $validated['journey_source'] ?? 'website';
+        unset($validated['journey_source'], $validated['privacy_consent']);
 
         $attribution = $features->enabled('referral_tracking')
             ? $referrals->attribution($request)
@@ -58,7 +71,7 @@ class InquiryController extends Controller
             ...$validated,
             ...($attribution ?? []),
             'reference' => 'IH-'.now()->format('ymd').'-'.Str::upper(Str::random(5)),
-            'source' => $attribution ? 'partner_referral' : 'website',
+            'source' => $attribution ? 'partner_referral' : $journeySource,
             'status' => 'baru',
         ]);
 
@@ -69,13 +82,29 @@ class InquiryController extends Controller
 
         return redirect()
             ->route('proposal.success', $inquiry)
-            ->with('success', 'Permintaan Anda sudah kami terima.');
+            ->with('success', 'Permintaan Anda sudah kami terima.')
+            ->with('open_whatsapp', true);
     }
 
     public function success(Inquiry $inquiry): View
     {
         $inquiry->load(['package.service', 'serviceOrder']);
+        $service = $inquiry->package?->service?->name
+            ?: $inquiry->package?->name
+            ?: 'konsultasi legalitas';
+        $message = implode("\n", array_filter([
+            'Halo IzinHukum, saya sudah mengirim permintaan.',
+            'Referensi: '.$inquiry->reference,
+            $inquiry->serviceOrder ? 'Nomor order: '.$inquiry->serviceOrder->order_number : null,
+            'Nama: '.$inquiry->name,
+            'Kebutuhan: '.$service,
+            '',
+            'Mohon ditindaklanjuti melalui WhatsApp ini.',
+        ], fn (?string $line): bool => $line !== null));
+        $whatsappNumber = preg_replace('/\D/', '', (string) config('company.whatsapp'));
+        $whatsappUrl = 'https://wa.me/'.$whatsappNumber.'?text='.urlencode($message);
+        $openWhatsApp = (bool) session('open_whatsapp', false);
 
-        return view('proposal-success', compact('inquiry'));
+        return view('proposal-success', compact('inquiry', 'whatsappUrl', 'openWhatsApp'));
     }
 }

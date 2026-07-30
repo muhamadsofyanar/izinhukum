@@ -57,7 +57,7 @@
                             <small>{{ $inquiry->referral_code ?: $inquiry->referredByPartner->partner_code }}</small>
                             <span class="status status-paid">Referral mitra</span>
                         @else
-                            <strong>Website</strong>
+                            <strong>{{ match ($inquiry->source) { 'name_generator' => 'Generator nama', 'deed_simulator' => 'Simulasi akta', default => 'Website' } }}</strong>
                             <small>Tanpa referral</small>
                         @endif
                     </td>

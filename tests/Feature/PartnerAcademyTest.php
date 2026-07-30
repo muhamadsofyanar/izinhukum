@@ -8,6 +8,7 @@ use App\Models\CourseSection;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -77,6 +78,66 @@ class PartnerAcademyTest extends TestCase
             ->assertOk()
             ->assertSee('Sertifikat Kelulusan')
             ->assertSee($enrollment->certificate_number);
+    }
+
+    public function test_admin_can_edit_a_section_and_replace_lesson_material(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('academy/materials/versi-lama.pdf', '%PDF-lama');
+
+        $admin = User::create([
+            'role' => 'admin',
+            'name' => 'Admin LMS',
+            'email' => 'admin-lms@example.test',
+            'password' => 'password-aman',
+            'is_active' => true,
+        ]);
+        $course = Course::create([
+            'title' => 'Kelas Dapat Diedit',
+            'slug' => 'kelas-dapat-diedit',
+            'summary' => 'Materi pengujian edit.',
+            'level' => 'dasar',
+            'status' => 'draft',
+            'passing_score' => 70,
+        ]);
+        $section = CourseSection::create([
+            'course_id' => $course->id,
+            'title' => 'Judul Lama',
+        ]);
+        $lesson = Lesson::create([
+            'course_section_id' => $section->id,
+            'title' => 'Materi Lama',
+            'type' => 'pdf',
+            'content' => 'Isi lama',
+            'file_path' => 'academy/materials/versi-lama.pdf',
+            'original_filename' => 'versi-lama.pdf',
+        ]);
+
+        $this->withSession(['portal_user_id' => $admin->id])
+            ->put(route('admin.academy.sections.update', $section), [
+                'title' => 'Judul Baru',
+            ])
+            ->assertRedirect();
+
+        $this->withSession(['portal_user_id' => $admin->id])
+            ->put(route('admin.academy.lessons.update', $lesson), [
+                'title' => 'Materi Baru',
+                'type' => 'pdf',
+                'content' => 'Isi baru',
+                'duration_minutes' => 12,
+                'material_file' => UploadedFile::fake()->create('versi-baru.pdf', 100, 'application/pdf'),
+            ])
+            ->assertRedirect();
+
+        $section->refresh();
+        $lesson->refresh();
+        $this->assertSame('Judul Baru', $section->title);
+        $this->assertSame('Materi Baru', $lesson->title);
+        $this->assertSame('Isi baru', $lesson->content);
+        $this->assertSame(12, $lesson->duration_minutes);
+        $this->assertSame('versi-baru.pdf', $lesson->original_filename);
+        Storage::disk('local')->assertMissing('academy/materials/versi-lama.pdf');
+        Storage::disk('local')->assertExists($lesson->file_path);
     }
 
     public function test_youtube_material_is_embedded_and_pdf_is_private(): void

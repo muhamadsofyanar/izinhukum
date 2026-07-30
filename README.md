@@ -8,6 +8,10 @@ Website legaltech **PT Praktisi Izin Hukum** berbasis Laravel 12, Bootstrap 5, M
 - Katalog 14 layanan dan seluruh paket harga.
 - Label oranye **Harga Perkiraan** untuk harga yang belum final.
 - Form permintaan proposal yang tersimpan ke database.
+- Form proposal membuat order, mengantrekan notifikasi admin, lalu membuka WhatsApp untuk konfirmasi klien.
+- Pusat alat gratis untuk perjalanan calon klien sebelum memesan.
+- Generator alternatif nama PT, Perseroan Perorangan, CV, Firma, Persekutuan Perdata, dan Yayasan dengan pagar format awal.
+- Simulasi edukatif bahan akta/pernyataan pendirian yang dapat dicetak tanpa menghimpun NIK.
 - Pencarian 1.559 kode resmi KBLI 2025.
 - Detail risiko OSS-RBA per ruang lingkup dan skala usaha, termasuk perizinan, persyaratan, kewajiban, kewenangan, dan jangka waktu.
 - Dashboard admin fokus untuk pesanan, tenggat, pembayaran, dan mitra.
@@ -17,7 +21,7 @@ Website legaltech **PT Praktisi Izin Hukum** berbasis Laravel 12, Bootstrap 5, M
 - Branding dokumen terpusat untuk logo, kontak, rekening, tanda tangan, dan stempel.
 - Pembayaran sebagian/penuh dengan status invoice otomatis dan kwitansi unik.
 - Laporan keuangan operasional basis kas: pemasukan, pengeluaran, kategori, piutang, arus kas, cetak, dan CSV.
-- LMS internal dengan video YouTube tertanam, PDF privat, progres belajar, dan sertifikat khusus.
+- LMS internal dengan judul bab dan materi yang dapat diedit, penggantian PDF privat, video YouTube tertanam, progres belajar, dan sertifikat khusus.
 - Bank konten untuk materi iklan dan promosi mitra.
 - Pendaftaran kemitraan dengan alur persetujuan admin.
 - Tiga paket mitra, tautan referral, atribusi proposal, dan komisi berbasis pembayaran aktif.
@@ -76,7 +80,7 @@ Data tersebut dapat diubah melalui environment variables tanpa mengedit kode.
 6. Pastikan halaman publik, `/up`, dan `/admin/masuk` dapat dibuka.
 7. Ubah `SEED_DATABASE=false`, lalu redeploy.
 
-### Memasang pembaruan mode fokus V13
+### Memasang pembaruan perjalanan calon klien V14
 
 Untuk website yang sudah berjalan, pertahankan:
 
@@ -84,7 +88,7 @@ Untuk website yang sudah berjalan, pertahankan:
 SEED_DATABASE=false
 ```
 
-Commit pembaruan lalu lakukan satu kali redeploy. Entrypoint menjalankan migrasi mode fokus, rekonsiliasi keuangan, backfill order, dan `php artisan kbli:ensure` secara otomatis. Migrasi tidak menghapus data CRM lama, tidak menjalankan ulang `ServiceSeeder`, dan tidak menimpa harga admin.
+Commit pembaruan lalu lakukan satu kali redeploy. Entrypoint menjalankan migrasi yang belum terpasang, rekonsiliasi keuangan, backfill order, dan `php artisan kbli:ensure` secara otomatis. V14 tidak menghapus data, tidak menjalankan ulang `ServiceSeeder`, dan tidak menimpa harga admin.
 
 Environment minimal untuk notifikasi:
 
@@ -172,4 +176,4 @@ php artisan test
 npm run build
 ```
 
-Panduan satu kali redeploy tersedia pada `PETUNJUK-REDEPLOY-V13.md`.
+Panduan satu kali redeploy tersedia pada `PETUNJUK-REDEPLOY-V14.md`.

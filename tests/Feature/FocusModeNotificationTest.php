@@ -23,12 +23,22 @@ class FocusModeNotificationTest extends TestCase
     {
         Queue::fake();
 
-        $this->post('/proposal', [
+        $response = $this->post('/proposal', [
             'name' => 'Klien Baru',
             'phone' => '081234567890',
             'email' => 'klien@example.test',
+            'journey_source' => 'name_generator',
             'privacy_consent' => '1',
-        ])->assertRedirect();
+        ]);
+
+        $response->assertRedirect()->assertSessionHas('open_whatsapp', true);
+        $this->assertDatabaseHas('inquiries', [
+            'name' => 'Klien Baru',
+            'source' => 'name_generator',
+        ]);
+        $this->assertDatabaseHas('service_orders', [
+            'customer_name' => 'Klien Baru',
+        ]);
 
         Queue::assertPushed(SendNewInquiryEmailNotification::class);
         Queue::assertPushed(SendNewInquiryWhatsAppNotification::class);

@@ -24,9 +24,34 @@
         <div class="admin-panel-head"><h2>Bab & materi</h2></div>
         @foreach($course->sections as $section)
         <article class="course-section-card">
-            <h3>{{ $section->title }}</h3>
+            <form method="post" action="{{ route('admin.academy.sections.update', $section) }}" class="academy-section-title-form">
+                @csrf @method('put')
+                <label class="visually-hidden" for="section-title-{{ $section->id }}">Judul bab</label>
+                <input class="form-control" id="section-title-{{ $section->id }}" name="title" value="{{ $section->title }}" required maxlength="180">
+                <button class="btn btn-sm btn-outline-primary" type="submit">Simpan judul</button>
+            </form>
             @foreach($section->lessons as $lesson)
             <div class="lesson-row"><span><strong>{{ $lesson->title }}</strong><small>{{ strtoupper($lesson->type) }} · {{ $lesson->duration_minutes }} menit</small></span>
+                <details class="lesson-editor">
+                    <summary class="btn btn-sm btn-outline-primary">Ubah</summary>
+                    <form method="post" enctype="multipart/form-data" action="{{ route('admin.academy.lessons.update', $lesson) }}" class="stack-form lesson-edit-form">
+                        @csrf @method('put')
+                        <input class="form-control" name="title" value="{{ $lesson->title }}" required maxlength="180" aria-label="Judul materi">
+                        <select class="form-select" name="type" aria-label="Jenis materi">@foreach(['text','video','pdf','link','assignment','quiz'] as $type)<option value="{{ $type }}" @selected($lesson->type === $type)>{{ $type }}</option>@endforeach</select>
+                        <input class="form-control" type="url" name="resource_url" value="{{ $lesson->resource_url }}" placeholder="URL video atau materi">
+                        <label class="field">
+                            <span>Ganti PDF (opsional, maks. 25 MB)</span>
+                            <input class="form-control" type="file" name="material_file" accept="application/pdf">
+                            @if($lesson->original_filename)<small>File saat ini: {{ $lesson->original_filename }}</small>@endif
+                        </label>
+                        @if($lesson->file_path)
+                            <label class="check-field"><input type="hidden" name="remove_material_file" value="0"><input type="checkbox" name="remove_material_file" value="1"> Hapus file PDF saat ini</label>
+                        @endif
+                        <input class="form-control" type="number" name="duration_minutes" value="{{ $lesson->duration_minutes }}" min="0" max="10000" placeholder="Durasi menit">
+                        <textarea class="form-control" name="content" rows="5" placeholder="Isi materi/instruksi">{{ $lesson->content }}</textarea>
+                        <button class="btn btn-secondary" type="submit">Simpan materi</button>
+                    </form>
+                </details>
                 <form method="post" action="{{ route('admin.academy.lessons.destroy', $lesson) }}">@csrf @method('delete')<button class="btn btn-sm btn-outline-danger">Hapus</button></form>
             </div>@endforeach
             <details><summary>+ Tambah materi</summary>

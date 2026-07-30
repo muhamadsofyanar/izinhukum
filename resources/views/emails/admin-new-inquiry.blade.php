@@ -13,6 +13,7 @@
 <tr><td style="color:#647487">Email</td><td>{{ $inquiry->email ?: 'Tidak diisi' }}</td></tr>
 <tr><td style="color:#647487">Perusahaan</td><td>{{ $inquiry->company_name ?: 'Tidak diisi' }}</td></tr>
 <tr><td style="color:#647487">Kota</td><td>{{ $inquiry->city ?: 'Tidak diisi' }}</td></tr>
+<tr><td style="color:#647487">Sumber perjalanan</td><td>{{ match ($inquiry->source) { 'name_generator' => 'Generator nama', 'deed_simulator' => 'Simulasi akta', 'partner_referral' => 'Referral mitra', default => 'Website' } }}</td></tr>
 </table>
 @if($inquiry->message)
 <p style="margin-top:24px"><strong>Catatan pelanggan</strong><br>{{ $inquiry->message }}</p>

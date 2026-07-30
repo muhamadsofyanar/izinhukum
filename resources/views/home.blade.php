@@ -55,6 +55,24 @@
     </div>
 </section>
 
+<section class="section section-soft">
+    <div class="container">
+        <div class="section-heading section-heading-split">
+            <div>
+                <span class="eyebrow">Coba sebelum memesan</span>
+                <h2>Rasakan alur legalitas secara langsung</h2>
+                <p>Siapkan nama, struktur awal dokumen, dan kandidat KBLI. Hasil yang dipilih dapat diteruskan ke proposal dan tercatat sebagai order.</p>
+            </div>
+            <a class="text-link" href="{{ route('tools.index') }}">Lihat semua alat →</a>
+        </div>
+        <div class="tool-grid tool-grid-home">
+            <a class="tool-card" href="{{ route('tools.name-generator') }}"><span class="tool-card-number">01</span><small>Identitas</small><h3>Generator nama</h3><p>PT, Perseroan Perorangan, CV, Firma, Persekutuan Perdata, dan Yayasan.</p><strong>Coba →</strong></a>
+            <a class="tool-card" href="{{ route('tools.deed-simulator') }}"><span class="tool-card-number">02</span><small>Dokumen</small><h3>Simulasi bahan akta</h3><p>Lihat ringkasan kedudukan, kegiatan, pendiri, modal, dan organ.</p><strong>Mulai →</strong></a>
+            <a class="tool-card" href="{{ route('kbli.index') }}"><span class="tool-card-number">03</span><small>Perizinan</small><h3>Cek KBLI & risiko</h3><p>Cari kegiatan usaha, tingkat risiko, izin, persyaratan, dan kewajiban.</p><strong>Cari →</strong></a>
+        </div>
+    </div>
+</section>
+
 <section class="section">
     <div class="container">
         <div class="section-heading section-heading-split">

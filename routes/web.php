@@ -39,6 +39,7 @@ use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\InquiryTrackingController;
 use App\Http\Controllers\KbliController;
 use App\Http\Controllers\LegalPageController;
+use App\Http\Controllers\LegalToolController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\Partner\ActivationController as PartnerActivationController;
 use App\Http\Controllers\Partner\AuthController as PartnerAuthController;
@@ -73,6 +74,12 @@ Route::get('/layanan', [ServiceController::class, 'index'])->name('services.inde
 Route::get('/layanan/{service:slug}', [ServiceController::class, 'show'])->name('services.show');
 Route::get('/cek-risiko-kbli', [KbliController::class, 'index'])->name('kbli.index');
 Route::get('/cek-risiko-kbli/{code}', [KbliController::class, 'show'])->name('kbli.show');
+Route::get('/alat', [LegalToolController::class, 'index'])->name('tools.index');
+Route::get('/alat/generator-nama', [LegalToolController::class, 'nameGenerator'])->name('tools.name-generator');
+Route::get('/alat/simulasi-akta', [LegalToolController::class, 'deedSimulator'])->name('tools.deed-simulator');
+Route::post('/alat/simulasi-akta', [LegalToolController::class, 'simulateDeed'])
+    ->middleware('throttle:20,1')
+    ->name('tools.deed-simulator.run');
 Route::get('/artikel', [ArticleController::class, 'index'])->middleware('feature:public_articles')->name('articles.index');
 Route::get('/artikel/{article:slug}', [ArticleController::class, 'show'])->middleware('feature:public_articles')->name('articles.show');
 Route::get('/proposal', [InquiryController::class, 'create'])->middleware('feature:public_proposal')->name('proposal.create');
@@ -132,7 +139,9 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::delete('/akademi/{course}', [AdminAcademyController::class, 'destroy'])->name('academy.destroy');
         Route::post('/akademi-kategori', [AdminAcademyController::class, 'storeCategory'])->name('academy.categories.store');
         Route::post('/akademi/{course}/bab', [AdminAcademyController::class, 'storeSection'])->name('academy.sections.store');
+        Route::put('/akademi/bab/{section}', [AdminAcademyController::class, 'updateSection'])->name('academy.sections.update');
         Route::post('/akademi/bab/{section}/materi', [AdminAcademyController::class, 'storeLesson'])->name('academy.lessons.store');
+        Route::put('/akademi/materi/{lesson}', [AdminAcademyController::class, 'updateLesson'])->name('academy.lessons.update');
         Route::delete('/akademi/materi/{lesson}', [AdminAcademyController::class, 'destroyLesson'])->name('academy.lessons.destroy');
         Route::post('/akademi/{course}/peserta', [AdminAcademyController::class, 'assign'])->name('academy.assign');
         Route::get('/operasional/{module}', [OperationsController::class, 'index'])->name('operations.index');

@@ -18,6 +18,7 @@
             <div class="col-lg-7">
                 <form class="form-card" action="{{ route('proposal.store') }}" method="post">
                     @csrf
+                    <input type="hidden" name="journey_source" value="{{ old('journey_source', $journeySource) }}">
                     <div class="form-section">
                         <span class="form-number">01</span>
                         <div>
@@ -72,12 +73,12 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label" for="company_name">Nama perusahaan/organisasi <small>(jika ada)</small></label>
-                            <input class="form-control @error('company_name') is-invalid @enderror" id="company_name" name="company_name" value="{{ old('company_name') }}" maxlength="160">
+                            <input class="form-control @error('company_name') is-invalid @enderror" id="company_name" name="company_name" value="{{ old('company_name', $prefillCompanyName) }}" maxlength="160">
                             @error('company_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12">
                             <label class="form-label" for="message">Ceritakan kebutuhan Anda</label>
-                            <textarea class="form-control @error('message') is-invalid @enderror" id="message" name="message" rows="5" maxlength="3000" placeholder="Contoh: ingin mendirikan PT untuk usaha perdagangan di Sumedang dan membutuhkan NIB.">{{ old('message') }}</textarea>
+                            <textarea class="form-control @error('message') is-invalid @enderror" id="message" name="message" rows="5" maxlength="3000" placeholder="Contoh: ingin mendirikan PT untuk usaha perdagangan di Sumedang dan membutuhkan NIB.">{{ old('message', $prefillMessage) }}</textarea>
                             @error('message')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12">
@@ -89,7 +90,7 @@
                         </div>
                     </div>
 
-                    <button class="btn btn-primary btn-lg mt-4" type="submit">Kirim permintaan</button>
+                    <button class="btn btn-primary btn-lg mt-4" type="submit">Kirim & lanjut ke WhatsApp</button>
                     <p class="form-privacy">Tim IzinHukum hanya menggunakan data untuk menindaklanjuti permintaan dan pelaksanaan layanan.</p>
                 </form>
             </div>
