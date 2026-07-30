@@ -22,11 +22,28 @@ class WhatsAppInboxController extends Controller
 {
     public function index(Request $request): View
     {
+        return view('admin.whatsapp.inbox', $this->inboxData($request));
+    }
+
+    public function show(Request $request, WhatsAppConversation $conversation): View
+    {
+        $conversation->load(['messages.crmDocument', 'messages.attemptsLog', 'assignee', 'serviceOrder', 'inquiry', 'partner', 'contact.labels', 'lead']);
+        $conversation->forceFill(['unread_count' => 0])->save();
+
+        return view('admin.whatsapp.conversation', array_merge($this->inboxData($request), [
+            'conversation' => $conversation,
+            'admins' => User::query()->where('role', 'admin')->where('is_active', true)->orderBy('name')->get(),
+            'vaultDocuments' => CrmDocument::query()->where('archive_status', 'stored')->whereNotNull('path')->when($conversation->contact_id, fn ($query) => $query->where('contact_id', $conversation->contact_id))->latest()->limit(500)->get(),
+        ]));
+    }
+
+    private function inboxData(Request $request): array
+    {
         $search = trim((string) $request->query('q'));
         $status = trim((string) $request->query('status'));
         $channel = trim((string) $request->query('channel'));
         $conversations = WhatsAppConversation::query()
-            ->with(['assignee', 'serviceOrder', 'contact.labels', 'lead'])
+            ->with(['assignee', 'serviceOrder', 'contact.labels', 'lead', 'latestMessage'])
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(fn (Builder $builder) => $builder
                     ->where('phone', 'like', '%'.$search.'%')
@@ -38,19 +55,7 @@ class WhatsAppInboxController extends Controller
             ->paginate(30)
             ->withQueryString();
 
-        return view('admin.whatsapp.inbox', compact('conversations', 'search', 'status', 'channel'));
-    }
-
-    public function show(WhatsAppConversation $conversation): View
-    {
-        $conversation->load(['messages.crmDocument', 'messages.attemptsLog', 'assignee', 'serviceOrder', 'inquiry', 'partner', 'contact.labels', 'lead']);
-        $conversation->forceFill(['unread_count' => 0])->save();
-
-        return view('admin.whatsapp.conversation', [
-            'conversation' => $conversation,
-            'admins' => User::query()->where('role', 'admin')->where('is_active', true)->orderBy('name')->get(),
-            'vaultDocuments' => CrmDocument::query()->where('archive_status', 'stored')->whereNotNull('path')->when($conversation->contact_id, fn ($query) => $query->where('contact_id', $conversation->contact_id))->latest()->limit(500)->get(),
-        ]);
+        return compact('conversations', 'search', 'status', 'channel');
     }
 
     public function reply(
