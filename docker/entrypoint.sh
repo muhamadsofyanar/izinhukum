@@ -93,4 +93,9 @@ php artisan kbli:ensure
 php artisan portal:secure-files
 php artisan optimize
 
+# Artisan startup commands run as root and may recreate cache files.
+# Restore ownership before PHP-FPM, queue, and scheduler begin serving traffic.
+chown -R www-data:www-data storage bootstrap/cache database
+chmod -R ug+rwX storage bootstrap/cache database
+
 exec "$@"
