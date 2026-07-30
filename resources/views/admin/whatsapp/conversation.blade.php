@@ -17,7 +17,7 @@
     @if($senderLabel)<strong class="wa-sender-label">{{ $senderLabel }}</strong>@endif
 @endif
 @if($message->body)<div class="wa-message-body">{{ $message->body }}</div>@endif
-@if($message->media_url)<a href="{{ $message->media_url }}" target="_blank" rel="noopener">Buka media ↗</a>@endif
+@if($message->crmDocument?->path)<a href="{{ route('admin.whatsapp.documents.download',$message->crmDocument) }}">Buka arsip privat</a>@elseif($message->media_url)<a href="{{ $message->media_url }}" target="_blank" rel="noopener">Buka media provider ↗</a>@endif
 <small>{{ $message->direction === 'inbound' ? 'Masuk' : 'Keluar' }} · {{ $message->created_at?->format('d/m/Y H:i:s') }} · {{ $message->status }}</small>
 </div>
 @empty<p class="wa-muted">Belum ada pesan.</p>@endforelse
@@ -27,7 +27,8 @@
 <form method="post" action="{{ route('admin.whatsapp.inbox.reply',$conversation) }}" class="wa-form-grid">@csrf
 <div><label>Tipe</label><select class="form-select" name="message_type"><option value="text">Teks</option><option value="image">Gambar</option><option value="document">Dokumen</option><option value="video">Video</option><option value="audio">Audio</option><option value="media">Media</option></select></div>
 <div><label>URL media opsional</label><input class="form-control" type="url" name="media_url"></div>
-<div class="full"><label>Isi balasan</label><textarea class="form-control" name="body" rows="5"></textarea></div>
+<div class="full"><label>Dokumen vault opsional</label><select class="form-select" name="crm_document_id"><option value="">Tanpa dokumen vault</option>@foreach($vaultDocuments as $document)<option value="{{ $document->id }}">{{ $document->name }}{{ $document->original_name ? ' · '.$document->original_name : '' }}</option>@endforeach</select><small class="wa-muted">Dokumen dikirim melalui tautan sementara 3 jam. Jangan pilih bersamaan dengan URL media.</small></div>
+<div class="full"><label>Isi balasan atau caption</label><textarea class="form-control" name="body" rows="5"></textarea></div>
 <div class="full"><button class="btn btn-primary">Kirim ke antrean</button></div>
 </form>
 </section>
@@ -36,7 +37,7 @@
 <p><strong>{{ $conversation->channel === 'group' ? 'JID grup' : 'Nomor' }}:</strong><br><code>{{ $conversation->phone }}</code></p>
 <p><strong>Kanal:</strong> {{ $conversation->channel === 'group' ? 'Grup' : 'Personal' }}</p>
 <p><strong>Perangkat:</strong> {{ $conversation->device_alias ?: 'support' }}</p>
-<p><strong>Tipe:</strong> {{ $conversation->contact_type }}</p>
+<p><strong>Tipe:</strong> {{ $conversation->contact_type }}</p>@if($conversation->contact)<p><strong>Kontak CRM:</strong><br><a href="{{ route('admin.whatsapp.contacts.show',$conversation->contact) }}">{{ $conversation->contact->name ?: $conversation->contact->phone }}</a></p><div class="wa-label-list mb-3">@foreach($conversation->contact->labels as $label)<span class="wa-label" style="--label-color:{{ $label->color }}">{{ $label->name }}</span>@endforeach</div>@endif @if($conversation->lead)<p><strong>Lead:</strong> {{ $conversation->lead->title }} · {{ $conversation->lead->stageLabel() }}</p>@endif
 @if($conversation->channel !== 'group')
 <p><strong>Order:</strong> {{ $conversation->serviceOrder?->order_number ?: '-' }}</p>
 <p><strong>Proposal:</strong> {{ $conversation->inquiry?->reference ?: '-' }}</p>

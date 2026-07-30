@@ -11,9 +11,9 @@ class WhatsAppConversation extends Model
     protected $table = 'whatsapp_conversations';
 
     protected $fillable = [
-        'phone', 'channel', 'device_alias', 'display_name', 'contact_type', 'partner_id', 'inquiry_id',
-        'service_order_id', 'assigned_to', 'status', 'unread_count', 'is_ai_blocked',
-        'labels', 'metadata', 'last_message_at', 'last_inbound_at', 'last_outbound_at',
+        'phone', 'channel', 'device_alias', 'display_name', 'contact_type', 'contact_id', 'lead_id',
+        'partner_id', 'inquiry_id', 'service_order_id', 'assigned_to', 'status', 'unread_count',
+        'is_ai_blocked', 'labels', 'metadata', 'last_message_at', 'last_inbound_at', 'last_outbound_at',
     ];
 
     protected function casts(): array
@@ -32,6 +32,16 @@ class WhatsAppConversation extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(WhatsAppMessage::class, 'conversation_id')->orderBy('created_at');
+    }
+
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(CrmContact::class, 'contact_id');
+    }
+
+    public function lead(): BelongsTo
+    {
+        return $this->belongsTo(CrmLead::class, 'lead_id');
     }
 
     public function partner(): BelongsTo

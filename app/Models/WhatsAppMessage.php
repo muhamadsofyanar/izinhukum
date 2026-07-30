@@ -9,10 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WhatsAppMessage extends Model
 {
-    protected $table = 'whatsapp_messages';
-
     protected $fillable = [
-        'conversation_id', 'template_id', 'inquiry_id', 'service_order_id', 'invoice_id',
+        'conversation_id', 'template_id', 'contact_id', 'lead_id', 'crm_document_id', 'inquiry_id', 'service_order_id', 'invoice_id',
         'payment_id', 'partner_id', 'created_by', 'direction', 'channel', 'phone',
         'recipient_name', 'message_type', 'body', 'media_url', 'device_alias', 'status',
         'provider_message_id', 'provider_device_id', 'idempotency_key', 'attempts',
@@ -52,6 +50,21 @@ class WhatsAppMessage extends Model
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(WhatsAppConversation::class, 'conversation_id');
+    }
+
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(CrmContact::class, 'contact_id');
+    }
+
+    public function lead(): BelongsTo
+    {
+        return $this->belongsTo(CrmLead::class, 'lead_id');
+    }
+
+    public function crmDocument(): BelongsTo
+    {
+        return $this->belongsTo(CrmDocument::class, 'crm_document_id');
     }
 
     public function template(): BelongsTo

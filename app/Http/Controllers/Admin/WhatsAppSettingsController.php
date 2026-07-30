@@ -34,6 +34,8 @@ class WhatsAppSettingsController extends Controller
             $featureRows = collect($features->all())->whereIn('key', [
                 'whatsapp', 'whatsapp_transactional', 'whatsapp_inbox', 'whatsapp_campaigns',
                 'whatsapp_autoreply', 'whatsapp_ai_assistant', 'whatsapp_rotator', 'whatsapp_provider_tools',
+                'crm_contacts', 'crm_leads', 'crm_sequences', 'crm_documents', 'crm_requirements',
+                'crm_faq', 'crm_media_archive', 'whatsapp_webhook_monitor',
             ])->values();
         } catch (Throwable $exception) {
             $settingsWarning = 'Feature flag belum dapat dibaca: '.$exception->getMessage();

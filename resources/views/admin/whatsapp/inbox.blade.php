@@ -13,13 +13,13 @@
 <div class="wa-table-wrap"><table class="wa-table"><thead><tr><th>Kontak atau grup</th><th>Kanal</th><th>Status</th><th>Belum dibaca</th><th>Order</th><th>Pesan terakhir</th><th></th></tr></thead><tbody>
 @forelse($conversations as $conversation)
 <tr>
-<td><strong>{{ $conversation->display_name ?: ($conversation->channel === 'group' ? 'Grup WhatsApp' : 'Nomor belum dikenal') }}</strong><br><code>{{ $conversation->phone }}</code></td>
+<td><strong>{{ $conversation->display_name ?: ($conversation->channel === 'group' ? 'Grup WhatsApp' : 'Nomor belum dikenal') }}</strong><br><code>{{ $conversation->phone }}</code>@if($conversation->contact)<div class="wa-label-list mt-2">@foreach($conversation->contact->labels as $label)<span class="wa-label" style="--label-color:{{ $label->color }}">{{ $label->name }}</span>@endforeach</div>@endif</td>
 <td><span class="wa-status {{ $conversation->channel === 'group' ? 'active' : '' }}">{{ $conversation->channel === 'group' ? 'Grup' : 'Personal' }}</span><br><small>{{ $conversation->contact_type }}</small></td>
 <td><span class="wa-status {{ $conversation->status }}">{{ $conversation->status }}</span>@if($conversation->is_ai_blocked && $conversation->channel !== 'group')<br><small>AI diblokir</small>@endif</td>
 <td>{{ $conversation->unread_count }}</td>
 <td>{{ $conversation->channel === 'group' ? '-' : ($conversation->serviceOrder?->order_number ?: '-') }}</td>
 <td>{{ $conversation->last_message_at?->format('d/m/Y H:i') ?: '-' }}</td>
-<td><a class="btn btn-sm btn-primary" href="{{ route('admin.whatsapp.inbox.show',$conversation) }}">Buka</a></td>
+<td><div class="wa-inline-actions"><a class="btn btn-sm btn-primary" href="{{ route('admin.whatsapp.inbox.show',$conversation) }}">Buka</a>@if($conversation->contact)<a class="btn btn-sm btn-outline-primary" href="{{ route('admin.whatsapp.contacts.show',$conversation->contact) }}">Kontak</a>@endif</div></td>
 </tr>
 @empty<tr><td colspan="7" class="wa-muted">Belum ada percakapan. Pasang URL webhook StarSender dan aktifkan feature flag Inbox. Pesan grup juga memerlukan Add-On Webhook Group.</td></tr>@endforelse
 </tbody></table></div>

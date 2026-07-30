@@ -115,6 +115,9 @@ class WhatsAppManager
         $message = WhatsAppMessage::query()->create([
             'conversation_id' => $conversation?->id,
             'template_id' => $data['template_id'] ?? null,
+            'contact_id' => $data['contact_id'] ?? $conversation?->contact_id,
+            'lead_id' => $data['lead_id'] ?? $conversation?->lead_id,
+            'crm_document_id' => $data['crm_document_id'] ?? null,
             'inquiry_id' => $data['inquiry_id'] ?? null,
             'service_order_id' => $data['service_order_id'] ?? null,
             'invoice_id' => $data['invoice_id'] ?? null,
@@ -181,6 +184,8 @@ class WhatsAppManager
         $conversation->channel = 'personal';
         $conversation->device_alias = $relations['device_alias'] ?? ($conversation->device_alias ?: 'support');
         $conversation->display_name = $name ?: $conversation->display_name;
+        $conversation->contact_id = $relations['contact_id'] ?? $conversation->contact_id;
+        $conversation->lead_id = $relations['lead_id'] ?? $conversation->lead_id;
         $conversation->partner_id = $relations['partner_id'] ?? $conversation->partner_id;
         $conversation->inquiry_id = $relations['inquiry_id'] ?? $conversation->inquiry_id;
         $conversation->service_order_id = $relations['service_order_id'] ?? $conversation->service_order_id;

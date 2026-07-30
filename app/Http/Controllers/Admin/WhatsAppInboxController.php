@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CrmDocument;
 use App\Models\User;
 use App\Models\WhatsAppConversation;
 use App\Rules\SafePublicUrl;
+use App\Services\Crm\CrmDocumentService;
 use App\Services\FeatureFlagService;
 use App\Services\WhatsApp\StarSenderClient;
 use App\Services\WhatsApp\WhatsAppAuditService;
@@ -24,7 +26,7 @@ class WhatsAppInboxController extends Controller
         $status = trim((string) $request->query('status'));
         $channel = trim((string) $request->query('channel'));
         $conversations = WhatsAppConversation::query()
-            ->with(['assignee', 'serviceOrder'])
+            ->with(['assignee', 'serviceOrder', 'contact.labels', 'lead'])
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(fn (Builder $builder) => $builder
                     ->where('phone', 'like', '%'.$search.'%')
@@ -41,12 +43,13 @@ class WhatsAppInboxController extends Controller
 
     public function show(WhatsAppConversation $conversation): View
     {
-        $conversation->load(['messages.attemptsLog', 'assignee', 'serviceOrder', 'inquiry', 'partner']);
+        $conversation->load(['messages.crmDocument', 'messages.attemptsLog', 'assignee', 'serviceOrder', 'inquiry', 'partner', 'contact.labels', 'lead']);
         $conversation->forceFill(['unread_count' => 0])->save();
 
         return view('admin.whatsapp.conversation', [
             'conversation' => $conversation,
             'admins' => User::query()->where('role', 'admin')->where('is_active', true)->orderBy('name')->get(),
+            'vaultDocuments' => CrmDocument::query()->where('archive_status', 'stored')->whereNotNull('path')->when($conversation->contact_id, fn ($query) => $query->where('contact_id', $conversation->contact_id))->latest()->limit(500)->get(),
         ]);
     }
 
@@ -54,17 +57,30 @@ class WhatsAppInboxController extends Controller
         Request $request,
         WhatsAppConversation $conversation,
         WhatsAppManager $manager,
+        CrmDocumentService $documents,
         WhatsAppAuditService $audit,
     ): RedirectResponse {
         $data = $request->validate([
             'body' => ['nullable', 'string', 'max:10000'],
             'media_url' => ['nullable', 'url', 'max:2048', new SafePublicUrl],
             'message_type' => ['required', 'in:text,image,document,video,audio,media'],
+            'crm_document_id' => ['nullable', 'exists:crm_documents,id'],
         ]);
 
-        if (blank($data['body'] ?? null) && blank($data['media_url'] ?? null)) {
-            return back()->withErrors(['body' => 'Isi balasan atau URL media wajib diisi.']);
+        if (filled($data['media_url'] ?? null) && filled($data['crm_document_id'] ?? null)) {
+            return back()->withErrors(['crm_document_id' => 'Pilih URL media atau dokumen vault, jangan keduanya.']);
         }
+        if (blank($data['body'] ?? null) && blank($data['media_url'] ?? null) && blank($data['crm_document_id'] ?? null)) {
+            return back()->withErrors(['body' => 'Isi balasan, URL media, atau dokumen vault wajib diisi.']);
+        }
+
+        $crmDocument = filled($data['crm_document_id'] ?? null) ? CrmDocument::query()->findOrFail($data['crm_document_id']) : null;
+        if ($crmDocument && ! $documents->pathExists($crmDocument)) {
+            return back()->withErrors(['crm_document_id' => 'Dokumen vault tidak ditemukan di penyimpanan.']);
+        }
+        $mediaUrl = $crmDocument
+            ? $documents->issueProviderAccess($crmDocument, 180, $request->attributes->get('currentUser')?->id)
+            : ($data['media_url'] ?? null);
 
         $isGroup = $conversation->channel === 'group' || $conversation->contact_type === 'group';
         $message = $manager->queueRaw([
@@ -72,8 +88,9 @@ class WhatsAppInboxController extends Controller
             'recipient_name' => $conversation->display_name,
             'channel' => $isGroup ? 'group' : 'personal',
             'body' => $data['body'] ?? null,
-            'media_url' => $data['media_url'] ?? null,
-            'message_type' => $data['message_type'],
+            'media_url' => $mediaUrl,
+            'crm_document_id' => $crmDocument?->id,
+            'message_type' => $crmDocument ? 'document' : $data['message_type'],
             'device_alias' => $conversation->device_alias ?: 'support',
             'conversation_id' => $conversation->id,
             'partner_id' => $conversation->partner_id,

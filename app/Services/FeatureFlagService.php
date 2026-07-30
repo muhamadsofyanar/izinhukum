@@ -81,7 +81,7 @@ class FeatureFlagService
         ],
         'whatsapp_ai_assistant' => [
             'label' => 'AI Assistant WhatsApp',
-            'description' => 'Menyiapkan mode bantuan AI. V11 tidak mengirim jawaban hukum otomatis tanpa provider dan persetujuan admin.',
+            'description' => 'Menyiapkan mode bantuan AI. Sistem tidak mengirim jawaban hukum kompleks otomatis tanpa aturan yang disetujui dan pengalihan ke admin.',
             'default' => false,
         ],
         'whatsapp_rotator' => [
@@ -92,6 +92,46 @@ class FeatureFlagService
         'whatsapp_provider_tools' => [
             'label' => 'Alat provider StarSender',
             'description' => 'Mengizinkan operasi tulis berisiko tinggi seperti membuat kontak, campaign provider, relog, dan menghapus perangkat.',
+            'default' => false,
+        ],
+        'crm_contacts' => [
+            'label' => 'CRM Kontak dan label',
+            'description' => 'Menampilkan daftar kontak terpusat, label, penanggung jawab, dan riwayat kontak.',
+            'default' => false,
+        ],
+        'crm_leads' => [
+            'label' => 'CRM Lead dan pipeline',
+            'description' => 'Mengelola calon klien dari bertanya, penawaran, deal, persyaratan, proses, hingga selesai.',
+            'default' => false,
+        ],
+        'crm_sequences' => [
+            'label' => 'Sequence follow-up',
+            'description' => 'Menjalankan rangkaian pesan terjadwal untuk kontak, label, atau kategori grup.',
+            'default' => false,
+        ],
+        'crm_documents' => [
+            'label' => 'Document Vault',
+            'description' => 'Mengarsipkan lampiran WhatsApp dan dokumen klien secara privat serta mengirim dokumen final.',
+            'default' => false,
+        ],
+        'crm_requirements' => [
+            'label' => 'Checklist persyaratan',
+            'description' => 'Mengelola persyaratan layanan, status penerimaan, revisi, dan verifikasi dokumen.',
+            'default' => false,
+        ],
+        'crm_faq' => [
+            'label' => 'FAQ otomatis terkontrol',
+            'description' => 'Menjawab pertanyaan umum berdasarkan aturan yang disetujui admin dan dapat dialihkan ke admin.',
+            'default' => false,
+        ],
+        'crm_media_archive' => [
+            'label' => 'Arsip lampiran WhatsApp',
+            'description' => 'Menyalin media masuk dari URL provider ke penyimpanan privat IzinHukum.',
+            'default' => false,
+        ],
+        'whatsapp_webhook_monitor' => [
+            'label' => 'Monitor webhook WhatsApp',
+            'description' => 'Menampilkan webhook masuk, status proses, error, dan tombol retry.',
             'default' => false,
         ],
     ];

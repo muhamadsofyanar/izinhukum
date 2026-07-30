@@ -13,3 +13,6 @@ Schedule::command('whatsapp:sync-status --limit=100')->everyTenMinutes()->withou
 Schedule::command('whatsapp:sync-devices')->hourly()->withoutOverlapping();
 
 Schedule::command('whatsapp:prune')->dailyAt('02:20')->withoutOverlapping();
+
+Schedule::command('crm:dispatch-sequences --limit=500')->everyMinute()->withoutOverlapping();
+Schedule::command('crm:archive-whatsapp-media --limit=50')->everyFiveMinutes()->withoutOverlapping();

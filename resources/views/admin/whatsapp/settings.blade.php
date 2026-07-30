@@ -48,7 +48,7 @@
             @csrf
             <div><label>Nomor tujuan</label><input class="form-control" name="phone" placeholder="08xxxxxxxxxx" required></div>
             <div><label>Perangkat</label><select class="form-select" name="device_alias"><option value="transaction">Transaksi</option><option value="support">Support</option><option value="partner">Mitra</option><option value="campaign">Campaign</option><option value="default">Default</option></select></div>
-            <div class="full"><label>Isi pesan</label><textarea class="form-control" name="body" rows="5" required>Pesan uji IzinHukum V11. Mohon abaikan pesan ini.</textarea></div>
+            <div class="full"><label>Isi pesan</label><textarea class="form-control" name="body" rows="5" required>Pesan uji IzinHukum V12. Mohon abaikan pesan ini.</textarea></div>
             <div class="full"><button class="btn btn-primary" type="submit">Masukkan ke antrean</button></div>
         </form>
     </section>

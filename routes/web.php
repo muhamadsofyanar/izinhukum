@@ -14,6 +14,13 @@ use App\Http\Controllers\Admin\PartnerController as AdminPartnerController;
 use App\Http\Controllers\Admin\ServiceOrderController as AdminServiceOrderController;
 use App\Http\Controllers\Admin\WhatsAppAutomationController;
 use App\Http\Controllers\Admin\WhatsAppCampaignController;
+use App\Http\Controllers\Admin\WhatsAppContactController;
+use App\Http\Controllers\Admin\WhatsAppDocumentController;
+use App\Http\Controllers\Admin\WhatsAppFaqController;
+use App\Http\Controllers\Admin\WhatsAppLabelController;
+use App\Http\Controllers\Admin\WhatsAppLeadController;
+use App\Http\Controllers\Admin\WhatsAppSequenceController;
+use App\Http\Controllers\Admin\WhatsAppWebhookMonitorController;
 use App\Http\Controllers\Admin\WhatsAppDashboardController;
 use App\Http\Controllers\Admin\WhatsAppDeviceController;
 use App\Http\Controllers\Admin\WhatsAppInboxController;
@@ -24,6 +31,7 @@ use App\Http\Controllers\Admin\WhatsAppSettingsController;
 use App\Http\Controllers\Admin\WhatsAppTemplateController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CrmDocumentProviderController;
 use App\Http\Controllers\CustomerOrderController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HomeController;
@@ -54,6 +62,9 @@ use App\Http\Controllers\StarSenderWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/healthz', HealthController::class)->name('healthz');
+Route::get('/crm-document/{link}/{token}', CrmDocumentProviderController::class)
+    ->middleware('throttle:60,1')
+    ->name('crm.documents.provider-download');
 Route::post('/webhooks/starsender/{secret}', StarSenderWebhookController::class)
     ->middleware('throttle:120,1')
     ->name('webhooks.starsender');
@@ -190,6 +201,53 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             Route::post('/grup/kategori', [WhatsAppGroupController::class, 'savePreset'])->name('groups.presets.save');
             Route::delete('/grup/kategori/{preset}', [WhatsAppGroupController::class, 'deletePreset'])->name('groups.presets.delete');
             Route::post('/grup/kirim-banyak', [WhatsAppGroupController::class, 'sendMany'])->middleware('throttle:10,1')->name('groups.send-many');
+
+
+            Route::get('/kontak', [WhatsAppContactController::class, 'index'])->name('contacts.index');
+            Route::post('/kontak', [WhatsAppContactController::class, 'store'])->name('contacts.store');
+            Route::get('/kontak-ekspor', [WhatsAppContactController::class, 'export'])->name('contacts.export');
+            Route::post('/kontak-impor', [WhatsAppContactController::class, 'import'])->name('contacts.import');
+            Route::get('/kontak/{contact}', [WhatsAppContactController::class, 'show'])->name('contacts.show');
+            Route::put('/kontak/{contact}', [WhatsAppContactController::class, 'update'])->name('contacts.update');
+            Route::put('/kontak/{contact}/label', [WhatsAppContactController::class, 'labels'])->name('contacts.labels');
+            Route::post('/kontak/{contact}/kirim', [WhatsAppContactController::class, 'send'])->middleware('throttle:30,1')->name('contacts.send');
+            Route::post('/kontak/{contact}/sequence', [WhatsAppContactController::class, 'enroll'])->name('contacts.sequences.enroll');
+            Route::post('/label', [WhatsAppLabelController::class, 'store'])->name('labels.store');
+            Route::put('/label/{label}', [WhatsAppLabelController::class, 'update'])->name('labels.update');
+            Route::delete('/label/{label}', [WhatsAppLabelController::class, 'destroy'])->name('labels.destroy');
+
+            Route::get('/crm', [WhatsAppLeadController::class, 'index'])->name('leads.index');
+            Route::post('/crm', [WhatsAppLeadController::class, 'store'])->name('leads.store');
+            Route::put('/crm/{lead}', [WhatsAppLeadController::class, 'update'])->name('leads.update');
+            Route::post('/crm/{lead}/order', [WhatsAppLeadController::class, 'createOrder'])->name('leads.orders.store');
+            Route::post('/crm/{lead}/persyaratan', [WhatsAppLeadController::class, 'applyRequirements'])->name('leads.requirements.apply');
+            Route::post('/crm/{lead}/persyaratan/kirim', [WhatsAppLeadController::class, 'sendRequirements'])->middleware('throttle:20,1')->name('leads.requirements.send');
+            Route::put('/persyaratan/{requirement}', [WhatsAppLeadController::class, 'updateRequirement'])->name('requirements.update');
+
+            Route::get('/sequence', [WhatsAppSequenceController::class, 'index'])->name('sequences.index');
+            Route::post('/sequence', [WhatsAppSequenceController::class, 'store'])->name('sequences.store');
+            Route::get('/sequence/{sequence}', [WhatsAppSequenceController::class, 'show'])->name('sequences.show');
+            Route::put('/sequence/{sequence}', [WhatsAppSequenceController::class, 'update'])->name('sequences.update');
+            Route::post('/sequence/{sequence}/langkah', [WhatsAppSequenceController::class, 'addStep'])->name('sequences.steps.store');
+            Route::delete('/sequence/{sequence}/langkah/{step}', [WhatsAppSequenceController::class, 'deleteStep'])->name('sequences.steps.destroy');
+            Route::post('/sequence/{sequence}/target', [WhatsAppSequenceController::class, 'enroll'])->name('sequences.enroll');
+            Route::post('/sequence-target/{enrollment}', [WhatsAppSequenceController::class, 'enrollmentAction'])->name('sequences.enrollments.action');
+
+            Route::get('/dokumen', [WhatsAppDocumentController::class, 'index'])->name('documents.index');
+            Route::post('/dokumen', [WhatsAppDocumentController::class, 'store'])->name('documents.store');
+            Route::post('/dokumen/kirim-banyak', [WhatsAppDocumentController::class, 'sendMany'])->middleware('throttle:10,1')->name('documents.send-many');
+            Route::get('/dokumen/{document}/unduh', [WhatsAppDocumentController::class, 'download'])->name('documents.download');
+            Route::post('/dokumen/{document}/arsipkan', [WhatsAppDocumentController::class, 'archive'])->name('documents.archive');
+            Route::put('/dokumen/{document}', [WhatsAppDocumentController::class, 'update'])->name('documents.update');
+            Route::post('/dokumen/{document}/kirim', [WhatsAppDocumentController::class, 'send'])->middleware('throttle:20,1')->name('documents.send');
+
+            Route::get('/faq', [WhatsAppFaqController::class, 'index'])->name('faq.index');
+            Route::post('/faq', [WhatsAppFaqController::class, 'store'])->name('faq.store');
+            Route::put('/faq/{faq}', [WhatsAppFaqController::class, 'update'])->name('faq.update');
+            Route::delete('/faq/{faq}', [WhatsAppFaqController::class, 'destroy'])->name('faq.destroy');
+
+            Route::get('/webhook-monitor', [WhatsAppWebhookMonitorController::class, 'index'])->name('webhooks.index');
+            Route::post('/webhook-monitor/{event}/retry', [WhatsAppWebhookMonitorController::class, 'retry'])->name('webhooks.retry');
 
             Route::get('/pesan', [WhatsAppMessageController::class, 'index'])->name('messages.index');
             Route::post('/pesan', [WhatsAppMessageController::class, 'store'])->middleware('throttle:30,1')->name('messages.store');

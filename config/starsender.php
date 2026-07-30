@@ -22,6 +22,8 @@ return [
     'premium_webhook_enabled' => env('STARSENDER_WEBHOOK_PREMIUM_ENABLED', false),
     'media_webhook_enabled' => env('STARSENDER_WEBHOOK_MEDIA_ENABLED', false),
     'group_webhook_enabled' => env('STARSENDER_WEBHOOK_GROUP_ENABLED', false),
+    'media_allowed_hosts' => array_values(array_filter(array_map('trim', explode(',', (string) env('STARSENDER_MEDIA_ALLOWED_HOSTS', 'starsender.online'))))),
+    'media_archive_max_bytes' => (int) env('STARSENDER_MEDIA_ARCHIVE_MAX_BYTES', 20971520),
     'webhook_retention_days' => (int) env('STARSENDER_WEBHOOK_RETENTION_DAYS', 90),
     'technical_log_retention_days' => (int) env('STARSENDER_TECHNICAL_LOG_RETENTION_DAYS', 180),
 ];

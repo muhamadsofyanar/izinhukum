@@ -8,7 +8,7 @@
 @include('admin.whatsapp._nav')
 
 @if(!$ready)
-<div class="alert alert-warning">Tabel V11 belum tersedia. Pastikan migration deployment telah selesai.</div>
+<div class="alert alert-warning">Tabel WhatsApp/CRM belum tersedia. Pastikan migration deployment telah selesai.</div>
 @endif
 
 <div class="wa-grid">
@@ -19,6 +19,10 @@
         ['label'=>'Pesan belum dibaca','value'=>$stats['unread']],
         ['label'=>'Campaign aktif','value'=>$stats['campaigns']],
         ['label'=>'Opt-out','value'=>$stats['opt_outs']],
+        ['label'=>'Kontak CRM','value'=>$stats['contacts']],
+        ['label'=>'Lead aktif','value'=>$stats['active_leads']],
+        ['label'=>'Dokumen pending','value'=>$stats['documents_pending']],
+        ['label'=>'Webhook gagal','value'=>$stats['webhook_failed']],
     ] as $stat)
     <section class="wa-card wa-stat wa-span-4"><strong>{{ number_format($stat['value'], 0, ',', '.') }}</strong><span>{{ $stat['label'] }}</span></section>
     @endforeach
