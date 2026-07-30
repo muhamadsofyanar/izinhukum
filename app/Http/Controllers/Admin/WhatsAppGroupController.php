@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\WhatsAppGroup;
-use App\Models\WhatsAppGroupSelection;
+use App\Models\WhatsAppGroupPreset;
 use App\Models\WhatsAppMessage;
 use App\Rules\SafePublicUrl;
 use App\Services\WhatsApp\WhatsAppAuditService;
@@ -25,10 +25,7 @@ class WhatsAppGroupController extends Controller
 {
     public function index(Request $request): View
     {
-        $deviceAlias = trim((string) $request->query('device_alias', 'support'));
-        if (! in_array($deviceAlias, ['default', 'transaction', 'support', 'partner', 'campaign'], true)) {
-            $deviceAlias = 'support';
-        }
+        $deviceAlias = $this->normalizeDeviceAlias((string) $request->query('device_alias', 'support'));
 
         $groups = WhatsAppGroup::query()
             ->where('device_alias', $deviceAlias)
@@ -37,19 +34,30 @@ class WhatsAppGroupController extends Controller
             ->orderBy('group_jid')
             ->get();
 
-        $savedGroupIds = [];
         $currentUserId = $request->attributes->get('currentUser')?->id;
-        if ($currentUserId && Schema::hasTable('whatsapp_group_selections')) {
-            $selection = WhatsAppGroupSelection::query()
+        $presets = collect();
+        $activePreset = null;
+        $savedGroupIds = [];
+
+        if ($currentUserId && Schema::hasTable('whatsapp_group_presets')) {
+            $presets = WhatsAppGroupPreset::query()
                 ->where('user_id', $currentUserId)
                 ->where('device_alias', $deviceAlias)
-                ->first();
+                ->orderBy('name')
+                ->get();
 
-            $activeIds = $groups->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
-            $savedGroupIds = array_values(array_intersect(
-                array_map('intval', (array) ($selection?->group_ids ?? [])),
-                $activeIds,
-            ));
+            $requestedPresetId = (int) $request->query('preset_id', 0);
+            if ($requestedPresetId > 0) {
+                $activePreset = $presets->firstWhere('id', $requestedPresetId);
+            }
+
+            if ($activePreset) {
+                $activeIds = $groups->pluck('id')->map(fn (mixed $id): int => (int) $id)->all();
+                $savedGroupIds = array_values(array_intersect(
+                    array_map('intval', (array) $activePreset->group_ids),
+                    $activeIds,
+                ));
+            }
         }
 
         $recentMessages = WhatsAppMessage::query()
@@ -58,7 +66,14 @@ class WhatsAppGroupController extends Controller
             ->paginate(25)
             ->withQueryString();
 
-        return view('admin.whatsapp.groups', compact('groups', 'recentMessages', 'deviceAlias', 'savedGroupIds'));
+        return view('admin.whatsapp.groups', compact(
+            'groups',
+            'recentMessages',
+            'deviceAlias',
+            'presets',
+            'activePreset',
+            'savedGroupIds',
+        ));
     }
 
     public function sync(
@@ -68,6 +83,7 @@ class WhatsAppGroupController extends Controller
     ): RedirectResponse {
         $data = $request->validate([
             'device_alias' => ['required', 'in:default,transaction,support,partner,campaign'],
+            'preset_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
         try {
@@ -78,30 +94,112 @@ class WhatsAppGroupController extends Controller
             ]);
 
             return redirect()
-                ->route('admin.whatsapp.groups.index', ['device_alias' => $data['device_alias']])
+                ->route('admin.whatsapp.groups.index', array_filter([
+                    'device_alias' => $data['device_alias'],
+                    'preset_id' => $data['preset_id'] ?? null,
+                ]))
                 ->with('success', $result['count'].' grup WhatsApp berhasil disinkronkan.');
         } catch (Throwable $exception) {
             return back()->withErrors(['groups' => $exception->getMessage()]);
         }
     }
 
-    public function clearSelection(Request $request): RedirectResponse
-    {
+    public function savePreset(
+        Request $request,
+        WhatsAppAuditService $audit,
+    ): RedirectResponse {
         $data = $request->validate([
+            'selected_group_ids' => ['required', 'string', 'json'],
             'device_alias' => ['required', 'in:default,transaction,support,partner,campaign'],
+            'preset_id' => ['nullable', 'integer', 'min:1'],
+            'preset_name' => ['required', 'string', 'max:100'],
         ]);
 
         $currentUserId = $request->attributes->get('currentUser')?->id;
-        if ($currentUserId && Schema::hasTable('whatsapp_group_selections')) {
-            WhatsAppGroupSelection::query()
-                ->where('user_id', $currentUserId)
-                ->where('device_alias', $data['device_alias'])
-                ->delete();
+        abort_unless($currentUserId, 403);
+
+        if (! Schema::hasTable('whatsapp_group_presets')) {
+            throw ValidationException::withMessages([
+                'preset_name' => 'Tabel kategori grup belum tersedia. Jalankan migrasi database terlebih dahulu.',
+            ]);
         }
 
+        $groupIds = $this->parseSelectedGroupIds($data['selected_group_ids']);
+        $groups = $this->resolveSelectedGroups($groupIds, $data['device_alias']);
+        $name = trim($data['preset_name']);
+        $presetId = isset($data['preset_id']) ? (int) $data['preset_id'] : null;
+
+        $duplicateQuery = WhatsAppGroupPreset::query()
+            ->where('user_id', $currentUserId)
+            ->where('device_alias', $data['device_alias'])
+            ->whereRaw('LOWER(name) = LOWER(?)', [$name]);
+
+        if ($presetId) {
+            $duplicateQuery->where('id', '!=', $presetId);
+        }
+
+        if ($duplicateQuery->exists()) {
+            throw ValidationException::withMessages([
+                'preset_name' => 'Nama kategori tersebut sudah digunakan pada perangkat ini.',
+            ]);
+        }
+
+        if ($presetId) {
+            $preset = WhatsAppGroupPreset::query()
+                ->whereKey($presetId)
+                ->where('user_id', $currentUserId)
+                ->where('device_alias', $data['device_alias'])
+                ->firstOrFail();
+
+            $preset->update([
+                'name' => $name,
+                'group_ids' => $groups->pluck('id')->map(fn (mixed $id): int => (int) $id)->values()->all(),
+            ]);
+            $message = 'Kategori "'.$preset->name.'" berhasil diperbarui.';
+            $event = 'whatsapp.group_preset_updated';
+        } else {
+            $preset = WhatsAppGroupPreset::query()->create([
+                'user_id' => $currentUserId,
+                'device_alias' => $data['device_alias'],
+                'name' => $name,
+                'group_ids' => $groups->pluck('id')->map(fn (mixed $id): int => (int) $id)->values()->all(),
+            ]);
+            $message = 'Kategori "'.$preset->name.'" berhasil disimpan.';
+            $event = 'whatsapp.group_preset_created';
+        }
+
+        $audit->record($request, $event, $preset, [
+            'device_alias' => $data['device_alias'],
+            'group_count' => $groups->count(),
+        ]);
+
         return redirect()
-            ->route('admin.whatsapp.groups.index', ['device_alias' => $data['device_alias']])
-            ->with('success', 'Pilihan grup tersimpan telah dihapus.');
+            ->route('admin.whatsapp.groups.index', [
+                'device_alias' => $data['device_alias'],
+                'preset_id' => $preset->id,
+            ])
+            ->with('success', $message);
+    }
+
+    public function deletePreset(
+        Request $request,
+        WhatsAppGroupPreset $preset,
+        WhatsAppAuditService $audit,
+    ): RedirectResponse {
+        $currentUserId = $request->attributes->get('currentUser')?->id;
+        abort_unless($currentUserId && (int) $preset->user_id === (int) $currentUserId, 404);
+
+        $deviceAlias = $preset->device_alias;
+        $name = $preset->name;
+        $audit->record($request, 'whatsapp.group_preset_deleted', $preset, [
+            'device_alias' => $deviceAlias,
+            'group_count' => count((array) $preset->group_ids),
+        ]);
+        $preset->delete();
+
+        return redirect()
+            ->route('admin.whatsapp.groups.index', ['device_alias' => $deviceAlias])
+            ->with('success', 'Kategori "'.$name.'" berhasil dihapus.');
     }
 
     public function sendMany(
@@ -112,6 +210,7 @@ class WhatsAppGroupController extends Controller
         $data = $request->validate([
             'selected_group_ids' => ['required', 'string', 'json'],
             'device_alias' => ['required', 'in:default,transaction,support,partner,campaign'],
+            'preset_id' => ['nullable', 'integer', 'min:1'],
             'message_type' => ['required', 'in:text,image,document,video,audio,media'],
             'body' => ['nullable', 'string', 'max:10000'],
             'media_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
@@ -121,16 +220,7 @@ class WhatsAppGroupController extends Controller
             'confirm_group_policy' => ['accepted'],
         ]);
 
-        $groupIds = collect(json_decode($data['selected_group_ids'], true, 512, JSON_THROW_ON_ERROR))
-            ->map(fn (mixed $id): int => (int) $id)
-            ->filter(fn (int $id): bool => $id > 0)
-            ->unique()
-            ->values()
-            ->all();
-        if ($groupIds === []) {
-            throw ValidationException::withMessages(['group_ids' => 'Pilih minimal satu grup.']);
-        }
-
+        $groupIds = $this->parseSelectedGroupIds($data['selected_group_ids']);
         $messageType = $request->hasFile('media_file') ? 'image' : $data['message_type'];
         $mediaUrl = filled($data['media_url'] ?? null) ? trim((string) $data['media_url']) : null;
 
@@ -145,21 +235,7 @@ class WhatsAppGroupController extends Controller
             throw ValidationException::withMessages(['media_file' => 'Unggah gambar atau isi URL media yang dapat diakses StarSender.']);
         }
 
-        $groups = WhatsAppGroup::query()
-            ->whereIn('id', $groupIds)
-            ->where('device_alias', $data['device_alias'])
-            ->where('is_active', true)
-            ->orderBy('id')
-            ->get();
-
-        if ($groups->count() !== count($groupIds)) {
-            throw ValidationException::withMessages([
-                'group_ids' => 'Sebagian grup tidak aktif atau berasal dari perangkat yang berbeda. Sinkronkan ulang dan pilih kembali.',
-            ]);
-        }
-
-        $this->saveSelection($request, $data['device_alias'], $groups->pluck('id')->all());
-
+        $groups = $this->resolveSelectedGroups($groupIds, $data['device_alias']);
         $batchId = (string) Str::uuid();
         $baseSchedule = filled($data['scheduled_at'] ?? null) ? Carbon::parse($data['scheduled_at']) : null;
         $interGroupDelay = (int) $data['delay_seconds'];
@@ -192,6 +268,7 @@ class WhatsAppGroupController extends Controller
                     'metadata' => [
                         'source' => 'admin_group_multi_send',
                         'group_id' => $group->id,
+                        'group_preset_id' => $data['preset_id'] ?? null,
                         'batch_id' => $batchId,
                         'batch_position' => $index + 1,
                         'batch_total' => $groups->count(),
@@ -215,6 +292,7 @@ class WhatsAppGroupController extends Controller
         $audit->record($request, 'whatsapp.group_batch_queued', null, [
             'batch_id' => $batchId,
             'group_count' => $queued,
+            'group_preset_id' => $data['preset_id'] ?? null,
             'device_alias' => $data['device_alias'],
             'message_type' => $messageType,
             'has_media' => filled($mediaUrl),
@@ -222,21 +300,54 @@ class WhatsAppGroupController extends Controller
         ]);
 
         return redirect()
-            ->route('admin.whatsapp.groups.index', ['device_alias' => $data['device_alias']])
-            ->with('success', $queued.' pesan grup masuk antrean. Pilihan grup telah disimpan untuk pengiriman berikutnya.');
+            ->route('admin.whatsapp.groups.index', array_filter([
+                'device_alias' => $data['device_alias'],
+                'preset_id' => $data['preset_id'] ?? null,
+            ]))
+            ->with('success', $queued.' pesan grup berhasil dimasukkan ke antrean.');
     }
 
-    private function saveSelection(Request $request, string $deviceAlias, array $groupIds): void
+    private function normalizeDeviceAlias(string $deviceAlias): string
     {
-        $currentUserId = $request->attributes->get('currentUser')?->id;
-        if (! $currentUserId || ! Schema::hasTable('whatsapp_group_selections')) {
-            return;
+        $deviceAlias = trim($deviceAlias);
+
+        return in_array($deviceAlias, ['default', 'transaction', 'support', 'partner', 'campaign'], true)
+            ? $deviceAlias
+            : 'support';
+    }
+
+    private function parseSelectedGroupIds(string $json): array
+    {
+        $groupIds = collect(json_decode($json, true, 512, JSON_THROW_ON_ERROR))
+            ->map(fn (mixed $id): int => (int) $id)
+            ->filter(fn (int $id): bool => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($groupIds === []) {
+            throw ValidationException::withMessages(['group_ids' => 'Pilih minimal satu grup.']);
         }
 
-        WhatsAppGroupSelection::query()->updateOrCreate(
-            ['user_id' => $currentUserId, 'device_alias' => $deviceAlias],
-            ['group_ids' => array_values(array_map('intval', $groupIds))],
-        );
+        return $groupIds;
+    }
+
+    private function resolveSelectedGroups(array $groupIds, string $deviceAlias)
+    {
+        $groups = WhatsAppGroup::query()
+            ->whereIn('id', $groupIds)
+            ->where('device_alias', $deviceAlias)
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->get();
+
+        if ($groups->count() !== count($groupIds)) {
+            throw ValidationException::withMessages([
+                'group_ids' => 'Sebagian grup tidak aktif atau berasal dari perangkat yang berbeda. Sinkronkan ulang dan pilih kembali.',
+            ]);
+        }
+
+        return $groups;
     }
 
     private function storeUploadedGroupImage(Request $request): string

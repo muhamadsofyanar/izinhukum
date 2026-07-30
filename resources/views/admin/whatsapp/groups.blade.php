@@ -8,6 +8,7 @@
     $checkedGroupIds = is_array($oldSelectedGroupIds) && count($oldSelectedGroupIds) > 0
         ? array_map('intval', $oldSelectedGroupIds)
         : array_map('intval', $savedGroupIds);
+    $activePresetId = $activePreset?->id;
 @endphp
 <div class="wa-grid">
     <section class="wa-card wa-span-4">
@@ -15,6 +16,7 @@
         <p class="wa-muted">Daftar grup diambil langsung dari perangkat StarSender memakai Device API Key. Sinkronkan ulang setelah perangkat bergabung atau keluar dari grup.</p>
         <form method="post" action="{{ route('admin.whatsapp.groups.sync') }}" class="wa-form-grid">
             @csrf
+            <input type="hidden" name="preset_id" value="{{ $activePresetId }}">
             <div class="full">
                 <label>Perangkat</label>
                 <select class="form-select" name="device_alias">
@@ -36,23 +38,90 @@
                 </select>
             </div>
         </form>
-        @if(count($savedGroupIds) > 0)
-            <hr>
-            <p class="wa-muted"><strong>{{ count($savedGroupIds) }} grup</strong> tersimpan sebagai pilihan terakhir pada perangkat ini.</p>
-            <form method="post" action="{{ route('admin.whatsapp.groups.selection.clear') }}">
-                @csrf
-                <input type="hidden" name="device_alias" value="{{ $deviceAlias }}">
-                <button class="btn btn-outline-danger" type="submit">Hapus pilihan tersimpan</button>
-            </form>
-        @endif
     </section>
 
     <section class="wa-card wa-span-8">
+        <h2>Kategori grup tersimpan</h2>
+        <p class="wa-muted">Simpan beberapa kumpulan grup dengan nama berbeda, misalnya Klien, Tamu, Komunitas Bisnis, atau Grup Belajar.</p>
+
+        <form method="get" class="wa-form-grid">
+            <input type="hidden" name="device_alias" value="{{ $deviceAlias }}">
+            <div class="full">
+                <label>Pilih kategori</label>
+                <select class="form-select" name="preset_id" onchange="this.form.submit()">
+                    <option value="">Kategori baru atau tanpa kategori</option>
+                    @foreach($presets as $preset)
+                        <option value="{{ $preset->id }}" @selected((int)$activePresetId === (int)$preset->id)>
+                            {{ $preset->name }} ({{ count((array)$preset->group_ids) }} grup)
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </form>
+
+        @if($presets->isNotEmpty())
+            <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem">
+                @foreach($presets as $preset)
+                    <a class="btn {{ (int)$activePresetId === (int)$preset->id ? 'btn-primary' : 'btn-outline-secondary' }}"
+                       href="{{ route('admin.whatsapp.groups.index', ['device_alias' => $deviceAlias, 'preset_id' => $preset->id]) }}">
+                        {{ $preset->name }} · {{ count((array)$preset->group_ids) }} grup
+                    </a>
+                @endforeach
+            </div>
+        @endif
+
+        <hr>
+
+        <form method="post" action="{{ route('admin.whatsapp.groups.presets.save') }}" class="wa-form-grid" id="wa-group-preset-form">
+            @csrf
+            <input type="hidden" name="device_alias" value="{{ $deviceAlias }}">
+            <input type="hidden" name="preset_id" value="{{ $activePresetId }}">
+            <input type="hidden" name="selected_group_ids" id="wa-preset-selected-group-ids" value="{{ json_encode($checkedGroupIds) }}">
+            <div class="full">
+                <label>Nama kategori</label>
+                <input class="form-control" type="text" name="preset_name" maxlength="100" required
+                       value="{{ old('preset_name', $activePreset?->name) }}"
+                       placeholder="Contoh: Klien, Tamu, Grup Belajar">
+                @error('preset_name')<small class="text-danger">{{ $message }}</small>@enderror
+            </div>
+            <div class="full">
+                <button class="btn btn-primary" id="wa-preset-save-button" type="submit">
+                    {{ $activePreset ? 'Perbarui kategori ini' : 'Simpan sebagai kategori baru' }}
+                </button>
+                @if($activePreset)
+                    <a class="btn btn-outline-secondary" href="{{ route('admin.whatsapp.groups.index', ['device_alias' => $deviceAlias]) }}">Buat kategori baru</a>
+                @endif
+            </div>
+        </form>
+
+        @if($activePreset)
+            <hr>
+            <p class="wa-muted">
+                Kategori aktif: <strong>{{ $activePreset->name }}</strong>. Centang atau hapus centang grup di bawah, lalu klik <strong>Perbarui kategori ini</strong> untuk menyimpan perubahan.
+            </p>
+            <form method="post" action="{{ route('admin.whatsapp.groups.presets.delete', $activePreset) }}" onsubmit="return confirm('Hapus kategori ini? Grup WhatsApp tidak akan terhapus.');">
+                @csrf
+                @method('delete')
+                <button class="btn btn-outline-danger" type="submit">Hapus kategori</button>
+            </form>
+        @elseif($presets->isEmpty())
+            <p class="wa-muted">Belum ada kategori. Centang grup di bawah, isi nama kategori, lalu simpan.</p>
+        @endif
+    </section>
+
+    <section class="wa-card wa-span-12">
         <h2>Kirim ke banyak grup</h2>
-        <p class="wa-muted">Semua grup yang dicentang akan diproses. Pilihan otomatis disimpan setelah pesan masuk antrean, sehingga pada pengiriman berikutnya tidak perlu mencentang ulang.</p>
+        <p class="wa-muted">
+            @if($activePreset)
+                Kategori <strong>{{ $activePreset->name }}</strong> sedang dimuat. Anda tetap dapat menambah atau mengurangi centang sebelum mengirim.
+            @else
+                Pilih grup secara manual atau muat kategori yang sudah disimpan.
+            @endif
+        </p>
         <form method="post" enctype="multipart/form-data" action="{{ route('admin.whatsapp.groups.send-many') }}" class="wa-form-grid" id="wa-group-send-form">
             @csrf
             <input type="hidden" name="device_alias" value="{{ $deviceAlias }}">
+            <input type="hidden" name="preset_id" value="{{ $activePresetId }}">
             <input type="hidden" name="selected_group_ids" id="wa-selected-group-ids" value="{{ json_encode($checkedGroupIds) }}">
             <div class="full wa-group-picker">
                 <div class="wa-group-picker-toolbar">
@@ -112,7 +181,7 @@
             <div class="full">
                 <label>URL media, opsional</label>
                 <input class="form-control" type="url" name="media_url" value="{{ old('media_url') }}" placeholder="https://...">
-                <small class="wa-muted">Gunakan ini untuk dokumen, video, audio, atau gambar yang sudah tersedia di URL publik. Jika gambar diunggah, file unggahan diprioritaskan.</small>
+                <small class="wa-muted">Gunakan untuk dokumen, video, audio, atau gambar yang sudah tersedia di URL publik. Jika gambar diunggah, file unggahan diprioritaskan.</small>
             </div>
             <div class="full">
                 <label class="wa-confirm-box"><input type="checkbox" name="confirm_group_policy" value="1" required> Saya memastikan pesan relevan dengan grup yang dipilih dan tidak mengandung spam.</label>
@@ -143,26 +212,33 @@
 @push('scripts')
 <script>
 (() => {
-    const form = document.getElementById('wa-group-send-form');
+    const sendForm = document.getElementById('wa-group-send-form');
+    const presetForm = document.getElementById('wa-group-preset-form');
     const selectAll = document.getElementById('wa-select-all-groups');
     const checkboxes = Array.from(document.querySelectorAll('.wa-group-checkbox'));
-    const selectedIdsInput = document.getElementById('wa-selected-group-ids');
+    const selectedIdsInputs = [
+        document.getElementById('wa-selected-group-ids'),
+        document.getElementById('wa-preset-selected-group-ids'),
+    ].filter(Boolean);
     const countLabel = document.getElementById('wa-selected-count');
     const submitButton = document.getElementById('wa-group-submit');
+    const presetSaveButton = document.getElementById('wa-preset-save-button');
     const mediaFile = document.getElementById('wa-media-file');
     const preview = document.getElementById('wa-media-preview');
     const previewImage = document.getElementById('wa-media-preview-image');
     const previewName = document.getElementById('wa-media-preview-name');
 
+    const selectedIds = () => checkboxes
+        .filter((box) => box.checked)
+        .map((box) => Number(box.value));
+
     const updateCount = () => {
-        const selected = checkboxes.filter((box) => box.checked).length;
-        if (countLabel) countLabel.textContent = `${selected} grup dipilih`;
-        if (selectedIdsInput) {
-            selectedIdsInput.value = JSON.stringify(checkboxes.filter((box) => box.checked).map((box) => Number(box.value)));
-        }
+        const ids = selectedIds();
+        if (countLabel) countLabel.textContent = `${ids.length} grup dipilih`;
+        selectedIdsInputs.forEach((input) => { input.value = JSON.stringify(ids); });
         if (selectAll) {
-            selectAll.checked = checkboxes.length > 0 && selected === checkboxes.length;
-            selectAll.indeterminate = selected > 0 && selected < checkboxes.length;
+            selectAll.checked = checkboxes.length > 0 && ids.length === checkboxes.length;
+            selectAll.indeterminate = ids.length > 0 && ids.length < checkboxes.length;
         }
     };
 
@@ -192,9 +268,24 @@
         });
     }
 
-    if (form) {
-        form.addEventListener('submit', (event) => {
-            const selected = checkboxes.filter((box) => box.checked).length;
+    if (presetForm) {
+        presetForm.addEventListener('submit', (event) => {
+            const selected = selectedIds().length;
+            if (selected === 0) {
+                event.preventDefault();
+                alert('Pilih minimal satu grup sebelum menyimpan kategori.');
+                return;
+            }
+            if (presetSaveButton) {
+                presetSaveButton.disabled = true;
+                presetSaveButton.textContent = 'Menyimpan kategori...';
+            }
+        });
+    }
+
+    if (sendForm) {
+        sendForm.addEventListener('submit', (event) => {
+            const selected = selectedIds().length;
             if (selected === 0) {
                 event.preventDefault();
                 alert('Pilih minimal satu grup.');
