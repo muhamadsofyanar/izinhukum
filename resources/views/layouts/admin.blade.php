@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Portal') · IzinHukum</title>
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=20.0.0">
+    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=21.0.0">
 </head>
 <body class="admin-body">
 @php
@@ -22,7 +22,7 @@
                 @if($platformBrandLogo)
                     <img class="brand-logo-image" src="{{ asset('storage/'.$platformBrandLogo) }}" alt="{{ $platformBrandName }}">
                 @else
-                    <span class="brand-mark">IH</span>
+                    <img class="brand-mark" src="{{ asset('brand/izinhukum-monogram.svg') }}" alt="" width="42" height="42">
                 @endif
                 <span class="brand-copy">
                     <strong>{{ $platformBrandName }}</strong>
@@ -48,6 +48,7 @@
                 @if($featureFlags->enabled('quote_templates'))<a class="{{ request()->routeIs('admin.quote-templates.*') ? 'active' : '' }}" href="{{ route('admin.quote-templates.index') }}">Template penawaran</a>@endif
                 <a class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">Pesanan</a>
                 <a class="{{ request()->routeIs('admin.packages.*') ? 'active' : '' }}" href="{{ route('admin.packages.index') }}">Layanan & harga</a>
+                @if($featureFlags->enabled('service_landing_pages'))<a class="{{ request()->routeIs('admin.service-landings.*') ? 'active' : '' }}" href="{{ route('admin.service-landings.index') }}">Landing layanan</a>@endif
                 <a class="{{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">Kupon & promo</a>
 
                 <span class="sidebar-section-label">Keuangan</span>

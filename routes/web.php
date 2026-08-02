@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\SalesPipelineController as AdminSalesPipelineCont
 use App\Http\Controllers\Admin\SalesMessageTemplateController as AdminSalesMessageTemplateController;
 use App\Http\Controllers\Admin\SalesQuoteController as AdminSalesQuoteController;
 use App\Http\Controllers\Admin\SalesQuoteTemplateController as AdminSalesQuoteTemplateController;
+use App\Http\Controllers\Admin\ServiceLandingController as AdminServiceLandingController;
 use App\Http\Controllers\Admin\ServiceOrderController as AdminServiceOrderController;
 use App\Http\Controllers\Admin\WhatsAppAutomationController;
 use App\Http\Controllers\Admin\WhatsAppCampaignController;
@@ -38,6 +39,7 @@ use App\Http\Controllers\Admin\WhatsAppProviderToolController;
 use App\Http\Controllers\Admin\WhatsAppSettingsController;
 use App\Http\Controllers\Admin\WhatsAppTemplateController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\CampaignLandingController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CrmDocumentProviderController;
 use App\Http\Controllers\CustomerOrderController;
@@ -80,6 +82,9 @@ Route::post('/webhooks/starsender/{secret}', StarSenderWebhookController::class)
     ->middleware(['feature:whatsapp_crm', 'throttle:120,1'])
     ->name('webhooks.starsender');
 Route::get('/', HomeController::class)->name('home');
+Route::get('/promo/{campaign:slug}', CampaignLandingController::class)
+    ->middleware(['feature:campaign_landing_pages', 'feature:public_proposal'])
+    ->name('campaigns.landing');
 Route::get('/layanan', [ServiceController::class, 'index'])->name('services.index');
 Route::get('/layanan/{service:slug}', [ServiceController::class, 'show'])->name('services.show');
 Route::get('/cek-risiko-kbli', [KbliController::class, 'index'])->name('kbli.index');
@@ -144,6 +149,10 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
         Route::get('/paket', [AdminPackageController::class, 'index'])->name('packages.index');
         Route::put('/paket/{package}', [AdminPackageController::class, 'update'])->name('packages.update');
+        Route::middleware('feature:service_landing_pages')->group(function (): void {
+            Route::get('/landing-layanan', [AdminServiceLandingController::class, 'index'])->name('service-landings.index');
+            Route::put('/landing-layanan/{service}', [AdminServiceLandingController::class, 'update'])->name('service-landings.update');
+        });
         Route::get('/kupon', [AdminCouponController::class, 'index'])->name('coupons.index');
         Route::post('/kupon', [AdminCouponController::class, 'store'])->name('coupons.store');
         Route::put('/kupon/{coupon}', [AdminCouponController::class, 'update'])->name('coupons.update');

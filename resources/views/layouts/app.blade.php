@@ -6,15 +6,19 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Jasa Legalitas Badan Usaha') · IzinHukum</title>
     <meta name="description" content="@yield('meta_description', 'IzinHukum membantu pengurusan legalitas badan usaha, badan hukum, OSS, NIB, dan kekayaan intelektual hingga tuntas.')">
-    <meta name="theme-color" content="#07192f">
+    <meta name="robots" content="@yield('robots', 'index,follow')">
+    <meta name="theme-color" content="#0D1B3D">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="@yield('title', 'IzinHukum · Legalitas Sampai Tuntas')">
+    <meta property="og:title" content="@yield('title', 'IzinHukum · Jalur Pasti, Usaha Aman')">
     <meta property="og:description" content="@yield('meta_description', 'Layanan legalitas bisnis yang praktis, aman, dan transparan.')">
     <meta property="og:url" content="{{ url()->current() }}">
+    <link rel="canonical" href="@yield('canonical', url()->current())">
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=20.0.0">
+    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=21.0.0">
+    @stack('head')
 </head>
 @php($featureFlags = app(\App\Services\FeatureFlagService::class))
+@php($focusedCampaign = trim($__env->yieldContent('focused_campaign')) !== '')
 <body>
     <a class="skip-link" href="#main">Lewati ke konten</a>
     <div class="utility-bar">
@@ -30,8 +34,8 @@
         <nav class="navbar navbar-expand-lg" aria-label="Navigasi utama">
             <div class="container">
                 <a class="brand" href="{{ route('home') }}" aria-label="IzinHukum beranda">
-                    <span class="brand-mark">IH</span>
-                    <span class="brand-copy"><strong>IzinHukum</strong><small>Legalitas sampai tuntas</small></span>
+                    @if($platformBrandLogo)<img class="brand-logo-image" src="{{ asset('storage/'.$platformBrandLogo) }}" alt="{{ $platformBrandName }}">@else<img class="brand-mark" src="{{ asset('brand/izinhukum-monogram.svg') }}" alt="" width="42" height="42">@endif
+                    <span class="brand-copy"><strong>{{ mb_strtoupper($platformBrandName) }}</strong><small>{{ $platformBrandTagline }}</small></span>
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Buka menu">
                     <span class="navbar-toggler-icon"></span>
@@ -92,7 +96,7 @@
     <main id="main">
         @yield('content')
     </main>
-    <section class="cta-band">
+    @unless($focusedCampaign)<section class="cta-band">
         <div class="container">
             <div class="cta-panel">
                 <div>
@@ -106,14 +110,14 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section>@endunless
     <footer class="site-footer">
         <div class="container">
             <div class="row g-5">
                 <div class="col-lg-4">
                     <a class="brand brand-light mb-3" href="{{ route('home') }}">
-                        <span class="brand-mark">IH</span>
-                        <span class="brand-copy"><strong>IzinHukum</strong><small>Legalitas sampai tuntas</small></span>
+                        @if($platformBrandLogo)<img class="brand-logo-image" src="{{ asset('storage/'.$platformBrandLogo) }}" alt="{{ $platformBrandName }}">@else<img class="brand-mark" src="{{ asset('brand/izinhukum-monogram.svg') }}" alt="" width="42" height="42">@endif
+                        <span class="brand-copy"><strong>{{ mb_strtoupper($platformBrandName) }}</strong><small>{{ $platformBrandTagline }}</small></span>
                     </a>
                     <p class="footer-intro">{{ config('company.name') }} membantu individu, UMKM, organisasi, dan perusahaan mengurus legalitas secara praktis dan transparan.</p>
                 </div>
@@ -152,8 +156,9 @@
             </div>
         </div>
     </footer>
-    <a class="whatsapp-float" target="_blank" rel="noopener" aria-label="Chat IzinHukum melalui WhatsApp" href="https://wa.me/{{ config('company.whatsapp') }}?text={{ urlencode('Halo IzinHukum, saya ingin konsultasi legalitas.') }}">
+    @unless($focusedCampaign)<a class="whatsapp-float" target="_blank" rel="noopener" aria-label="Chat IzinHukum melalui WhatsApp" href="https://wa.me/{{ config('company.whatsapp') }}?text={{ urlencode('Halo IzinHukum, saya ingin konsultasi legalitas.') }}">
         <span>WA</span><strong>Konsultasi</strong>
-    </a>
+    </a>@endunless
+    @stack('scripts')
 </body>
 </html>

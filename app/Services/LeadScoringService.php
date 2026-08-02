@@ -36,7 +36,7 @@ class LeadScoringService
         $score += filled($lead->service_interest) ? 20 : 0;
         $score += (float) $lead->estimated_value > 0 ? 20 : 0;
         $score += filled($lead->notes) && mb_strlen((string) $lead->notes) >= 40 ? 10 : 0;
-        $score += in_array($lead->source, ['referral', 'website', 'ads'], true) ? 5 : 0;
+        $score += in_array($lead->source, ['referral', 'website', 'service_landing', 'ads'], true) ? 5 : 0;
 
         return min(100, $score);
     }

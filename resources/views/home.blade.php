@@ -1,44 +1,51 @@
 @extends('layouts.app')
 
-@section('title', 'Jasa Legalitas Bisnis Sampai Tuntas')
-@section('meta_description', 'IzinHukum membantu pendirian PT, CV, Firma, Yayasan, Perkumpulan, OSS, NIB, Virtual Office, merek, dan layanan hukum lainnya.')
+@section('title', 'Konsultasi Legalitas dan Lanjut Deal via WhatsApp')
+@section('meta_description', 'Isi kebutuhan legalitas di IzinHukum, dapatkan nomor referensi, lalu lanjutkan konsultasi dan deal secara langsung melalui WhatsApp.')
 
 @section('content')
-<section class="hero">
+<section class="hero hero-conversion">
     <div class="hero-orb hero-orb-one"></div>
     <div class="hero-orb hero-orb-two"></div>
     <div class="container position-relative">
         <div class="row align-items-center g-5">
-            <div class="col-lg-7">
-                <span class="eyebrow">Konsultan legal untuk bisnis Indonesia</span>
-                <h1>Urus legalitas lebih pasti. <span>Kami bantu sampai tuntas.</span></h1>
-                <p class="hero-copy">Tak perlu mondar-mandir atau bingung membaca prosedur. Mulai dari konsultasi, dokumen, hingga perizinan—Anda tinggal memantau prosesnya.</p>
+            <div class="col-lg-6">
+                <span class="eyebrow">Dari website, lanjut langsung ke WhatsApp</span>
+                <h1>Isi kebutuhan sekali. <span>Lanjutkan deal di WhatsApp.</span></h1>
+                <p class="hero-copy">Pilih layanan dan ceritakan kebutuhan Anda. Sistem mencatat permintaan serta membuat nomor referensi, kemudian WhatsApp terbuka agar pembahasan tidak dimulai dari nol.</p>
                 <div class="d-flex flex-wrap gap-3">
-                    <a class="btn btn-primary btn-lg" href="{{ route('proposal.create') }}">Konsultasi gratis</a>
+                    @if($proposalEnabled)<a class="btn btn-primary btn-lg" href="#home-lead-form">Mulai konsultasi gratis</a>@endif
                     <a class="btn btn-ghost btn-lg" href="{{ route('services.index') }}">Lihat layanan <span>→</span></a>
                 </div>
                 <div class="trust-row">
-                    <div><strong>Praktis</strong><span>Satu pintu</span></div>
-                    <div><strong>Transparan</strong><span>Harga jelas</span></div>
-                    <div><strong>Nasional</strong><span>Seluruh Indonesia</span></div>
+                    <div><strong>±1 menit</strong><span>Isi form singkat</span></div>
+                    <div><strong>Langsung tercatat</strong><span>Dapat nomor referensi</span></div>
+                    <div><strong>Tetap personal</strong><span>Deal manual via WA</span></div>
                 </div>
             </div>
-            <div class="col-lg-5">
-                <div class="hero-card">
-                    <div class="hero-card-head">
-                        <span>Alur layanan IzinHukum</span>
-                        <span class="live-dot">Siap membantu</span>
+            <div class="col-lg-6">
+                @if($proposalEnabled)
+                <form class="home-lead-card" id="home-lead-form" action="{{ route('proposal.store') }}" method="post">
+                    @csrf
+                    <input type="hidden" name="journey_source" value="website">
+                    <div class="home-lead-head"><div><span>Mulai di sini</span><h2>Kebutuhan legalitas Anda</h2></div><span class="live-dot">Siap ditindaklanjuti</span></div>
+                    @if($errors->any())<div class="alert alert-danger py-2">Periksa kembali data yang ditandai.</div>@endif
+                    <label class="field"><span>Pilih layanan</span><select class="form-select @error('service_package_id') is-invalid @enderror" name="service_package_id"><option value="">Belum tahu / konsultasi dahulu</option>@foreach($packages->groupBy(fn($package) => $package->service?->name) as $serviceName=>$servicePackages)<optgroup label="{{ $serviceName }}">@foreach($servicePackages as $package)<option value="{{ $package->id }}" @selected(old('service_package_id') == $package->id)>{{ $package->name }} · {{ $package->price === 0 && $package->is_estimated ? 'Sesuai kebutuhan' : $package->formattedPrice() }}</option>@endforeach</optgroup>@endforeach</select>@error('service_package_id')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
+                    <div class="row g-2">
+                        <label class="field col-md-6"><span>Nama lengkap *</span><input class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" required maxlength="120" autocomplete="name">@error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
+                        <label class="field col-md-6"><span>Nomor WhatsApp *</span><input class="form-control @error('phone') is-invalid @enderror" name="phone" value="{{ old('phone') }}" required maxlength="32" inputmode="tel" autocomplete="tel">@error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
+                        <label class="field col-md-7"><span>Nama usaha/perusahaan</span><input class="form-control @error('company_name') is-invalid @enderror" name="company_name" value="{{ old('company_name') }}" maxlength="160">@error('company_name')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
+                        <label class="field col-md-5"><span>Kode kupon</span><input class="form-control text-uppercase @error('coupon_code') is-invalid @enderror" name="coupon_code" value="{{ old('coupon_code') }}" maxlength="32" placeholder="Jika ada">@error('coupon_code')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
+                        <label class="field col-12"><span>Ceritakan kebutuhan</span><textarea class="form-control @error('message') is-invalid @enderror" name="message" rows="2" maxlength="3000" placeholder="Contoh: ingin mendirikan PT dan membutuhkan NIB.">{{ old('message') }}</textarea>@error('message')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
                     </div>
-                    <ol class="process-list">
-                        <li><span>1</span><div><strong>Ceritakan kebutuhan</strong><small>Pilih layanan atau konsultasikan situasi Anda.</small></div></li>
-                        <li><span>2</span><div><strong>Terima arahan & penawaran</strong><small>Ruang lingkup, dokumen, biaya, dan estimasi proses dijelaskan.</small></div></li>
-                        <li><span>3</span><div><strong>Kami proses sampai selesai</strong><small>Anda menerima pembaruan dan dokumen hasil.</small></div></li>
-                    </ol>
-                    <div class="hero-card-foot">
-                        <span class="avatar-stack"><i>IH</i><i>CS</i><i>LG</i></span>
-                        <span>Tim legal & customer support</span>
-                    </div>
-                </div>
+                    <label class="consent-line home-consent"><input type="checkbox" name="privacy_consent" value="1" required @checked(old('privacy_consent'))> Saya menyetujui pemrosesan data untuk tindak lanjut sesuai <a href="{{ route('legal.privacy') }}" target="_blank">Kebijakan Privasi</a>.</label>
+                    @error('privacy_consent')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                    <button class="btn btn-primary btn-lg w-100 mt-3" type="submit">Kirim & lanjut ke WhatsApp →</button>
+                    <small class="home-lead-safe">Belum ada pembayaran. Pesan WhatsApp tetap Anda kirim sendiri.</small>
+                </form>
+                @else
+                <div class="hero-card"><div class="hero-card-head"><span>Alur layanan IzinHukum</span><span class="live-dot">Siap membantu</span></div><ol class="process-list"><li><span>1</span><div><strong>Ceritakan kebutuhan</strong><small>Pilih layanan atau konsultasikan situasi Anda.</small></div></li><li><span>2</span><div><strong>Terima arahan & penawaran</strong><small>Ruang lingkup, dokumen, biaya, dan estimasi dijelaskan.</small></div></li><li><span>3</span><div><strong>Kami proses sampai selesai</strong><small>Anda menerima pembaruan dan dokumen hasil.</small></div></li></ol></div>
+                @endif
             </div>
         </div>
     </div>
@@ -47,10 +54,22 @@
 <section class="proof-strip">
     <div class="container">
         <div class="proof-grid">
-            <span>Dokumen lebih terarah</span>
-            <span>Proses dapat dipantau</span>
-            <span>Konsultasi jarak jauh</span>
-            <span>Biaya transparan</span>
+            <span>Form langsung di halaman utama</span>
+            <span>Nomor referensi otomatis</span>
+            <span>Lanjut ke WhatsApp</span>
+            <span>Progres dapat dilacak</span>
+        </div>
+    </div>
+</section>
+
+<section class="home-conversion-section">
+    <div class="container">
+        <div class="home-conversion-head"><span>Alur baru IzinHukum</span><h2>Dari iklan hingga pembahasan deal, tanpa kehilangan data lead</h2></div>
+        <div class="home-conversion-grid">
+            <article><span>01</span><strong>Buka website</strong><small>Calon klien datang dari broadcast, referral, atau pencarian.</small></article>
+            <article><span>02</span><strong>Isi kebutuhan</strong><small>Layanan dan konteks dicatat sebelum percakapan dimulai.</small></article>
+            <article><span>03</span><strong>Lanjut WhatsApp</strong><small>Nomor referensi ikut dibawa untuk pembahasan manual.</small></article>
+            <article><span>04</span><strong>Penawaran & proses</strong><small>Admin menindaklanjuti melalui pipeline sampai selesai.</small></article>
         </div>
     </div>
 </section>

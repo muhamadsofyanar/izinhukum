@@ -17,7 +17,8 @@ class PublicPagesTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('Kami bantu sampai tuntas')
+            ->assertSee('Isi kebutuhan sekali')
+            ->assertSee('Kirim & lanjut ke WhatsApp')
             ->assertSee('PT PRAKTISI IZIN HUKUM');
     }
 
@@ -29,7 +30,7 @@ class PublicPagesTest extends TestCase
             ->assertOk()
             ->assertSee('Harga Perkiraan')
             ->assertSee('Rp1.500.000')
-            ->assertSee('Minta Penawaran');
+            ->assertSee('Pilih &amp; konsultasikan', false);
     }
 
     public function test_proposal_can_be_submitted(): void

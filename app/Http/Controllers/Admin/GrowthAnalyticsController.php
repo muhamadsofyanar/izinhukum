@@ -53,10 +53,13 @@ class GrowthAnalyticsController extends Controller
             $collected = (int) $payments->whereIn('invoice_id', $invoiceIds)->sum('amount');
             $spend = (int) ($campaign?->spend ?? 0);
             $leadCount = $items->count();
+            $landingViews = (int) ($campaign?->landing_views ?? 0);
 
             return [
                 'name' => $campaign?->name ?: $items->first()->utm_campaign,
+                'views' => $landingViews,
                 'leads' => $leadCount,
+                'landing_conversion' => $landingViews > 0 ? round(($leadCount / $landingViews) * 100, 1) : null,
                 'qualified' => $items->whereIn('status', ['dihubungi', 'proses', 'selesai'])->count(),
                 'approved' => $quotes->whereIn('inquiry_id', $inquiryIds)->where('status', 'approved')->count(),
                 'collected' => $collected,

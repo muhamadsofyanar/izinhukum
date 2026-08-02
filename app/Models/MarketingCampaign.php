@@ -17,8 +17,9 @@ class MarketingCampaign extends Model
     ];
 
     protected $fillable = [
-        'name', 'slug', 'source', 'medium', 'start_date', 'end_date',
-        'budget', 'spend', 'status', 'notes', 'created_by',
+        'name', 'slug', 'service_id', 'source', 'medium', 'landing_headline',
+        'landing_subheadline', 'cta_text', 'is_landing_enabled', 'landing_views',
+        'start_date', 'end_date', 'budget', 'spend', 'status', 'notes', 'created_by',
     ];
 
     protected function casts(): array
@@ -26,7 +27,13 @@ class MarketingCampaign extends Model
         return [
             'start_date' => 'date', 'end_date' => 'date',
             'budget' => 'integer', 'spend' => 'integer',
+            'is_landing_enabled' => 'boolean', 'landing_views' => 'integer',
         ];
+    }
+
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(Service::class);
     }
 
     public function creator(): BelongsTo
@@ -42,5 +49,18 @@ class MarketingCampaign extends Model
     public function statusLabel(): string
     {
         return self::STATUSES[$this->status] ?? ucfirst($this->status);
+    }
+
+    public function isLandingLive(): bool
+    {
+        return $this->is_landing_enabled
+            && $this->status === 'active'
+            && (! $this->start_date || $this->start_date->copy()->startOfDay()->lte(now()))
+            && (! $this->end_date || $this->end_date->copy()->endOfDay()->gte(now()));
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
     }
 }

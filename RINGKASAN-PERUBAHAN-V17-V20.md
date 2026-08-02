@@ -2,8 +2,16 @@
 
 Tujuan paket ini adalah membantu tim mengubah lebih banyak lead menjadi deal. Seluruh perubahan disatukan dalam satu paket V20 agar cukup satu kali redeploy.
 
-## V17 — Prioritas lead
+## V17 — Landing page dan prioritas lead
 
+- Homepage utama `izinhukum.com` diubah secara nyata menjadi landing page konversi dengan form langsung pada hero.
+- Headline homepage menjelaskan alur isi kebutuhan sekali lalu lanjut deal di WhatsApp.
+- Alur empat langkah dari website, pencatatan lead, WhatsApp, sampai penawaran ditampilkan di halaman utama.
+- Landing page khusus per campaign dengan URL sendiri.
+- Satu landing konsultasi umum dibuat otomatis saat migrasi agar siap digunakan setelah deploy.
+- Admin dapat memilih layanan fokus, judul, penjelasan, teks CTA, dan status publikasi.
+- Calon klien mengisi form langsung pada landing page lalu memperoleh nomor referensi dan melanjutkan deal melalui WhatsApp.
+- Jumlah kunjungan dan konversi form menjadi lead tercatat.
 - Skor lead otomatis 0–100 berdasarkan kelengkapan kontak, layanan, nilai, pesan, referral, kupon, dan campaign.
 - Label prioritas panas, hangat, atau dingin pada pipeline.
 - Filter lead panas dan pengurutan peluang yang perlu didahulukan.
@@ -38,12 +46,13 @@ Tujuan paket ini adalah membantu tim mengubah lebih banyak lead menjadi deal. Se
 
 ## Kontrol peluncuran
 
-Lima sakelar baru tersedia pada **Admin → Fitur aplikasi**:
+Enam sakelar baru tersedia pada **Admin → Fitur aplikasi**:
 
-1. Prioritas dan skor lead.
-2. Playbook penjualan manual.
-3. Template penawaran.
-4. Pemulihan lead.
-5. Biaya dan ROI campaign.
+1. Landing page campaign.
+2. Prioritas dan skor lead.
+3. Playbook penjualan manual.
+4. Template penawaran.
+5. Pemulihan lead.
+6. Biaya dan ROI campaign.
 
 Semua source dapat dideploy bersama. Sakelar dapat diubah sesudah deploy tanpa menghapus histori dan tanpa redeploy ulang.

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Monogram Izin Hukum</title>
+  <rect width="64" height="64" rx="10" fill="#ffffff"/>
+  <rect x="5" y="8" width="10" height="48" rx="1" fill="#0D1B3D"/>
+  <rect x="27" y="8" width="10" height="48" rx="1" fill="#0D1B3D"/>
+  <rect x="49" y="8" width="10" height="48" rx="1" fill="#0D1B3D"/>
+  <rect x="27" y="27" width="32" height="10" rx="3" fill="#D4A017"/>
+</svg>

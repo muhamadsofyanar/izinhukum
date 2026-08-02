@@ -69,6 +69,7 @@ class SendNewInquiryWhatsAppNotification implements ShouldQueue, ShouldBeUnique
             'Sumber: '.match ($inquiry->source) {
                 'name_generator' => 'Generator nama',
                 'deed_simulator' => 'Simulasi akta',
+                'service_landing' => 'Landing layanan',
                 'partner_referral' => 'Referral mitra',
                 default => 'Website',
             },

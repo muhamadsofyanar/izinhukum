@@ -53,11 +53,11 @@ class AppServiceProvider extends ServiceProvider
             try {
                 $view->with([
                     'platformBrandName' => Schema::hasTable('system_settings') ? SystemSetting::valueFor('brand_name', 'IzinHukum') : 'IzinHukum',
-                    'platformBrandTagline' => Schema::hasTable('system_settings') ? SystemSetting::valueFor('brand_tagline', 'Legalitas sampai tuntas') : 'Legalitas sampai tuntas',
+                    'platformBrandTagline' => Schema::hasTable('system_settings') ? SystemSetting::valueFor('brand_tagline', 'Jalur Pasti, Usaha Aman') : 'Jalur Pasti, Usaha Aman',
                     'platformBrandLogo' => Schema::hasTable('system_settings') ? SystemSetting::valueFor('brand_logo') : null,
                 ]);
             } catch (\Throwable) {
-                $view->with(['platformBrandName' => 'IzinHukum', 'platformBrandTagline' => 'Legalitas sampai tuntas', 'platformBrandLogo' => null]);
+                $view->with(['platformBrandName' => 'IzinHukum', 'platformBrandTagline' => 'Jalur Pasti, Usaha Aman', 'platformBrandLogo' => null]);
             }
         });
     }

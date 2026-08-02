@@ -4,7 +4,7 @@ Paket V20 menggabungkan pengembangan V17, V18, V19, dan V20 dalam satu source da
 
 ## Hasil setiap versi
 
-- **V17 — Prioritas lead:** skor 0–100, kategori panas/hangat/dingin, waktu respons pertama, dan urutan kerja berdasarkan peluang.
+- **V17 — Landing dan prioritas lead:** homepage utama dengan formulir konversi langsung, landing page campaign, skor 0–100, kategori panas/hangat/dingin, waktu respons pertama, dan urutan kerja berdasarkan peluang.
 - **V18 — Playbook manual:** template pesan sesuai tahap pipeline dan tautan WhatsApp siap isi. Tidak ada pesan, follow-up, atau broadcast yang dikirim otomatis.
 - **V19 — Penawaran dan pemulihan:** template ruang lingkup/ketentuan penawaran, alasan tidak lanjut terstruktur, dan jadwal menghubungi kembali lead.
 - **V20 — Funnel dan ROI:** funnel lead sampai selesai, rekomendasi tindakan harian, pencatatan biaya campaign, biaya per lead, pembayaran teratribusi, dan ROI.
@@ -28,21 +28,25 @@ Empat migrasi V17–V20:
 - menambah skor, suhu lead, waktu respons, alasan tidak lanjut, dan jadwal aktivasi ulang;
 - membuat serta mengisi template pesan manual;
 - membuat template penawaran dan menghubungkannya ke histori penawaran;
-- membuat campaign terukur dan menghubungkan inquiry lama berdasarkan UTM;
-- mengaktifkan lima feature flag baru tanpa menghapus data lama.
+- membuat campaign terukur beserta landing page, jumlah kunjungan, dan hubungan inquiry berdasarkan UTM;
+- mengaktifkan enam feature flag baru tanpa menghapus data lama.
 
 Data lead lama diberi skor. Aktivitas kontak, penawaran, dan status deal lama yang tersedia ikut dipakai untuk mengisi funnel awal.
+Satu landing page aktif bernama **Landing konsultasi legalitas** juga dibuat otomatis agar dapat langsung diuji dan disunting dari admin.
 
 ## Pemeriksaan setelah deploy
 
 1. Buka `/healthz`; pastikan `status=healthy` dan `version=20.0.0`.
-2. Masuk ke **Admin → Fitur aplikasi**. Pastikan Prioritas lead, Playbook manual, Template penawaran, Pemulihan lead, serta Biaya dan ROI campaign aktif.
-3. Buka **Pipeline penjualan**. Pastikan lead memiliki skor dan label panas/hangat/dingin.
-4. Klik salah satu tombol playbook. Pastikan tab WhatsApp terbuka dengan pesan terisi dan pesan belum terkirim.
-5. Buat draf penawaran. Pilih template dan pastikan ruang lingkup, ketentuan, masa berlaku, serta jatuh tempo terisi.
-6. Ubah satu lead uji ke **Tidak lanjut**, isi alasan dan tanggal hubungi kembali. Pastikan lead muncul pada daftar pemulihan saat waktunya tiba.
-7. Buat campaign pada **Campaign & ROI**, salin tautan UTM, lalu kirim proposal uji melalui tautan tersebut.
-8. Buka **Funnel & Pertumbuhan**. Pastikan campaign, funnel, prioritas harian, biaya per lead, pembayaran, dan ROI tampil.
+2. Masuk ke **Admin → Fitur aplikasi**. Pastikan Landing page campaign, Prioritas lead, Playbook manual, Template penawaran, Pemulihan lead, serta Biaya dan ROI campaign aktif.
+3. Buka homepage utama. Pastikan hero baru **Isi kebutuhan sekali. Lanjutkan deal di WhatsApp** dan formulir singkat tampil tanpa membuka halaman lain.
+4. Kirim form uji dari homepage. Pastikan nomor referensi dibuat dan WhatsApp terbuka untuk konfirmasi manual.
+5. Buka **Pipeline penjualan**. Pastikan lead memiliki skor dan label panas/hangat/dingin.
+6. Klik salah satu tombol playbook. Pastikan tab WhatsApp terbuka dengan pesan terisi dan pesan belum terkirim.
+7. Buat draf penawaran. Pilih template dan pastikan ruang lingkup, ketentuan, masa berlaku, serta jatuh tempo terisi.
+8. Ubah satu lead uji ke **Tidak lanjut**, isi alasan dan tanggal hubungi kembali. Pastikan lead muncul pada daftar pemulihan saat waktunya tiba.
+9. Buat campaign pada **Campaign, Landing Page & ROI**, isi judul serta layanan fokus, lalu buka pratinjau landing page.
+10. Salin tautan broadcast, buka sebagai pengunjung, isi form uji, dan pastikan halaman berhasil mengarahkan ke WhatsApp setelah nomor referensi dibuat.
+11. Buka **Funnel & Pertumbuhan**. Pastikan kunjungan, konversi form, campaign, funnel, prioritas harian, biaya per lead, pembayaran, dan ROI tampil.
 
 ## Peluncuran bertahap tanpa redeploy
 

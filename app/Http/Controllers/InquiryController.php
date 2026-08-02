@@ -91,7 +91,7 @@ class InquiryController extends Controller
             'company_name' => ['nullable', 'string', 'max:160'],
             'city' => ['nullable', 'string', 'max:120'],
             'message' => ['nullable', 'string', 'max:3000'],
-            'journey_source' => ['nullable', 'in:website,name_generator,deed_simulator'],
+            'journey_source' => ['nullable', 'in:website,service_landing,name_generator,deed_simulator'],
             'coupon_code' => ['nullable', 'string', 'max:32', 'regex:/^[A-Za-z0-9_-]+$/'],
             'privacy_consent' => ['accepted'],
         ]);

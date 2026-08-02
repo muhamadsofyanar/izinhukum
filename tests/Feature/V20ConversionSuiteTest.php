@@ -35,7 +35,11 @@ class V20ConversionSuiteTest extends TestCase
         ]);
         $package = ServicePackage::query()->where('price', '>', 0)->firstOrFail();
 
-        $this->get('/layanan?utm_source=whatsapp&utm_medium=broadcast&utm_campaign=promo-agustus');
+        $this->get(route('campaigns.landing', $campaign))
+            ->assertOk()
+            ->assertSee('Urus legalitas lebih jelas')
+            ->assertSee('Kirim & lanjut ke WhatsApp');
+        $this->assertSame(1, $campaign->fresh()->landing_views);
         $this->post('/proposal', [
             'service_package_id' => $package->id,
             'name' => 'Lead Berniat Tinggi',

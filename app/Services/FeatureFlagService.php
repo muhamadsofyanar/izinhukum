@@ -84,6 +84,16 @@ class FeatureFlagService
             'description' => 'Mencatat budget/biaya campaign dan membandingkannya dengan lead, deal, serta pembayaran teratribusi.',
             'default' => true,
         ],
+        'campaign_landing_pages' => [
+            'label' => 'Landing page campaign',
+            'description' => 'Menyediakan halaman campaign terukur dengan formulir singkat sebelum calon klien melanjutkan deal manual melalui WhatsApp.',
+            'default' => true,
+        ],
+        'service_landing_pages' => [
+            'label' => 'Landing page setiap layanan',
+            'description' => 'Mengaktifkan template konversi V21 untuk seluruh layanan lengkap dengan manfaat, proses, FAQ, SEO, dan formulir langsung.',
+            'default' => true,
+        ],
         'partner_academy' => [
             'label' => 'Akademi mitra',
             'description' => 'Mitra dapat membuka LMS, materi, progres, dan sertifikat.',

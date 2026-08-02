@@ -1,0 +1,36 @@
+IZINHUKUM V21 · FILE BARU
+app/Http/Controllers/Admin/ServiceLandingController.php
+app/Services/ServiceLandingContentService.php
+database/migrations/2026_08_02_000028_add_v21_service_landing_pages.php
+resources/views/admin/service-landings/index.blade.php
+resources/views/services/show-legacy.blade.php
+public/brand/izinhukum-monogram.svg
+tests/Feature/V21ServiceLandingPageTest.php
+docs/branding/brand-digital-v1.png
+docs/branding/brand-logo-master-v1.png
+BRAND-GUIDELINES-V21.md
+RINGKASAN-PERUBAHAN-V21.md
+PETUNJUK-REDEPLOY-V21.md
+VALIDASI-V21.md
+DAFTAR-FILE-V21.txt
+
+IZINHUKUM V21 · FILE DIPERBARUI
+app/Http/Controllers/HealthController.php
+app/Http/Controllers/InquiryController.php
+app/Http/Controllers/ServiceController.php
+app/Jobs/SendNewInquiryWhatsAppNotification.php
+app/Models/Service.php
+app/Providers/AppServiceProvider.php
+app/Services/BrandingService.php
+app/Services/FeatureFlagService.php
+app/Services/LeadScoringService.php
+resources/css/app.scss
+resources/views/layouts/admin.blade.php
+resources/views/layouts/app.blade.php
+resources/views/services/show.blade.php
+routes/web.php
+tests/Feature/PublicPagesTest.php
+tests/Feature/V10FoundationTest.php
+README.md
+public/build/manifest.json
+public/build/assets/app-CMM2nS3g.css

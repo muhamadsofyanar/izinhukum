@@ -18,6 +18,14 @@ class Service extends Model
         'category',
         'summary',
         'description',
+        'landing_eyebrow',
+        'landing_headline',
+        'landing_subheadline',
+        'landing_benefits',
+        'landing_process',
+        'landing_faqs',
+        'seo_title',
+        'seo_description',
         'requirements',
         'icon',
         'is_featured',
@@ -29,6 +37,9 @@ class Service extends Model
     {
         return [
             'requirements' => 'array',
+            'landing_benefits' => 'array',
+            'landing_process' => 'array',
+            'landing_faqs' => 'array',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
         ];

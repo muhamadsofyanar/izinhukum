@@ -10,7 +10,7 @@ class BrandingService
     {
         return [
             'name' => SystemSetting::valueFor('brand_name', 'IzinHukum'),
-            'tagline' => SystemSetting::valueFor('brand_tagline', 'Legalitas sampai tuntas'),
+            'tagline' => SystemSetting::valueFor('brand_tagline', 'Jalur Pasti, Usaha Aman'),
             'logo' => SystemSetting::valueFor('brand_logo'),
             'address' => SystemSetting::valueFor('document_address', config('company.address')),
             'phone' => SystemSetting::valueFor('document_phone', config('company.phone')),

@@ -18,10 +18,11 @@ class MarketingCampaignController extends Controller
     public function index(FeatureFlagService $features): View
     {
         return view('admin.marketing-campaigns.index', [
-            'campaigns' => MarketingCampaign::query()->withCount('inquiries')->latest()->paginate(25),
+            'campaigns' => MarketingCampaign::query()->with(['service'])->withCount('inquiries')->latest()->paginate(25),
             'statuses' => MarketingCampaign::STATUSES,
-            'services' => Service::query()->where('is_active', true)->orderBy('name')->get(['name', 'slug']),
+            'services' => Service::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'slug']),
             'growthEnabled' => $features->enabled('growth_analytics'),
+            'landingPagesEnabled' => $features->enabled('campaign_landing_pages'),
         ]);
     }
 
@@ -63,8 +64,13 @@ class MarketingCampaignController extends Controller
         return $request->validate([
             'name' => ['required', 'string', 'max:160'],
             'slug' => ['nullable', 'string', 'max:180', Rule::unique('marketing_campaigns', 'slug')->ignore($campaign?->id)],
+            'service_id' => ['nullable', 'exists:services,id'],
             'source' => ['required', 'string', 'max:120'],
             'medium' => ['required', 'string', 'max:120'],
+            'landing_headline' => ['nullable', 'string', 'max:180'],
+            'landing_subheadline' => ['nullable', 'string', 'max:1000'],
+            'cta_text' => ['required', 'string', 'max:80'],
+            'is_landing_enabled' => ['nullable', 'boolean'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'budget' => ['nullable', 'integer', 'min:0'],

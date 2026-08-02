@@ -5,11 +5,13 @@ Website legaltech **PT Praktisi Izin Hukum** berbasis Laravel 12, Bootstrap 5, M
 ## Fitur
 
 - Homepage responsif dengan mega menu.
+- Homepage utama menjadi landing page konversi: formulir singkat tampil di hero, lead langsung tercatat, lalu calon klien diteruskan ke WhatsApp untuk deal manual.
 - Katalog 19 layanan, termasuk PKP, RUPS, penyusunan laporan keuangan, brand identity, dan perizinan lainnya.
 - Label oranye **Harga Perkiraan** untuk harga yang belum final.
 - Form permintaan proposal yang tersimpan ke database.
 - Form proposal membuat order, mengantrekan notifikasi admin, lalu membuka WhatsApp untuk konfirmasi klien.
 - Pelacakan UTM/campaign dan landing page sampai proposal untuk mengukur sumber lead.
+- Landing page campaign yang dapat disunting admin: fokus layanan, judul, penawaran singkat, CTA, formulir lead, dan kelanjutan otomatis ke WhatsApp.
 - Pipeline penjualan ringan untuk tahap lead, PIC, nilai, catatan, dan jadwal follow-up tanpa mengaktifkan CRM WhatsApp lama.
 - Penawaran digital bertautan publik; persetujuan klien membuat invoice otomatis.
 - Unggah bukti transfer privat dari halaman invoice, pemeriksaan admin, dan pembuatan pembayaran/kwitansi otomatis.
@@ -90,7 +92,7 @@ Data tersebut dapat diubah melalui environment variables tanpa mengedit kode.
 6. Pastikan halaman publik, `/up`, dan `/admin/masuk` dapat dibuka.
 7. Ubah `SEED_DATABASE=false`, lalu redeploy.
 
-### Memasang Conversion Suite V17–V20 dalam satu kali redeploy
+### Memasang Conversion Suite V17–V21 dalam satu kali redeploy
 
 Untuk website yang sudah berjalan, pertahankan:
 
@@ -98,9 +100,11 @@ Untuk website yang sudah berjalan, pertahankan:
 SEED_DATABASE=false
 ```
 
-Commit pembaruan lalu lakukan satu kali redeploy. Entrypoint menjalankan semua migrasi tertunda, termasuk versi sebelumnya bila belum terpasang, rekonsiliasi keuangan, backfill order, dan `php artisan kbli:ensure` secara otomatis. V17–V20 menambahkan prioritas lead, playbook manual, template penawaran, pemulihan lead, funnel konversi, dan ROI campaign di atas Growth Suite V16. Data lama ikut diberi skor dan dimasukkan ke funnel tanpa menjalankan ulang `ServiceSeeder` atau menimpa harga katalog yang telah diubah admin.
+Commit pembaruan lalu lakukan satu kali redeploy. Entrypoint menjalankan semua migrasi tertunda, termasuk versi sebelumnya bila belum terpasang, rekonsiliasi keuangan, backfill order, dan `php artisan kbli:ensure` secara otomatis. V17–V20 menambahkan landing campaign, prioritas lead, playbook manual, template penawaran, pemulihan lead, funnel konversi, dan ROI. V21 menyempurnakan seluruh landing layanan dengan konten spesifik, form lead, SEO/schema, editor admin, serta branding navy–gold resmi. Data lama tetap dipertahankan tanpa menjalankan ulang `ServiceSeeder` atau menimpa harga katalog yang telah diubah admin.
 
-Modul baru memiliki sakelar pada **Admin → Fitur aplikasi**. Dengan demikian source dapat dideploy sekali, lalu peluncuran modul dapat diatur tanpa redeploy berikutnya. Playbook hanya membuka pesan WhatsApp yang telah diisi; admin tetap memeriksa dan menekan tombol kirim sendiri.
+Modul baru memiliki sakelar pada **Admin → Fitur aplikasi**. Dengan demikian source dapat dideploy sekali, lalu peluncuran modul dapat diatur tanpa redeploy berikutnya. Konten landing dapat disunting melalui **Admin → Landing layanan** tanpa redeploy. Playbook dan form hanya membuka pesan WhatsApp yang telah diisi; pengguna/admin tetap memeriksa dan menekan tombol kirim sendiri.
+
+Panduan lengkap: `PETUNJUK-REDEPLOY-V21.md`, `RINGKASAN-PERUBAHAN-V21.md`, dan `BRAND-GUIDELINES-V21.md`.
 
 Environment minimal untuk notifikasi:
 
@@ -188,4 +192,4 @@ php artisan test
 npm run build
 ```
 
-Panduan satu kali redeploy terbaru tersedia pada `PETUNJUK-REDEPLOY-V20.md`.
+Panduan satu kali redeploy terbaru tersedia pada `PETUNJUK-REDEPLOY-V21.md`.
