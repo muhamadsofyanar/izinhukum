@@ -91,13 +91,49 @@ class InquiryController extends Controller
             'company_name' => ['nullable', 'string', 'max:160'],
             'city' => ['nullable', 'string', 'max:120'],
             'message' => ['nullable', 'string', 'max:3000'],
+            'foundation_purpose' => ['nullable', 'in:social_education,religious,humanitarian,mixed,other'],
+            'foundation_readiness' => ['nullable', 'in:ready,partial,starting'],
+            'foundation_timeline' => ['nullable', 'in:immediately,thirty_days,three_months,research'],
             'journey_source' => ['nullable', 'in:website,service_landing,name_generator,deed_simulator'],
             'coupon_code' => ['nullable', 'string', 'max:32', 'regex:/^[A-Za-z0-9_-]+$/'],
             'privacy_consent' => ['accepted'],
         ]);
         $journeySource = $validated['journey_source'] ?? 'website';
         $couponCode = Str::upper(trim((string) ($validated['coupon_code'] ?? '')));
-        unset($validated['journey_source'], $validated['coupon_code'], $validated['privacy_consent']);
+        $foundationQualification = array_filter([
+            'Fokus kegiatan' => [
+                'social_education' => 'Sosial/pendidikan',
+                'religious' => 'Keagamaan',
+                'humanitarian' => 'Kemanusiaan',
+                'mixed' => 'Gabungan',
+                'other' => 'Lainnya/perlu konsultasi',
+            ][$validated['foundation_purpose'] ?? ''] ?? null,
+            'Kesiapan' => [
+                'ready' => 'Nama dan struktur sudah siap',
+                'partial' => 'Sebagian data sudah siap',
+                'starting' => 'Masih mulai dari awal',
+            ][$validated['foundation_readiness'] ?? ''] ?? null,
+            'Target mulai' => [
+                'immediately' => 'Secepatnya',
+                'thirty_days' => 'Dalam 30 hari',
+                'three_months' => 'Dalam 1–3 bulan',
+                'research' => 'Masih riset',
+            ][$validated['foundation_timeline'] ?? ''] ?? null,
+        ]);
+        unset(
+            $validated['journey_source'],
+            $validated['coupon_code'],
+            $validated['privacy_consent'],
+            $validated['foundation_purpose'],
+            $validated['foundation_readiness'],
+            $validated['foundation_timeline'],
+        );
+        if ($foundationQualification !== []) {
+            $qualificationText = collect($foundationQualification)
+                ->map(fn (string $value, string $label): string => '- '.$label.': '.$value)
+                ->implode("\n");
+            $validated['message'] = trim((string) ($validated['message'] ?? '')."\n\nKualifikasi Yayasan:\n".$qualificationText);
+        }
 
         $attribution = $features->enabled('referral_tracking')
             ? $referrals->attribution($request)

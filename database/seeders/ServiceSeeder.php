@@ -31,6 +31,26 @@ class ServiceSeeder extends Seeder
             'EFIN badan',
         ];
 
+        $foundationBasic = [
+            'Konsultasi tujuan, kegiatan, dan struktur Yayasan',
+            'Pengecekan dan pemesanan nama Yayasan',
+            'Pemeriksaan susunan Pembina, Pengurus, dan Pengawas',
+            'Persiapan minuta pendirian',
+            'Akta pendirian Yayasan',
+            'Pengajuan pengesahan badan hukum melalui AHU',
+            'Dokumen hasil dan arahan kewajiban berikutnya',
+        ];
+
+        $foundationPermit = [
+            'Seluruh ruang lingkup Paket Pendirian Yayasan',
+            'Pendampingan NPWP badan',
+            'Pemetaan kegiatan dan KBLI yang relevan',
+            'Pendampingan NIB apabila diperlukan dan dapat diterapkan',
+            'Identifikasi izin sektoral sesuai kegiatan Yayasan',
+            'Daftar tindak lanjut untuk izin tambahan di luar paket',
+            'Biaya tambahan selalu dikonfirmasi sebelum dikerjakan',
+        ];
+
         $virtualOffice = [
             'Paket pendirian dan perizinan',
             'Virtual Office selama 1 tahun',
@@ -148,8 +168,9 @@ class ServiceSeeder extends Seeder
 
         foreach ([
             ['Perkumpulan', 'pendirian-perkumpulan', 'Badan hukum berbasis anggota untuk tujuan sosial, profesi, atau kegiatan bersama.', 5000000, 7],
-            ['Yayasan', 'pendirian-yayasan', 'Badan hukum nirlaba berbasis kekayaan yang dipisahkan untuk tujuan sosial, keagamaan, atau kemanusiaan.', 4000000, 8],
+            ['Yayasan', 'pendirian-yayasan', 'Badan hukum berbasis kekayaan yang dipisahkan untuk tujuan sosial, keagamaan, atau kemanusiaan.', 4000000, 8],
         ] as [$name, $slug, $summary, $basicPrice, $sort]) {
+            $isFoundation = $name === 'Yayasan';
             $create([
                 'name' => $name,
                 'slug' => $slug,
@@ -162,8 +183,22 @@ class ServiceSeeder extends Seeder
                 'is_active' => true,
                 'sort_order' => $sort,
             ], [
-                ['name' => "Pendirian {$name}", 'tagline' => 'Paket akta dan pengesahan.', 'price' => $basicPrice, 'minimum_end_user_price' => (int) round($basicPrice * 0.70), 'partner_price' => (int) round($basicPrice * 0.60), 'features' => $legalBasic],
-                ['name' => "Pendirian {$name} + Izin", 'tagline' => 'Paket pendirian dan perizinan.', 'price' => 5500000, 'features' => $permit, 'is_popular' => true],
+                [
+                    'name' => "Pendirian {$name}",
+                    'tagline' => $isFoundation ? 'Paket akta dan pengesahan badan hukum Yayasan.' : 'Paket akta dan pengesahan.',
+                    'price' => $basicPrice,
+                    'minimum_end_user_price' => (int) round($basicPrice * 0.70),
+                    'partner_price' => (int) round($basicPrice * 0.60),
+                    'features' => $isFoundation ? $foundationBasic : $legalBasic,
+                    'is_popular' => $isFoundation,
+                ],
+                [
+                    'name' => "Pendirian {$name} + Izin",
+                    'tagline' => $isFoundation ? 'Pendirian plus pemetaan dan pendampingan izin sesuai kegiatan.' : 'Paket pendirian dan perizinan.',
+                    'price' => 5500000,
+                    'features' => $isFoundation ? $foundationPermit : $permit,
+                    'is_popular' => ! $isFoundation,
+                ],
             ]);
         }
 
@@ -278,7 +313,7 @@ class ServiceSeeder extends Seeder
         $requirements = [
             'pendirian-pt' => ['Nama PT minimal 3 kata', 'Alamat usaha (kabupaten/kota)', 'Minimal 2 pendiri', 'KTP dan NPWP para pendiri', 'Informasi modal usaha'],
             'pendirian-cv' => ['Nama CV minimal 2 kata', 'Alamat usaha (kabupaten/kota)', 'Minimal 2 sekutu: aktif dan pasif', 'KTP dan NPWP para sekutu'],
-            'pendirian-yayasan' => ['Nama yayasan minimal 3 kata', 'Alamat yayasan (kabupaten/kota)', 'Pembina', 'Pengurus: Ketua, Sekretaris, dan Bendahara', 'Pengawas', 'KTP dan NPWP pengurus'],
+            'pendirian-yayasan' => ['Alternatif nama Yayasan minimal 3 kata', 'Tujuan sosial, keagamaan, dan/atau kemanusiaan', 'Alamat Yayasan (kabupaten/kota)', 'Data kekayaan awal yang dipisahkan dari kekayaan pendiri', 'Pembina', 'Pengurus: Ketua, Sekretaris, dan Bendahara', 'Pengawas', 'KTP dan NPWP pihak terkait'],
             'pendirian-koperasi' => ['Nama koperasi minimal 3 kata', 'Alamat koperasi (kabupaten/kota)', 'Minimal 9 pendiri', 'KTP dan NPWP para pendiri', 'Struktur pengurus dan pengawas'],
             'pendirian-perkumpulan' => ['Nama perkumpulan minimal 3 kata', 'Alamat organisasi (kabupaten/kota)', 'Minimal 2 pendiri', 'Struktur pengurus: Ketua, Sekretaris, dan Bendahara', 'KTP para pendiri'],
             'pendirian-firma' => ['Nama firma minimal 2 kata', 'Alamat usaha (kabupaten/kota)', 'Minimal 2 sekutu', 'KTP dan NPWP para sekutu'],

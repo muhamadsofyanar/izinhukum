@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\MarketingCampaign;
 use App\Models\ServicePackage;
+use App\Services\CouponService;
 use App\Services\FeatureFlagService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CampaignLandingController extends Controller
@@ -14,6 +16,7 @@ class CampaignLandingController extends Controller
         Request $request,
         MarketingCampaign $campaign,
         FeatureFlagService $features,
+        CouponService $coupons,
     ): View {
         abort_unless($campaign->isLandingLive(), 404);
 
@@ -36,11 +39,28 @@ class CampaignLandingController extends Controller
             ->orderByDesc('is_popular')
             ->orderBy('sort_order')
             ->get();
-        $campaign->loadMissing('service');
+        $campaign->loadMissing(['service', 'coupon']);
+        $coupon = $campaign->coupon;
+        $promoOffers = [];
+        if ($coupon) {
+            $coupon->loadCount('redemptions');
+            foreach ($packages as $package) {
+                try {
+                    $promoOffers[$package->id] = $coupons->quote($coupon->code, $package);
+                } catch (ValidationException) {
+                    // Jangan tampilkan harga promo pada paket yang tidak memenuhi syarat.
+                }
+            }
+        }
+        if ($promoOffers === []) {
+            $coupon = null;
+        }
 
         return view('campaign-landing', [
             'campaign' => $campaign,
             'packages' => $packages,
+            'coupon' => $coupon,
+            'promoOffers' => $promoOffers,
             'headline' => $campaign->landing_headline
                 ?: 'Urus legalitas lebih jelas, tanpa mulai dari nol',
             'subheadline' => $campaign->landing_subheadline

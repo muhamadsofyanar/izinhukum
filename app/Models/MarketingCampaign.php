@@ -17,7 +17,7 @@ class MarketingCampaign extends Model
     ];
 
     protected $fillable = [
-        'name', 'slug', 'service_id', 'source', 'medium', 'landing_headline',
+        'name', 'slug', 'service_id', 'coupon_id', 'source', 'medium', 'landing_headline',
         'landing_subheadline', 'cta_text', 'is_landing_enabled', 'landing_views',
         'start_date', 'end_date', 'budget', 'spend', 'status', 'notes', 'created_by',
     ];
@@ -34,6 +34,11 @@ class MarketingCampaign extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 
     public function creator(): BelongsTo

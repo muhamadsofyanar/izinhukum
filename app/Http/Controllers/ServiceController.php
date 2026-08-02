@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MarketingCampaign;
 use App\Models\Service;
+use App\Services\CouponService;
 use App\Services\FeatureFlagService;
 use App\Services\ServiceLandingContentService;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ServiceController extends Controller
@@ -25,6 +28,7 @@ class ServiceController extends Controller
         Service $service,
         ServiceLandingContentService $landing,
         FeatureFlagService $features,
+        CouponService $coupons,
     ): View
     {
         abort_unless($service->is_active, 404);
@@ -43,6 +47,40 @@ class ServiceController extends Controller
             ->take(3)
             ->get();
 
-        return view('services.show', compact('service', 'content', 'structuredData', 'relatedServices'));
+        $activeCampaign = MarketingCampaign::query()
+            ->with('coupon')
+            ->where('service_id', $service->id)
+            ->whereNotNull('coupon_id')
+            ->where('status', 'active')
+            ->where('is_landing_enabled', true)
+            ->orderByDesc('start_date')
+            ->get()
+            ->first(fn (MarketingCampaign $campaign): bool => $campaign->isLandingLive());
+        $activeCoupon = $activeCampaign?->coupon;
+        $promoOffers = [];
+        if ($activeCoupon) {
+            $activeCoupon->loadCount('redemptions');
+            foreach ($service->packages as $package) {
+                try {
+                    $promoOffers[$package->id] = $coupons->quote($activeCoupon->code, $package);
+                } catch (ValidationException) {
+                    // Paket yang tidak memenuhi minimum atau kuota tidak ditampilkan sebagai promo.
+                }
+            }
+        }
+        if ($promoOffers === []) {
+            $activeCoupon = null;
+            $activeCampaign = null;
+        }
+
+        return view('services.show', compact(
+            'service',
+            'content',
+            'structuredData',
+            'relatedServices',
+            'activeCampaign',
+            'activeCoupon',
+            'promoOffers',
+        ));
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Coupon;
 use App\Models\MarketingCampaign;
 use App\Models\Service;
 use App\Models\User;
@@ -18,9 +19,10 @@ class MarketingCampaignController extends Controller
     public function index(FeatureFlagService $features): View
     {
         return view('admin.marketing-campaigns.index', [
-            'campaigns' => MarketingCampaign::query()->with(['service'])->withCount('inquiries')->latest()->paginate(25),
+            'campaigns' => MarketingCampaign::query()->with(['service', 'coupon'])->withCount('inquiries')->latest()->paginate(25),
             'statuses' => MarketingCampaign::STATUSES,
             'services' => Service::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'slug']),
+            'coupons' => Coupon::query()->orderByDesc('is_active')->orderBy('code')->get(['id', 'name', 'code', 'is_active']),
             'growthEnabled' => $features->enabled('growth_analytics'),
             'landingPagesEnabled' => $features->enabled('campaign_landing_pages'),
         ]);
@@ -65,6 +67,7 @@ class MarketingCampaignController extends Controller
             'name' => ['required', 'string', 'max:160'],
             'slug' => ['nullable', 'string', 'max:180', Rule::unique('marketing_campaigns', 'slug')->ignore($campaign?->id)],
             'service_id' => ['nullable', 'exists:services,id'],
+            'coupon_id' => ['nullable', 'exists:coupons,id'],
             'source' => ['required', 'string', 'max:120'],
             'medium' => ['required', 'string', 'max:120'],
             'landing_headline' => ['nullable', 'string', 'max:180'],

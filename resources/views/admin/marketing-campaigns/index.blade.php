@@ -23,6 +23,7 @@
         <label class="field"><span>Nama campaign *</span><input class="form-control" name="name" value="{{ old('name') }}" required></label>
         <label class="field"><span>Kode URL</span><input class="form-control" name="slug" value="{{ old('slug') }}" placeholder="Otomatis dari nama"></label>
         <label class="field"><span>Fokus layanan</span><select class="form-select" name="service_id"><option value="">Semua layanan</option>@foreach($services as $service)<option value="{{ $service->id }}" @selected(old('service_id') == $service->id)>{{ $service->name }}</option>@endforeach</select></label>
+        <label class="field"><span>Promo/kupon otomatis</span><select class="form-select" name="coupon_id"><option value="">Tanpa promo</option>@foreach($coupons as $coupon)<option value="{{ $coupon->id }}" @selected(old('coupon_id') == $coupon->id)>{{ $coupon->code }} · {{ $coupon->name }}{{ $coupon->is_active ? '' : ' (nonaktif)' }}</option>@endforeach</select></label>
         <label class="field"><span>Teks tombol</span><input class="form-control" name="cta_text" value="{{ old('cta_text', 'Konsultasi sekarang') }}" required></label>
         <label class="field"><span>Sumber</span><input class="form-control" name="source" value="{{ old('source', 'whatsapp') }}" required></label>
         <label class="field"><span>Media</span><input class="form-control" name="medium" value="{{ old('medium', 'broadcast') }}" required></label>
@@ -56,6 +57,7 @@
                 <label class="field col-md-6"><span>Kode URL</span><input class="form-control" name="slug" value="{{ $campaign->slug }}" required></label>
                 <label class="field col-md-6"><span>Fokus layanan</span><select class="form-select" name="service_id"><option value="">Semua layanan</option>@foreach($services as $service)<option value="{{ $service->id }}" @selected($campaign->service_id === $service->id)>{{ $service->name }}</option>@endforeach</select></label>
             </div>
+            <label class="field"><span>Promo/kupon otomatis</span><select class="form-select" name="coupon_id"><option value="">Tanpa promo</option>@foreach($coupons as $coupon)<option value="{{ $coupon->id }}" @selected($campaign->coupon_id === $coupon->id)>{{ $coupon->code }} · {{ $coupon->name }}{{ $coupon->is_active ? '' : ' (nonaktif)' }}</option>@endforeach</select></label>
             <div class="row g-2">
                 <label class="field col-6"><span>Sumber</span><input class="form-control" name="source" value="{{ $campaign->source }}" required></label>
                 <label class="field col-6"><span>Media</span><input class="form-control" name="medium" value="{{ $campaign->medium }}" required></label>
