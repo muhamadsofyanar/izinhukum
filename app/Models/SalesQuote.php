@@ -22,6 +22,7 @@ class SalesQuote extends Model
         'created_by',
         'inquiry_id',
         'crm_lead_id',
+        'sales_quote_template_id',
         'service_order_id',
         'invoice_id',
         'referred_by_partner_id',
@@ -89,6 +90,11 @@ class SalesQuote extends Model
     public function crmLead(): BelongsTo
     {
         return $this->belongsTo(CrmLead::class);
+    }
+
+    public function template(): BelongsTo
+    {
+        return $this->belongsTo(SalesQuoteTemplate::class, 'sales_quote_template_id');
     }
 
     public function invoice(): BelongsTo

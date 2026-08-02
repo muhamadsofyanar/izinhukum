@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Portal') · IzinHukum</title>
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=16.0.0">
+    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=20.0.0">
 </head>
 <body class="admin-body">
 @php
@@ -43,13 +43,16 @@
                 <span class="sidebar-section-label">Operasional</span>
                 <a class="{{ request()->routeIs('admin.inquiries.*') ? 'active' : '' }}" href="{{ route('admin.inquiries.index') }}">Permintaan masuk</a>
                 @if($featureFlags->enabled('sales_pipeline'))<a class="{{ request()->routeIs('admin.pipeline.*') ? 'active' : '' }}" href="{{ route('admin.pipeline.index') }}">Pipeline penjualan</a>@endif
+                @if($featureFlags->enabled('manual_sales_playbooks'))<a class="{{ request()->routeIs('admin.sales-messages.*') ? 'active' : '' }}" href="{{ route('admin.sales-messages.index') }}">Playbook penjualan</a>@endif
                 @if($featureFlags->enabled('digital_quotes'))<a class="{{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}" href="{{ route('admin.quotes.index') }}">Penawaran digital</a>@endif
+                @if($featureFlags->enabled('quote_templates'))<a class="{{ request()->routeIs('admin.quote-templates.*') ? 'active' : '' }}" href="{{ route('admin.quote-templates.index') }}">Template penawaran</a>@endif
                 <a class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">Pesanan</a>
                 <a class="{{ request()->routeIs('admin.packages.*') ? 'active' : '' }}" href="{{ route('admin.packages.index') }}">Layanan & harga</a>
                 <a class="{{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">Kupon & promo</a>
 
                 <span class="sidebar-section-label">Keuangan</span>
                 @if($featureFlags->enabled('growth_analytics'))<a class="{{ request()->routeIs('admin.growth.*') ? 'active' : '' }}" href="{{ route('admin.growth.index') }}">Analitik pertumbuhan</a>@endif
+                @if($featureFlags->enabled('campaign_roi'))<a class="{{ request()->routeIs('admin.marketing-campaigns.*') ? 'active' : '' }}" href="{{ route('admin.marketing-campaigns.index') }}">Campaign & ROI</a>@endif
                 <a class="{{ request()->routeIs('admin.finance.*') ? 'active' : '' }}" href="{{ route('admin.finance.index') }}">Laporan keuangan</a>
                 <a class="{{ request()->routeIs('admin.invoices.*') || request()->routeIs('admin.payments.*') ? 'active' : '' }}" href="{{ route('admin.invoices.index') }}">Invoice & kwitansi</a>
 

@@ -11,8 +11,10 @@ use Illuminate\Support\Facades\Schema;
 
 class SalesPipelineService
 {
-    public function __construct(private readonly CrmContactService $contacts)
-    {
+    public function __construct(
+        private readonly CrmContactService $contacts,
+        private readonly LeadScoringService $scoring,
+    ) {
     }
 
     public function syncInquiry(Inquiry $inquiry, ?int $assignedTo = null): ?CrmLead
@@ -56,7 +58,10 @@ class SalesPipelineService
                 $lead->service_interest = $inquiry->package?->name;
                 $lead->estimated_value = max(0, (int) ($inquiry->package?->price ?? 0) - $inquiry->coupon_discount_amount);
                 $lead->probability = $this->probabilityForStage($lead->stage);
+                $lead->lead_score = $this->scoring->scoreInquiry($inquiry);
+                $lead->temperature = $this->scoring->temperature($lead->lead_score);
                 $lead->assigned_to = $assignedTo;
+                $lead->last_stage_changed_at = now();
                 $lead->metadata = [
                     'utm_source' => $inquiry->utm_source,
                     'utm_medium' => $inquiry->utm_medium,
@@ -67,6 +72,11 @@ class SalesPipelineService
             }
             $lead->service_order_id = $inquiry->serviceOrder?->id ?: $lead->service_order_id;
             $lead->save();
+            $score = $this->scoring->scoreInquiry($inquiry);
+            $lead->forceFill([
+                'lead_score' => $score,
+                'temperature' => $this->scoring->temperature($score),
+            ])->save();
 
             CrmActivity::query()->firstOrCreate(
                 [

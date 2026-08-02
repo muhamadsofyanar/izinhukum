@@ -7,20 +7,26 @@ use App\Models\CrmActivity;
 use App\Models\CrmLead;
 use App\Models\User;
 use App\Services\Crm\CrmContactService;
+use App\Services\LeadScoringService;
+use App\Services\SalesMessageRenderer;
 use App\Services\SalesPipelineService;
 use App\Services\ServiceOrderService;
+use App\Services\FeatureFlagService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use App\Models\SalesMessageTemplate;
 
 class SalesPipelineController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, FeatureFlagService $features): View
     {
         $search = trim((string) $request->query('q'));
         $stage = trim((string) $request->query('stage'));
+        $temperature = trim((string) $request->query('temperature'));
+        $recovery = $request->boolean('recovery');
         $leads = CrmLead::query()
             ->with(['contact', 'inquiry.package.service', 'serviceOrder', 'assignee', 'activities.user'])
             ->when($search !== '', function (Builder $query) use ($search): void {
@@ -34,9 +40,15 @@ class SalesPipelineController extends Controller
                 });
             })
             ->when($stage !== '', fn (Builder $query) => $query->where('stage', $stage))
+            ->when($features->enabled('lead_prioritization') && $temperature !== '', fn (Builder $query) => $query->where('temperature', $temperature))
+            ->when($features->enabled('lead_recovery') && $recovery, fn (Builder $query) => $query
+                ->where('stage', 'lost')
+                ->whereNotNull('reactivate_at')
+                ->where('reactivate_at', '<=', now()))
             ->orderByRaw("CASE stage WHEN 'new' THEN 1 WHEN 'questioning' THEN 2 WHEN 'qualified' THEN 3 WHEN 'proposal' THEN 4 WHEN 'deal' THEN 5 WHEN 'waiting_requirements' THEN 6 WHEN 'processing' THEN 7 WHEN 'completed' THEN 8 ELSE 9 END")
             ->orderByRaw('CASE WHEN next_follow_up_at IS NULL THEN 1 ELSE 0 END')
             ->orderBy('next_follow_up_at')
+            ->orderByDesc('lead_score')
             ->paginate(24)
             ->withQueryString();
 
@@ -45,17 +57,34 @@ class SalesPipelineController extends Controller
             'stages' => CrmLead::STAGES,
             'stage' => $stage,
             'search' => $search,
+            'temperature' => $temperature,
+            'temperatures' => CrmLead::TEMPERATURES,
+            'lossReasons' => CrmLead::LOSS_REASONS,
+            'recovery' => $recovery,
             'admins' => User::query()->where('role', 'admin')->where('is_active', true)->orderBy('name')->get(),
+            'messageTemplates' => $features->enabled('manual_sales_playbooks')
+                ? SalesMessageTemplate::query()->where('is_active', true)->orderBy('sort_order')->get()
+                : collect(),
+            'playbooksEnabled' => $features->enabled('manual_sales_playbooks'),
+            'leadPrioritizationEnabled' => $features->enabled('lead_prioritization'),
+            'leadRecoveryEnabled' => $features->enabled('lead_recovery'),
+            'quotesEnabled' => $features->enabled('digital_quotes'),
             'summary' => CrmLead::query()->selectRaw('stage, COUNT(*) as aggregate')->groupBy('stage')->pluck('aggregate', 'stage'),
             'dueFollowUps' => CrmLead::query()
                 ->whereNotIn('stage', ['completed', 'lost'])
                 ->whereNotNull('next_follow_up_at')
                 ->where('next_follow_up_at', '<=', now())
                 ->count(),
+            'hotLeads' => CrmLead::query()->where('temperature', 'hot')->whereNotIn('stage', ['completed', 'lost'])->count(),
+            'recoveryDue' => CrmLead::query()->where('stage', 'lost')->whereNotNull('reactivate_at')->where('reactivate_at', '<=', now())->count(),
         ]);
     }
 
-    public function store(Request $request, CrmContactService $contacts): RedirectResponse
+    public function store(
+        Request $request,
+        CrmContactService $contacts,
+        LeadScoringService $scoring,
+    ): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:160'],
@@ -89,6 +118,7 @@ class SalesPipelineController extends Controller
             'next_follow_up_at' => $data['next_follow_up_at'] ?? null,
             'notes' => $data['notes'] ?? null,
         ], $actor?->id);
+        $scoring->refresh($lead);
         CrmActivity::query()->create([
             'contact_id' => $contact->id,
             'lead_id' => $lead->id,
@@ -106,6 +136,7 @@ class SalesPipelineController extends Controller
         CrmLead $lead,
         SalesPipelineService $pipeline,
         ServiceOrderService $orders,
+        LeadScoringService $scoring,
     ): RedirectResponse {
         $data = $request->validate([
             'stage' => ['required', Rule::in(array_keys(CrmLead::STAGES))],
@@ -116,14 +147,27 @@ class SalesPipelineController extends Controller
             'next_follow_up_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:10000'],
             'lost_reason' => ['nullable', 'string', 'max:2000'],
+            'loss_reason_code' => ['nullable', Rule::in(array_keys(CrmLead::LOSS_REASONS))],
+            'reactivate_at' => ['nullable', 'date'],
         ]);
         $oldStage = $lead->stage;
         $data['probability'] = $data['probability'] ?? $pipeline->probabilityForStage($data['stage']);
         $data['closed_at'] = in_array($data['stage'], ['completed', 'lost'], true) ? now() : null;
+        if ($oldStage !== $data['stage']) {
+            $data['last_stage_changed_at'] = now();
+        }
+        if (in_array($data['stage'], ['deal', 'waiting_requirements', 'processing', 'completed'], true)) {
+            $data['won_at'] = $lead->won_at ?: now();
+        }
         if ($data['stage'] !== 'lost') {
             $data['lost_reason'] = null;
+            $data['loss_reason_code'] = null;
+            $data['reactivate_at'] = null;
+        } elseif (app(FeatureFlagService::class)->enabled('lead_recovery') && empty($data['loss_reason_code'])) {
+            return back()->withErrors(['loss_reason_code' => 'Pilih alasan lead tidak lanjut.'])->withInput();
         }
         $lead->update($data);
+        $lead = $scoring->refresh($lead);
         $lead->loadMissing(['contact', 'inquiry', 'serviceOrder']);
         $lead->contact?->update([
             'lifecycle_stage' => in_array($lead->stage, ['deal', 'waiting_requirements', 'processing', 'completed'], true) ? 'customer' : 'lead',
@@ -194,6 +238,12 @@ class SalesPipelineController extends Controller
             $lead->update(['next_follow_up_at' => $data['due_at'] ?? null]);
         } else {
             $lead->contact?->update(['last_contact_at' => now()]);
+            if (! $lead->first_contacted_at && in_array($data['type'], ['contacted', 'call', 'meeting'], true)) {
+                $lead->update([
+                    'first_contacted_at' => now(),
+                    'response_minutes' => (int) round(max(0, $lead->created_at->diffInMinutes(now()))),
+                ]);
+            }
         }
 
         return back()->with('success', 'Aktivitas penjualan berhasil dicatat.');
@@ -217,5 +267,32 @@ class SalesPipelineController extends Controller
         $created = $pipeline->backfill();
 
         return back()->with('success', $created.' permintaan lama ditambahkan ke pipeline.');
+    }
+
+    public function whatsapp(
+        Request $request,
+        CrmLead $lead,
+        SalesMessageTemplate $template,
+        SalesMessageRenderer $renderer,
+    ): RedirectResponse {
+        abort_unless($template->is_active, 404);
+        $lead->loadMissing('contact');
+        abort_unless(filled($lead->contact?->phone), 422, 'Lead tidak memiliki nomor WhatsApp.');
+        CrmActivity::query()->create([
+            'contact_id' => $lead->contact_id,
+            'lead_id' => $lead->id,
+            'service_order_id' => $lead->service_order_id,
+            'user_id' => $request->attributes->get('currentUser')?->id,
+            'type' => 'message_prepared',
+            'title' => 'Pesan WhatsApp disiapkan',
+            'description' => $template->name.' · Pengiriman tetap dilakukan manual oleh admin.',
+            'completed_at' => now(),
+        ]);
+
+        return redirect()->away($renderer->whatsappUrl(
+            $template,
+            $lead,
+            $request->attributes->get('currentUser')?->name,
+        ));
     }
 }

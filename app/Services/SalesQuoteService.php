@@ -99,6 +99,8 @@ class SalesQuoteService
                     'probability' => 80,
                     'estimated_value' => $locked->total,
                     'closed_at' => null,
+                    'won_at' => $lead->won_at ?: now(),
+                    'last_stage_changed_at' => $lead->stage !== 'deal' ? now() : $lead->last_stage_changed_at,
                 ]);
                 CrmActivity::query()->create([
                     'contact_id' => $lead->contact_id,

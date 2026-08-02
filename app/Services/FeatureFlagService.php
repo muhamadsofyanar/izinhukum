@@ -59,6 +59,31 @@ class FeatureFlagService
             'description' => 'Admin melihat konversi sumber/campaign, layanan, referral, penawaran, invoice, dan pembayaran.',
             'default' => true,
         ],
+        'lead_prioritization' => [
+            'label' => 'Prioritas dan skor lead',
+            'description' => 'Memberi skor intent serta label panas, hangat, atau dingin agar admin mendahulukan lead paling potensial.',
+            'default' => true,
+        ],
+        'manual_sales_playbooks' => [
+            'label' => 'Playbook penjualan manual',
+            'description' => 'Menyiapkan pesan WhatsApp sesuai tahap. Admin tetap membuka, memeriksa, dan mengirim sendiri.',
+            'default' => true,
+        ],
+        'quote_templates' => [
+            'label' => 'Template penawaran',
+            'description' => 'Ruang lingkup dan ketentuan penawaran dapat digunakan ulang agar respons lebih cepat dan konsisten.',
+            'default' => true,
+        ],
+        'lead_recovery' => [
+            'label' => 'Pemulihan lead',
+            'description' => 'Mencatat alasan tidak lanjut dan menjadwalkan lead untuk dihubungi kembali secara manual.',
+            'default' => true,
+        ],
+        'campaign_roi' => [
+            'label' => 'Biaya dan ROI campaign',
+            'description' => 'Mencatat budget/biaya campaign dan membandingkannya dengan lead, deal, serta pembayaran teratribusi.',
+            'default' => true,
+        ],
         'partner_academy' => [
             'label' => 'Akademi mitra',
             'description' => 'Mitra dapat membuka LMS, materi, progres, dan sertifikat.',

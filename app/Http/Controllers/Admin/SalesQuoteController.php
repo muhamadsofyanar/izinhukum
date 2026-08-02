@@ -7,9 +7,11 @@ use App\Models\CrmActivity;
 use App\Models\CrmLead;
 use App\Models\Inquiry;
 use App\Models\SalesQuote;
+use App\Models\SalesQuoteTemplate;
 use App\Models\ServicePackage;
 use App\Models\User;
 use App\Services\BrandingService;
+use App\Services\FeatureFlagService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,8 +50,21 @@ class SalesQuoteController extends Controller
         $inquiry = $request->filled('inquiry')
             ? Inquiry::query()->with(['package.service', 'serviceOrder', 'referredByPartner'])->findOrFail($request->integer('inquiry'))
             : $lead?->inquiry;
+        $serviceId = $inquiry?->package?->service_id;
+        $templatesEnabled = app(FeatureFlagService::class)->enabled('quote_templates');
+        $template = ! $templatesEnabled
+            ? null
+            : ($request->filled('template')
+                ? SalesQuoteTemplate::query()->where('is_active', true)->findOrFail($request->integer('template'))
+                : SalesQuoteTemplate::query()->where('is_active', true)
+                ->where(function ($query) use ($serviceId): void {
+                    $query->when($serviceId, fn ($builder) => $builder->where('service_id', $serviceId))
+                        ->orWhereNull('service_id');
+                })
+                ->orderByRaw('CASE WHEN service_id IS NULL THEN 1 ELSE 0 END')
+                ->first());
 
-        return view('admin.quotes.form', $this->formData(null, $inquiry, $lead));
+        return view('admin.quotes.form', $this->formData(null, $inquiry, $lead, $template));
     }
 
     public function store(Request $request): RedirectResponse
@@ -71,6 +86,9 @@ class SalesQuoteController extends Controller
             ]);
             $quote->update(['quote_number' => sprintf('QTN/IH/%s/%05d', now()->format('Ym'), $quote->id)]);
             $quote->items()->createMany($prepared['items']);
+            if ($quote->sales_quote_template_id) {
+                SalesQuoteTemplate::query()->whereKey($quote->sales_quote_template_id)->increment('use_count');
+            }
 
             return $quote;
         });
@@ -92,9 +110,9 @@ class SalesQuoteController extends Controller
     public function edit(SalesQuote $quote): View
     {
         abort_unless($quote->status === 'draft', 422, 'Hanya penawaran draf yang dapat diubah.');
-        $quote->load(['items', 'inquiry', 'crmLead.contact']);
+        $quote->load(['items', 'inquiry', 'crmLead.contact', 'template']);
 
-        return view('admin.quotes.form', $this->formData($quote, $quote->inquiry, $quote->crmLead));
+        return view('admin.quotes.form', $this->formData($quote, $quote->inquiry, $quote->crmLead, $quote->template));
     }
 
     public function update(Request $request, SalesQuote $quote): RedirectResponse
@@ -124,7 +142,13 @@ class SalesQuoteController extends Controller
         $quote->loadMissing(['crmLead', 'inquiry.crmLead']);
         $lead = $quote->crmLead ?: $quote->inquiry?->crmLead;
         if ($lead) {
-            $lead->update(['stage' => 'proposal', 'probability' => 55, 'estimated_value' => $quote->total]);
+            $lead->update([
+                'stage' => 'proposal',
+                'probability' => 55,
+                'estimated_value' => $quote->total,
+                'last_quote_at' => now(),
+                'last_stage_changed_at' => $lead->stage !== 'proposal' ? now() : $lead->last_stage_changed_at,
+            ]);
             CrmActivity::query()->create([
                 'contact_id' => $lead->contact_id,
                 'lead_id' => $lead->id,
@@ -153,6 +177,10 @@ class SalesQuoteController extends Controller
         $validated = $request->validate([
             'inquiry_id' => ['nullable', 'exists:inquiries,id'],
             'crm_lead_id' => ['nullable', 'exists:crm_leads,id'],
+            'sales_quote_template_id' => [
+                'nullable',
+                Rule::exists('sales_quote_templates', 'id')->where(fn ($query) => $query->where('is_active', true)),
+            ],
             'recipient_name' => ['required', 'string', 'max:160'],
             'recipient_company' => ['nullable', 'string', 'max:180'],
             'recipient_email' => ['nullable', 'email', 'max:160'],
@@ -210,6 +238,9 @@ class SalesQuoteController extends Controller
             'attributes' => [
                 'inquiry_id' => $inquiry?->id,
                 'crm_lead_id' => $lead?->id,
+                'sales_quote_template_id' => app(FeatureFlagService::class)->enabled('quote_templates')
+                    ? ($validated['sales_quote_template_id'] ?? null)
+                    : null,
                 'service_order_id' => $inquiry?->serviceOrder?->id ?: $lead?->serviceOrder?->id,
                 'referred_by_partner_id' => $inquiry?->referred_by_partner_id,
                 'coupon_id' => $inquiry?->coupon_id,
@@ -234,7 +265,12 @@ class SalesQuoteController extends Controller
         ];
     }
 
-    private function formData(?SalesQuote $quote, ?Inquiry $inquiry, ?CrmLead $lead = null): array
+    private function formData(
+        ?SalesQuote $quote,
+        ?Inquiry $inquiry,
+        ?CrmLead $lead = null,
+        ?SalesQuoteTemplate $defaultTemplate = null,
+    ): array
     {
         $packages = ServicePackage::query()
             ->with('service')
@@ -258,7 +294,28 @@ class SalesQuoteController extends Controller
                 'quantity' => 1,
                 'unit_price' => $inquiry?->package?->price ?: (int) ($lead?->estimated_value ?? 0),
             ]];
+        $quoteTemplatesEnabled = app(FeatureFlagService::class)->enabled('quote_templates');
+        $quoteTemplates = $quoteTemplatesEnabled
+            ? SalesQuoteTemplate::query()
+                ->with('service')
+                ->where('is_active', true)
+                ->orderByRaw('CASE WHEN service_id IS NULL THEN 1 ELSE 0 END')
+                ->orderBy('name')
+                ->get()
+            : collect();
+        $templateOptions = $quoteTemplates->map(fn (SalesQuoteTemplate $template): array => [
+            'id' => $template->id,
+            'scope' => $template->scope,
+            'terms' => $template->terms,
+            'notes' => $template->notes,
+            'validity_days' => $template->validity_days,
+            'invoice_due_days' => $template->invoice_due_days,
+        ])->values()->all();
 
-        return compact('quote', 'inquiry', 'lead', 'packages', 'packageOptions', 'formItems');
+        return compact(
+            'quote', 'inquiry', 'lead', 'packages', 'packageOptions', 'formItems',
+            'quoteTemplates', 'templateOptions', 'defaultTemplate',
+            'quoteTemplatesEnabled',
+        );
     }
 }

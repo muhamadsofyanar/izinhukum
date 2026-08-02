@@ -11,11 +11,14 @@ use App\Http\Controllers\Admin\FinanceController as AdminFinanceController;
 use App\Http\Controllers\Admin\GrowthAnalyticsController as AdminGrowthAnalyticsController;
 use App\Http\Controllers\Admin\InquiryController as AdminInquiryController;
 use App\Http\Controllers\Admin\MailSettingController as AdminMailSettingController;
+use App\Http\Controllers\Admin\MarketingCampaignController as AdminMarketingCampaignController;
 use App\Http\Controllers\Admin\PackageController as AdminPackageController;
 use App\Http\Controllers\Admin\PartnerController as AdminPartnerController;
 use App\Http\Controllers\Admin\PaymentProofController as AdminPaymentProofController;
 use App\Http\Controllers\Admin\SalesPipelineController as AdminSalesPipelineController;
+use App\Http\Controllers\Admin\SalesMessageTemplateController as AdminSalesMessageTemplateController;
 use App\Http\Controllers\Admin\SalesQuoteController as AdminSalesQuoteController;
+use App\Http\Controllers\Admin\SalesQuoteTemplateController as AdminSalesQuoteTemplateController;
 use App\Http\Controllers\Admin\ServiceOrderController as AdminServiceOrderController;
 use App\Http\Controllers\Admin\WhatsAppAutomationController;
 use App\Http\Controllers\Admin\WhatsAppCampaignController;
@@ -154,6 +157,13 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             Route::put('/pipeline/{lead}', [AdminSalesPipelineController::class, 'update'])->name('pipeline.update');
             Route::post('/pipeline/{lead}/aktivitas', [AdminSalesPipelineController::class, 'addActivity'])->name('pipeline.activities.store');
             Route::put('/pipeline/aktivitas/{activity}/selesai', [AdminSalesPipelineController::class, 'completeActivity'])->name('pipeline.activities.complete');
+            Route::post('/pipeline/{lead}/whatsapp/{template}', [AdminSalesPipelineController::class, 'whatsapp'])->middleware('feature:manual_sales_playbooks')->name('pipeline.whatsapp');
+        });
+        Route::middleware('feature:manual_sales_playbooks')->group(function (): void {
+            Route::get('/playbook-penjualan', [AdminSalesMessageTemplateController::class, 'index'])->name('sales-messages.index');
+            Route::post('/playbook-penjualan', [AdminSalesMessageTemplateController::class, 'store'])->name('sales-messages.store');
+            Route::put('/playbook-penjualan/{template}', [AdminSalesMessageTemplateController::class, 'update'])->name('sales-messages.update');
+            Route::delete('/playbook-penjualan/{template}', [AdminSalesMessageTemplateController::class, 'destroy'])->name('sales-messages.destroy');
         });
         Route::middleware('feature:digital_quotes')->group(function (): void {
             Route::get('/penawaran', [AdminSalesQuoteController::class, 'index'])->name('quotes.index');
@@ -164,6 +174,12 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             Route::put('/penawaran/{quote}', [AdminSalesQuoteController::class, 'update'])->name('quotes.update');
             Route::post('/penawaran/{quote}/terbitkan', [AdminSalesQuoteController::class, 'send'])->name('quotes.send');
             Route::post('/penawaran/{quote}/batalkan', [AdminSalesQuoteController::class, 'cancel'])->name('quotes.cancel');
+        });
+        Route::middleware('feature:quote_templates')->group(function (): void {
+            Route::get('/template-penawaran', [AdminSalesQuoteTemplateController::class, 'index'])->name('quote-templates.index');
+            Route::post('/template-penawaran', [AdminSalesQuoteTemplateController::class, 'store'])->name('quote-templates.store');
+            Route::put('/template-penawaran/{template}', [AdminSalesQuoteTemplateController::class, 'update'])->name('quote-templates.update');
+            Route::delete('/template-penawaran/{template}', [AdminSalesQuoteTemplateController::class, 'destroy'])->name('quote-templates.destroy');
         });
         Route::get('/mitra', [AdminPartnerController::class, 'index'])->name('partners.index');
         Route::post('/mitra', [AdminPartnerController::class, 'store'])->name('partners.store');
@@ -208,6 +224,11 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::post('/pembayaran/{payment}/batalkan', [PortalPaymentController::class, 'cancel'])->name('payments.cancel');
         Route::get('/keuangan', [AdminFinanceController::class, 'index'])->name('finance.index');
         Route::get('/pertumbuhan', AdminGrowthAnalyticsController::class)->middleware('feature:growth_analytics')->name('growth.index');
+        Route::middleware('feature:campaign_roi')->group(function (): void {
+            Route::get('/campaign-pemasaran', [AdminMarketingCampaignController::class, 'index'])->name('marketing-campaigns.index');
+            Route::post('/campaign-pemasaran', [AdminMarketingCampaignController::class, 'store'])->name('marketing-campaigns.store');
+            Route::put('/campaign-pemasaran/{campaign}', [AdminMarketingCampaignController::class, 'update'])->name('marketing-campaigns.update');
+        });
         Route::post('/keuangan/kategori', [AdminFinanceController::class, 'storeCategory'])->name('finance.categories.store');
         Route::post('/keuangan/pemasukan', [AdminFinanceController::class, 'storeIncome'])->name('finance.incomes.store');
         Route::post('/keuangan/pengeluaran', [AdminFinanceController::class, 'storeExpense'])->name('finance.expenses.store');

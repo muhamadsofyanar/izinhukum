@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Jobs\SendNewInquiryEmailNotification;
 use App\Jobs\SendNewInquiryWhatsAppNotification;
 use App\Models\Inquiry;
+use App\Models\MarketingCampaign;
 use App\Models\ServicePackage;
 use App\Services\CouponService;
 use App\Services\FeatureFlagService;
@@ -107,6 +108,11 @@ class InquiryController extends Controller
                 array_flip(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'landing_path']),
             )
             : [];
+        if (! empty($marketing['utm_campaign'])) {
+            $marketing['marketing_campaign_id'] = MarketingCampaign::query()
+                ->where('slug', Str::slug((string) $marketing['utm_campaign']))
+                ->value('id');
+        }
         $inquiry = DB::transaction(function () use (
             $validated,
             $couponCode,

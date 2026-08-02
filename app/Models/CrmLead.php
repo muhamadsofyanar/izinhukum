@@ -8,6 +8,23 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CrmLead extends Model
 {
+    public const TEMPERATURES = [
+        'hot' => 'Panas',
+        'warm' => 'Hangat',
+        'cold' => 'Dingin',
+    ];
+
+    public const LOSS_REASONS = [
+        'price' => 'Harga/budget',
+        'timing' => 'Belum waktunya',
+        'no_response' => 'Tidak merespons',
+        'competitor' => 'Memilih penyedia lain',
+        'requirements' => 'Persyaratan belum siap',
+        'cancelled_plan' => 'Rencana dibatalkan',
+        'outside_scope' => 'Di luar layanan',
+        'other' => 'Alasan lainnya',
+    ];
+
     public const STAGES = [
         'new' => 'Lead baru',
         'questioning' => 'Bertanya',
@@ -25,7 +42,9 @@ class CrmLead extends Model
     protected $fillable = [
         'contact_id', 'inquiry_id', 'service_order_id', 'title', 'source', 'stage',
         'service_interest', 'estimated_value', 'probability', 'assigned_to',
-        'next_follow_up_at', 'closed_at', 'lost_reason', 'notes', 'metadata',
+        'lead_score', 'temperature', 'next_follow_up_at', 'last_stage_changed_at',
+        'first_contacted_at', 'response_minutes', 'closed_at', 'lost_reason',
+        'loss_reason_code', 'reactivate_at', 'last_quote_at', 'won_at', 'notes', 'metadata',
     ];
 
     protected function casts(): array
@@ -33,8 +52,15 @@ class CrmLead extends Model
         return [
             'estimated_value' => 'decimal:2',
             'probability' => 'integer',
+            'lead_score' => 'integer',
             'next_follow_up_at' => 'datetime',
+            'last_stage_changed_at' => 'datetime',
+            'first_contacted_at' => 'datetime',
+            'response_minutes' => 'integer',
             'closed_at' => 'datetime',
+            'reactivate_at' => 'datetime',
+            'last_quote_at' => 'datetime',
+            'won_at' => 'datetime',
             'metadata' => 'array',
         ];
     }
@@ -82,5 +108,17 @@ class CrmLead extends Model
     public function stageLabel(): string
     {
         return self::STAGES[$this->stage] ?? ucfirst(str_replace('_', ' ', $this->stage));
+    }
+
+    public function temperatureLabel(): string
+    {
+        return self::TEMPERATURES[$this->temperature] ?? ucfirst($this->temperature);
+    }
+
+    public function lossReasonLabel(): ?string
+    {
+        return $this->loss_reason_code
+            ? (self::LOSS_REASONS[$this->loss_reason_code] ?? $this->loss_reason_code)
+            : null;
     }
 }

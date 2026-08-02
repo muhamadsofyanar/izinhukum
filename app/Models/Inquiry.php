@@ -28,6 +28,7 @@ class Inquiry extends Model
         'utm_source',
         'utm_medium',
         'utm_campaign',
+        'marketing_campaign_id',
         'utm_term',
         'utm_content',
         'landing_path',
@@ -67,6 +68,11 @@ class Inquiry extends Model
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);
+    }
+
+    public function marketingCampaign(): BelongsTo
+    {
+        return $this->belongsTo(MarketingCampaign::class);
     }
 
     public function invoices(): HasMany
