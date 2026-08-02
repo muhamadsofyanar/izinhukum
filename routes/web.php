@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AcademyController as AdminAcademyController;
 use App\Http\Controllers\Admin\ArticleController as AdminArticleController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\BrandingController as AdminBrandingController;
+use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\FeatureSettingController as AdminFeatureSettingController;
 use App\Http\Controllers\Admin\FinanceController as AdminFinanceController;
@@ -83,6 +84,7 @@ Route::post('/alat/simulasi-akta', [LegalToolController::class, 'simulateDeed'])
 Route::get('/artikel', [ArticleController::class, 'index'])->middleware('feature:public_articles')->name('articles.index');
 Route::get('/artikel/{article:slug}', [ArticleController::class, 'show'])->middleware('feature:public_articles')->name('articles.show');
 Route::get('/proposal', [InquiryController::class, 'create'])->middleware('feature:public_proposal')->name('proposal.create');
+Route::post('/proposal/cek-kupon', [InquiryController::class, 'checkCoupon'])->middleware(['feature:public_proposal', 'throttle:20,1'])->name('proposal.coupon.check');
 Route::post('/proposal', [InquiryController::class, 'store'])->middleware(['feature:public_proposal', 'throttle:10,1'])->name('proposal.store');
 Route::get('/proposal/berhasil/{inquiry:reference}', [InquiryController::class, 'success'])->name('proposal.success');
 Route::get('/lacak-permintaan', [InquiryTrackingController::class, 'index'])->name('tracking.index');
@@ -121,6 +123,10 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
         Route::get('/paket', [AdminPackageController::class, 'index'])->name('packages.index');
         Route::put('/paket/{package}', [AdminPackageController::class, 'update'])->name('packages.update');
+        Route::get('/kupon', [AdminCouponController::class, 'index'])->name('coupons.index');
+        Route::post('/kupon', [AdminCouponController::class, 'store'])->name('coupons.store');
+        Route::put('/kupon/{coupon}', [AdminCouponController::class, 'update'])->name('coupons.update');
+        Route::delete('/kupon/{coupon}', [AdminCouponController::class, 'destroy'])->name('coupons.destroy');
         Route::get('/permintaan', [AdminInquiryController::class, 'index'])->name('inquiries.index');
         Route::put('/permintaan/{inquiry}', [AdminInquiryController::class, 'update'])->name('inquiries.update');
         Route::get('/mitra', [AdminPartnerController::class, 'index'])->name('partners.index');

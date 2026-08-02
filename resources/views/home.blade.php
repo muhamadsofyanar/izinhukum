@@ -66,7 +66,7 @@
             <a class="text-link" href="{{ route('tools.index') }}">Lihat semua alat →</a>
         </div>
         <div class="tool-grid tool-grid-home">
-            <a class="tool-card" href="{{ route('tools.name-generator') }}"><span class="tool-card-number">01</span><small>Identitas</small><h3>Generator nama</h3><p>PT, Perseroan Perorangan, CV, Firma, Persekutuan Perdata, dan Yayasan.</p><strong>Coba →</strong></a>
+            <a class="tool-card" href="{{ route('tools.name-generator') }}"><span class="tool-card-number">01</span><small>Identitas</small><h3>Generator nama</h3><p>PT, PT PMA, Perseroan Perorangan, CV, Firma, Persekutuan Perdata, Yayasan, Perkumpulan, dan Koperasi.</p><strong>Coba →</strong></a>
             <a class="tool-card" href="{{ route('tools.deed-simulator') }}"><span class="tool-card-number">02</span><small>Dokumen</small><h3>Simulasi bahan akta</h3><p>Lihat ringkasan kedudukan, kegiatan, pendiri, modal, dan organ.</p><strong>Mulai →</strong></a>
             <a class="tool-card" href="{{ route('kbli.index') }}"><span class="tool-card-number">03</span><small>Perizinan</small><h3>Cek KBLI & risiko</h3><p>Cari kegiatan usaha, tingkat risiko, izin, persyaratan, dan kewajiban.</p><strong>Cari →</strong></a>
         </div>
@@ -93,7 +93,7 @@
                         <h3>{{ $service->name }}</h3>
                         <p>{{ $service->summary }}</p>
                         <div class="service-card-bottom">
-                            <span>Mulai <strong>Rp{{ number_format($lowest, 0, ',', '.') }}</strong></span>
+                            <span>@if((int) $lowest === 0) Harga <strong>berdasarkan penawaran</strong>@else Mulai <strong>Rp{{ number_format($lowest, 0, ',', '.') }}</strong>@endif</span>
                             <span class="arrow">→</span>
                         </div>
                     </a>

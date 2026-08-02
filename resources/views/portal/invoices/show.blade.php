@@ -70,6 +70,13 @@
     </div>
 @endif
 
+@if($invoice->coupon_code)
+    <div class="admin-note mb-3">
+        Kupon promo: <strong>{{ $invoice->coupon_code }}</strong> · potongan
+        <strong>Rp{{ number_format($invoice->discount, 0, ',', '.') }}</strong>.
+    </div>
+@endif
+
 <section class="invoice-sheet admin-invoice">
     @include('portal.invoices._document')
 </section>

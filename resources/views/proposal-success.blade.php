@@ -19,6 +19,9 @@
             @if($inquiry->serviceOrder)
                 <div class="success-detail"><span>Nomor order</span><strong>{{ $inquiry->serviceOrder->order_number }}</strong></div>
             @endif
+            @if($inquiry->coupon_code)
+                <div class="success-detail"><span>Kupon promo</span><strong>{{ $inquiry->coupon_code }} · potongan Rp{{ number_format($inquiry->coupon_discount_amount, 0, ',', '.') }}</strong></div>
+            @endif
             <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
                 @if($inquiry->serviceOrder && app(\App\Services\FeatureFlagService::class)->enabled('customer_portal'))
                     <a class="btn btn-primary" href="{{ route('customer.orders.show', $inquiry->serviceOrder->public_token) }}">Buka portal pelanggan</a>

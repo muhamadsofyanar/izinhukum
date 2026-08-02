@@ -32,6 +32,10 @@
                     @if($sourceInquiry->referredByPartner)
                         Sumber mitra: <strong>{{ $sourceInquiry->referredByPartner->name }} · {{ $sourceInquiry->referral_code }}</strong>.
                     @endif
+                    @if($sourceInquiry->coupon_code)
+                        Promo: <strong>{{ $sourceInquiry->coupon_code }}</strong> dengan potongan tercatat
+                        <strong>Rp{{ number_format($sourceInquiry->coupon_discount_amount, 0, ',', '.') }}</strong>.
+                    @endif
                 </div>
             @endif
             @if($user->isAdmin())

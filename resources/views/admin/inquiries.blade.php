@@ -49,6 +49,7 @@
                         <strong>{{ $inquiry->package?->name ?? 'Konsultasi umum' }}</strong>
                         <small>{{ $inquiry->company_name ?: 'Tanpa nama perusahaan' }}</small>
                         <small>{{ $inquiry->created_at->format('d/m/Y H:i') }}</small>
+                        @if($inquiry->coupon_code)<span class="status status-paid">Kupon {{ $inquiry->coupon_code }} · −Rp{{ number_format($inquiry->coupon_discount_amount, 0, ',', '.') }}</span>@endif
                         <a class="btn btn-sm btn-outline-primary mt-2" href="{{ route('admin.invoices.create', ['inquiry' => $inquiry->id]) }}">Buat invoice</a>
                     </td>
                     <td>

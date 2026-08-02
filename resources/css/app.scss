@@ -1366,6 +1366,8 @@ a { color: $teal-dark; text-decoration: none; }
 .transaction-cancel-panel summary { padding: 1rem 1.2rem; color: #a2272f; cursor: pointer; font-weight: 800; }
 .transaction-cancelled { opacity: .68; background: #fff7f7; }
 .transaction-cancelled td > strong { text-decoration: line-through; }
+.coupon-service-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: .45rem .8rem; padding: .8rem; background: $soft; border: 1px solid $line; border-radius: 12px; }
+.coupon-edit-panel { width: min(760px,75vw); padding: 1rem; background: #fff; border: 1px solid $line; border-radius: 12px; box-shadow: var(--shadow); }
 .category-chip-list { display: flex; flex-wrap: wrap; gap: .4rem; }
 .category-chip-list span { padding: .38rem .55rem; color: $muted; background: $soft; border-radius: 999px; font-size: .68rem; }
 .tool-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; }

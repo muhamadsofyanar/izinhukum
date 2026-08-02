@@ -27,8 +27,13 @@ class ServiceOrderService
                     'service_package_id' => $inquiry->service_package_id,
                     'referred_by_partner_id' => $inquiry->referred_by_partner_id,
                     'partner_referral_id' => $inquiry->partner_referral_id,
+                    'coupon_id' => $inquiry->coupon_id,
                     'created_by' => $actor?->id,
                     'referral_code' => $inquiry->referral_code,
+                    'coupon_code' => $inquiry->coupon_code,
+                    'coupon_discount_type' => $inquiry->coupon_discount_type,
+                    'coupon_discount_value' => $inquiry->coupon_discount_value,
+                    'coupon_discount_amount' => $inquiry->coupon_discount_amount,
                     'title' => $inquiry->package?->service?->name
                         ?: $inquiry->package?->name
                         ?: 'Konsultasi legalitas',

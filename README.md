@@ -5,12 +5,13 @@ Website legaltech **PT Praktisi Izin Hukum** berbasis Laravel 12, Bootstrap 5, M
 ## Fitur
 
 - Homepage responsif dengan mega menu.
-- Katalog 14 layanan dan seluruh paket harga.
+- Katalog 19 layanan, termasuk PKP, RUPS, penyusunan laporan keuangan, brand identity, dan perizinan lainnya.
 - Label oranye **Harga Perkiraan** untuk harga yang belum final.
 - Form permintaan proposal yang tersimpan ke database.
 - Form proposal membuat order, mengantrekan notifikasi admin, lalu membuka WhatsApp untuk konfirmasi klien.
+- Kupon per layanan dengan persentase/nominal, periode, kuota, minimum transaksi, dan jejak promo hingga invoice; referral mitra tetap tercatat terpisah.
 - Pusat alat gratis untuk perjalanan calon klien sebelum memesan.
-- Generator alternatif nama PT, Perseroan Perorangan, CV, Firma, Persekutuan Perdata, dan Yayasan dengan pagar format awal.
+- Generator alternatif nama PT, Perseroan Perorangan, PT PMA, CV, Firma, Persekutuan Perdata, Yayasan, Perkumpulan, dan Koperasi dengan pagar format awal serta rujukan regulasi terbaru.
 - Simulasi edukatif bahan akta/pernyataan pendirian yang dapat dicetak tanpa menghimpun NIK.
 - Pencarian 1.559 kode resmi KBLI 2025.
 - Detail risiko OSS-RBA per ruang lingkup dan skala usaha, termasuk perizinan, persyaratan, kewajiban, kewenangan, dan jangka waktu.
@@ -80,7 +81,7 @@ Data tersebut dapat diubah melalui environment variables tanpa mengedit kode.
 6. Pastikan halaman publik, `/up`, dan `/admin/masuk` dapat dibuka.
 7. Ubah `SEED_DATABASE=false`, lalu redeploy.
 
-### Memasang pembaruan perjalanan calon klien V14
+### Memasang pembaruan katalog dan promo V15
 
 Untuk website yang sudah berjalan, pertahankan:
 
@@ -88,7 +89,7 @@ Untuk website yang sudah berjalan, pertahankan:
 SEED_DATABASE=false
 ```
 
-Commit pembaruan lalu lakukan satu kali redeploy. Entrypoint menjalankan migrasi yang belum terpasang, rekonsiliasi keuangan, backfill order, dan `php artisan kbli:ensure` secara otomatis. V14 tidak menghapus data, tidak menjalankan ulang `ServiceSeeder`, dan tidak menimpa harga admin.
+Commit pembaruan lalu lakukan satu kali redeploy. Entrypoint menjalankan migrasi yang belum terpasang, rekonsiliasi keuangan, backfill order, dan `php artisan kbli:ensure` secara otomatis. V15 menambahkan tabel kupon serta lima layanan baru tanpa menjalankan ulang `ServiceSeeder` atau menimpa harga katalog yang telah diubah admin. Harga awal kelima layanan baru ditampilkan sebagai penawaran, bukan angka buatan.
 
 Environment minimal untuk notifikasi:
 
@@ -176,4 +177,4 @@ php artisan test
 npm run build
 ```
 
-Panduan satu kali redeploy tersedia pada `PETUNJUK-REDEPLOY-V14.md`.
+Panduan satu kali redeploy tersedia pada `PETUNJUK-REDEPLOY-V15.md`.

@@ -23,6 +23,10 @@ class Invoice extends Model
         'partner_id',
         'referred_by_partner_id',
         'referral_code',
+        'coupon_id',
+        'coupon_code',
+        'coupon_discount_type',
+        'coupon_discount_value',
         'recipient_type',
         'recipient_name',
         'recipient_company',
@@ -52,6 +56,7 @@ class Invoice extends Model
             'sent_at' => 'datetime',
             'paid_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'coupon_discount_value' => 'integer',
         ];
     }
 
@@ -105,6 +110,11 @@ class Invoice extends Model
     public function referredByPartner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'referred_by_partner_id');
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 
     public function items(): HasMany

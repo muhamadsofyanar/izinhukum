@@ -34,13 +34,22 @@
                                 <optgroup label="{{ $serviceName }}">
                                     @foreach($servicePackages as $package)
                                         <option value="{{ $package->id }}" @selected(old('service_package_id', $selectedPackage) == $package->id)>
-                                            {{ $package->name }} — {{ $package->is_estimated ? 'perkiraan ' : '' }}{{ $package->formattedPrice() }}
+                                            {{ $package->name }} — @if($package->price === 0 && $package->is_estimated) harga berdasarkan penawaran @else {{ $package->is_estimated ? 'perkiraan ' : '' }}{{ $package->formattedPrice() }} @endif
                                         </option>
                                     @endforeach
                                 </optgroup>
                             @endforeach
                         </select>
                         @error('service_package_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label" for="coupon_code">Kode kupon <small>(jika ada)</small></label>
+                        <div class="input-group">
+                            <input class="form-control text-uppercase @error('coupon_code') is-invalid @enderror" id="coupon_code" name="coupon_code" value="{{ old('coupon_code', $prefillCouponCode) }}" maxlength="32" autocomplete="off" placeholder="Contoh: LEGAL10">
+                            <button class="btn btn-outline-primary" id="coupon-check" type="button">Cek kupon</button>
+                        </div>
+                        @error('coupon_code')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                        <div class="small mt-2" id="coupon-feedback" aria-live="polite">Kupon dan referral mitra berbeda: kupon memberi diskon, referral mencatat sumber mitra.</div>
                     </div>
 
                     <div class="form-section mt-5">
@@ -111,3 +120,48 @@
     </div>
 </section>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const button = document.getElementById('coupon-check');
+    const code = document.getElementById('coupon_code');
+    const packageSelect = document.getElementById('service_package_id');
+    const feedback = document.getElementById('coupon-feedback');
+    const token = document.querySelector('meta[name="csrf-token"]').content;
+
+    async function checkCoupon() {
+        code.value = code.value.trim().toUpperCase();
+        if (!code.value || !packageSelect.value) {
+            feedback.className = 'small mt-2 text-danger';
+            feedback.textContent = 'Pilih paket layanan dan masukkan kode kupon terlebih dahulu.';
+            return;
+        }
+        button.disabled = true;
+        feedback.className = 'small mt-2 text-muted';
+        feedback.textContent = 'Memeriksa kupon…';
+        try {
+            const response = await fetch(@json(route('proposal.coupon.check')), {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token},
+                body: JSON.stringify({service_package_id: packageSelect.value, coupon_code: code.value})
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.errors?.coupon_code?.[0] || data.message || 'Kupon tidak dapat digunakan.');
+            feedback.className = 'small mt-2 text-success';
+            feedback.textContent = `${data.message} Potongan ${data.discount_formatted}; estimasi setelah promo ${data.total_formatted}.`;
+        } catch (error) {
+            feedback.className = 'small mt-2 text-danger';
+            feedback.textContent = error.message;
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    button.addEventListener('click', checkCoupon);
+    packageSelect.addEventListener('change', function () {
+        if (code.value.trim()) checkCoupon();
+    });
+});
+</script>
+@endpush

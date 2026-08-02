@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Generator Nama Badan Usaha dan Yayasan')
-@section('meta_description', 'Buat alternatif nama PT, CV, Firma, Persekutuan Perdata, Perseroan Perorangan, dan Yayasan dengan pemeriksaan format awal.')
+@section('meta_description', 'Buat alternatif nama PT, PT PMA, Perseroan Perorangan, CV, Firma, Persekutuan Perdata, Yayasan, Perkumpulan, dan Koperasi dengan pemeriksaan format awal.')
 
 @section('content')
 <section class="page-hero page-hero-compact">
@@ -82,7 +82,7 @@
 
                 <div class="legal-source-card mt-4">
                     <strong>Filter yang digunakan</strong>
-                    <p>Huruf Latin, kata yang dapat dibaca, struktur nama yang konservatif, serta penghindaran bentuk angka/huruf tanpa makna. Nama yang sama atau mirip dengan badan lain, lembaga negara, pemerintah, atau organisasi internasional tetap memerlukan pemeriksaan resmi.</p>
+                    <p>Huruf Latin, kata yang dapat dibaca, struktur nama konservatif per bentuk badan, serta penghindaran angka/huruf tanpa makna. Aturan yang ditampilkan mengikuti status regulasi 2025, tetapi persetujuan dan ketersediaan tetap hanya ditentukan melalui layanan resmi AHU.</p>
                 </div>
             </div>
         </div>

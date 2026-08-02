@@ -174,6 +174,7 @@
                 <div><dt>Paket</dt><dd>{{ $order->package?->name ?: $order->inquiry?->package?->name ?: 'Tidak dipilih' }}</dd></div>
                 <div><dt>Mitra referral</dt><dd>{{ $order->referredByPartner?->name ?: 'Tanpa referral' }}</dd></div>
                 <div><dt>Kode referral</dt><dd>{{ $order->referral_code ?: '-' }}</dd></div>
+                <div><dt>Kupon promo</dt><dd>{{ $order->coupon_code ? $order->coupon_code.' · −Rp'.number_format($order->coupon_discount_amount, 0, ',', '.') : '-' }}</dd></div>
                 <div><dt>Dibuat oleh</dt><dd>{{ $order->creator?->name ?: 'Sistem' }}</dd></div>
                 <div><dt>Mulai proses</dt><dd>{{ $order->started_at?->format('d/m/Y H:i') ?: '-' }}</dd></div>
                 <div><dt>Selesai</dt><dd>{{ $order->completed_at?->format('d/m/Y H:i') ?: '-' }}</dd></div>

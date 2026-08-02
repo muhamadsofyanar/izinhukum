@@ -22,7 +22,7 @@
             <del>Rp{{ number_format($package->original_price, 0, ',', '.') }}</del>
         @endif
         <strong>{{ $package->formattedPrice() }}</strong>
-        @if($package->price_suffix && $package->price_suffix !== 'mulai')
+        @if($package->price_suffix && !in_array($package->price_suffix, ['mulai', 'penawaran'], true))
             <small>{{ $package->price_suffix }}</small>
         @endif
     </div>

@@ -34,9 +34,14 @@ class ServiceOrder extends Model
         'service_package_id',
         'referred_by_partner_id',
         'partner_referral_id',
+        'coupon_id',
         'assigned_to',
         'created_by',
         'referral_code',
+        'coupon_code',
+        'coupon_discount_type',
+        'coupon_discount_value',
+        'coupon_discount_amount',
         'title',
         'customer_name',
         'customer_email',
@@ -62,6 +67,8 @@ class ServiceOrder extends Model
         return [
             'checklist' => 'array',
             'progress' => 'integer',
+            'coupon_discount_value' => 'integer',
+            'coupon_discount_amount' => 'integer',
             'started_at' => 'datetime',
             'due_at' => 'datetime',
             'completed_at' => 'datetime',
@@ -87,6 +94,11 @@ class ServiceOrder extends Model
     public function referral(): BelongsTo
     {
         return $this->belongsTo(PartnerReferral::class, 'partner_referral_id');
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 
     public function assignee(): BelongsTo

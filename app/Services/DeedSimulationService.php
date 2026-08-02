@@ -119,7 +119,7 @@ class DeedSimulationService
             ],
             'pt_perorangan' => [
                 'label' => 'PP 8 Tahun 2021 dan Permenkum 49 Tahun 2025',
-                'url' => 'https://peraturan.bpk.go.id/Details/161838/pp-',
+                'url' => 'https://peraturan.bpk.go.id/Details/161838/pp-no-8-tahun-2021',
             ],
             'cv' => [
                 'label' => 'Permenkum 25 Tahun 2025',

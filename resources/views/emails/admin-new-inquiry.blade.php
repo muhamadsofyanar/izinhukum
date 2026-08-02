@@ -14,6 +14,7 @@
 <tr><td style="color:#647487">Perusahaan</td><td>{{ $inquiry->company_name ?: 'Tidak diisi' }}</td></tr>
 <tr><td style="color:#647487">Kota</td><td>{{ $inquiry->city ?: 'Tidak diisi' }}</td></tr>
 <tr><td style="color:#647487">Sumber perjalanan</td><td>{{ match ($inquiry->source) { 'name_generator' => 'Generator nama', 'deed_simulator' => 'Simulasi akta', 'partner_referral' => 'Referral mitra', default => 'Website' } }}</td></tr>
+@if($inquiry->coupon_code)<tr><td style="color:#647487">Kupon promo</td><td><strong>{{ $inquiry->coupon_code }}</strong> · potongan Rp{{ number_format($inquiry->coupon_discount_amount, 0, ',', '.') }}</td></tr>@endif
 </table>
 @if($inquiry->message)
 <p style="margin-top:24px"><strong>Catatan pelanggan</strong><br>{{ $inquiry->message }}</p>

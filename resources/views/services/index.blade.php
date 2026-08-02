@@ -29,12 +29,12 @@
                                 <p>{{ $service->summary }}</p>
                                 <div class="service-card-bottom">
                                     <span>
-                                        @if($service->packages->contains('is_estimated', true))
-                                            Estimasi mulai
+                                        @if((int) $service->packages->min('price') === 0)
+                                            Harga <strong>berdasarkan penawaran</strong>
                                         @else
-                                            Mulai
+                                            @if($service->packages->contains('is_estimated', true)) Estimasi mulai @else Mulai @endif
+                                            <strong>Rp{{ number_format($service->packages->min('price'), 0, ',', '.') }}</strong>
                                         @endif
-                                        <strong>Rp{{ number_format($service->packages->min('price'), 0, ',', '.') }}</strong>
                                     </span>
                                     <span class="arrow">→</span>
                                 </div>

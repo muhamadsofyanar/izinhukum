@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Portal') · IzinHukum</title>
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=14.0.0">
+    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=15.0.0">
 </head>
 <body class="admin-body">
 @php
@@ -43,6 +43,7 @@
                 <span class="sidebar-section-label">Operasional</span>
                 <a class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">Pesanan</a>
                 <a class="{{ request()->routeIs('admin.packages.*') ? 'active' : '' }}" href="{{ route('admin.packages.index') }}">Layanan & harga</a>
+                <a class="{{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">Kupon & promo</a>
 
                 <span class="sidebar-section-label">Keuangan</span>
                 <a class="{{ request()->routeIs('admin.finance.*') ? 'active' : '' }}" href="{{ route('admin.finance.index') }}">Laporan keuangan</a>

@@ -62,6 +62,10 @@ class SendNewInquiryWhatsAppNotification implements ShouldQueue, ShouldBeUnique
             $inquiry->email ? 'Email klien: '.$inquiry->email : null,
             $inquiry->company_name ? 'Perusahaan: '.$inquiry->company_name : null,
             $inquiry->city ? 'Kota: '.$inquiry->city : null,
+            $inquiry->coupon_code ? 'Kupon: '.$inquiry->coupon_code : null,
+            $inquiry->coupon_discount_amount > 0
+                ? 'Potongan: Rp'.number_format($inquiry->coupon_discount_amount, 0, ',', '.')
+                : null,
             'Sumber: '.match ($inquiry->source) {
                 'name_generator' => 'Generator nama',
                 'deed_simulator' => 'Simulasi akta',

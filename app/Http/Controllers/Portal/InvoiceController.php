@@ -78,7 +78,8 @@ class InvoiceController extends Controller
                 ...$prepared['attributes'],
                 'status' => 'draft',
                 'subtotal' => $prepared['subtotal'],
-                'total' => $prepared['subtotal'],
+                'discount' => $prepared['discount'],
+                'total' => $prepared['total'],
             ]);
 
             $invoice->update([
@@ -122,14 +123,20 @@ class InvoiceController extends Controller
                 'issue_date',
                 'due_date',
                 'subtotal',
+                'discount',
                 'total',
+                'coupon_id',
+                'coupon_code',
+                'coupon_discount_type',
+                'coupon_discount_value',
                 'notes',
             ]);
 
             $lockedInvoice->update([
                 ...$prepared['attributes'],
                 'subtotal' => $prepared['subtotal'],
-                'total' => $prepared['subtotal'],
+                'discount' => $prepared['discount'],
+                'total' => $prepared['total'],
             ]);
             $lockedInvoice->items()->delete();
             $lockedInvoice->items()->createMany($prepared['items']);
@@ -442,12 +449,26 @@ class InvoiceController extends Controller
             ];
         }
 
+        $couponDiscount = 0;
+        $couponApplies = $recipientType === 'end_user'
+            && $inquiry?->coupon_id
+            && collect($items)->contains(
+                fn (array $item): bool => (int) $item['service_package_id'] === (int) $inquiry->service_package_id,
+            );
+        if ($couponApplies) {
+            $couponDiscount = min($subtotal, (int) $inquiry->coupon_discount_amount);
+        }
+
         return [
             'attributes' => [
                 'inquiry_id' => $inquiry?->id,
                 'partner_id' => $partner?->id,
                 'referred_by_partner_id' => $referredPartner?->id,
                 'referral_code' => $referredPartner?->partner_code,
+                'coupon_id' => $couponApplies ? $inquiry->coupon_id : null,
+                'coupon_code' => $couponApplies ? $inquiry->coupon_code : null,
+                'coupon_discount_type' => $couponApplies ? $inquiry->coupon_discount_type : null,
+                'coupon_discount_value' => $couponApplies ? $inquiry->coupon_discount_value : 0,
                 'recipient_type' => $recipientType,
                 'recipient_name' => $partner?->name ?? $validated['recipient_name'],
                 'recipient_company' => $partner?->company_name ?? ($validated['recipient_company'] ?? null),
@@ -460,6 +481,8 @@ class InvoiceController extends Controller
             ],
             'items' => $items,
             'subtotal' => $subtotal,
+            'discount' => $couponDiscount,
+            'total' => max(0, $subtotal - $couponDiscount),
         ];
     }
 

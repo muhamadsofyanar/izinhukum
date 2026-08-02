@@ -30,6 +30,10 @@
     </table>
 </div>
 <div class="invoice-total">
+    @if($invoice->discount > 0)
+        <div><span>Subtotal</span><strong>Rp{{ number_format($invoice->subtotal, 0, ',', '.') }}</strong></div>
+        <div><span>Promo{{ $invoice->coupon_code ? ' · '.$invoice->coupon_code : '' }}</span><strong>− Rp{{ number_format($invoice->discount, 0, ',', '.') }}</strong></div>
+    @endif
     <div><span>Total tagihan</span><strong>{{ $invoice->formattedTotal() }}</strong></div>
     @if($invoice->amountPaid() > 0)
         <div><span>Sudah dibayar</span><strong>Rp{{ number_format($invoice->amountPaid(), 0, ',', '.') }}</strong></div>

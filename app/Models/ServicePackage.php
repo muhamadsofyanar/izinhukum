@@ -53,6 +53,10 @@ class ServicePackage extends Model
 
     public function formattedPrice(): string
     {
+        if ($this->price === 0 && $this->is_estimated) {
+            return 'Hubungi kami';
+        }
+
         return 'Rp'.number_format($this->price, 0, ',', '.');
     }
 
