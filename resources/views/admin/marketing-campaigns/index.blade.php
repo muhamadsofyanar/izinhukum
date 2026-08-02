@@ -2,15 +2,21 @@
 
 @section('title', 'Campaign & Landing Page')
 @section('heading', 'Campaign, Landing Page & ROI')
-@if($growthEnabled)@section('header_action')<a class="btn btn-outline-primary" href="{{ route('admin.growth.index') }}">Buka analitik funnel</a>@endsection@endif
+@section('header_action')
+    @if($growthEnabled)
+        <a class="btn btn-outline-primary" href="{{ route('admin.growth.index') }}">Buka analitik funnel</a>
+    @endif
+@endsection
 
 @section('content')
 <div class="admin-note mb-3">
     Buat tautan landing page untuk broadcast WhatsApp. Calon klien mengisi form singkat, memperoleh nomor referensi, lalu melanjutkan deal secara manual melalui WhatsApp.
-    @unless($landingPagesEnabled)<strong> Publikasi landing page sedang dimatikan pada Fitur aplikasi.</strong>@endunless
+    @if(! $landingPagesEnabled)
+        <strong>Publikasi landing page sedang dimatikan pada Fitur aplikasi.</strong>
+    @endif
 </div>
 
-<details class="admin-panel mb-3" @if($errors->any()) open @endif>
+<details class="admin-panel mb-3" {{ $errors->any() ? 'open' : '' }}>
     <summary class="admin-panel-head"><h2>Buat campaign dan landing page</h2><span>Simpan lalu salin tautan broadcast</span></summary>
     <form class="p-4 form-grid" method="post" action="{{ route('admin.marketing-campaigns.store') }}">
         @csrf
@@ -80,7 +86,11 @@
                 </select>
                 <input class="form-control form-control-sm campaign-link" data-source="{{ $campaign->source }}" data-medium="{{ $campaign->medium }}" data-campaign="{{ $campaign->slug }}" readonly>
                 <button class="btn btn-sm btn-outline-primary copy-campaign-link" type="button">Salin tautan broadcast</button>
-                @if($landingPagesEnabled && $campaign->isLandingLive())<a class="btn btn-sm btn-outline-secondary" href="{{ route('campaigns.landing', $campaign) }}" target="_blank" rel="noopener">Pratinjau ↗</a>@else<small>Landing page belum dapat dibuka sampai fitur, status, periode, dan sakelar landing aktif.</small>@endif
+                @if($landingPagesEnabled && $campaign->isLandingLive())
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('campaigns.landing', $campaign) }}" target="_blank" rel="noopener">Pratinjau ↗</a>
+                @else
+                    <small>Landing page belum dapat dibuka sampai fitur, status, periode, dan sakelar landing aktif.</small>
+                @endif
             </div>
         </form>
     </article>
@@ -88,7 +98,9 @@
     <div class="empty-state"><h2>Belum ada campaign</h2><p>Buat campaign pertama untuk memperoleh landing page dan mengukur kunjungan menjadi lead.</p></div>
 @endforelse
 </div>
-@if($campaigns->hasPages())<div class="mt-3">{{ $campaigns->links() }}</div>@endif
+@if($campaigns->hasPages())
+    <div class="mt-3">{{ $campaigns->links() }}</div>
+@endif
 @endsection
 
 @push('scripts')

@@ -18,7 +18,7 @@ Tidak ada environment variable baru yang wajib.
 
 ## Pemeriksaan setelah deploy
 
-1. Buka `/healthz`; pastikan `status=healthy` dan `version=21.0.0`.
+1. Buka `/healthz`; pastikan `status=healthy` dan `version=21.0.1`.
 2. Buka homepage dan pastikan logo, tagline, serta aksen navy–gold tampil.
 3. Buka minimal tiga URL `/layanan/{slug}` dari kategori berbeda.
 4. Pastikan hero khusus, paket, proses, persyaratan, FAQ, dan form konsultasi tampil.

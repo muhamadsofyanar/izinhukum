@@ -13,6 +13,7 @@ RINGKASAN-PERUBAHAN-V21.md
 PETUNJUK-REDEPLOY-V21.md
 VALIDASI-V21.md
 DAFTAR-FILE-V21.txt
+HOTFIX-V21.0.1.md
 
 IZINHUKUM V21 · FILE DIPERBARUI
 app/Http/Controllers/HealthController.php
@@ -28,9 +29,11 @@ resources/css/app.scss
 resources/views/layouts/admin.blade.php
 resources/views/layouts/app.blade.php
 resources/views/services/show.blade.php
+resources/views/admin/marketing-campaigns/index.blade.php
 routes/web.php
 tests/Feature/PublicPagesTest.php
 tests/Feature/V10FoundationTest.php
+tests/Feature/V20ConversionSuiteTest.php
 README.md
 public/build/manifest.json
 public/build/assets/app-CMM2nS3g.css

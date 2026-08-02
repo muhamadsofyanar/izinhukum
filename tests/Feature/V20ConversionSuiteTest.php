@@ -21,6 +21,17 @@ class V20ConversionSuiteTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_campaign_and_landing_page_screen_renders(): void
+    {
+        $admin = $this->admin();
+
+        $this->withSession(['portal_user_id' => $admin->id])
+            ->get(route('admin.marketing-campaigns.index'))
+            ->assertOk()
+            ->assertSee('Campaign, Landing Page &amp; ROI', false)
+            ->assertSee('Salin tautan broadcast');
+    }
+
     public function test_campaign_lead_is_attributed_and_scored(): void
     {
         Queue::fake();
