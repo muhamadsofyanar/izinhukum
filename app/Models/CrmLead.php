@@ -64,6 +64,11 @@ class CrmLead extends Model
         return $this->hasMany(CrmActivity::class, 'lead_id')->latest();
     }
 
+    public function salesQuotes(): HasMany
+    {
+        return $this->hasMany(SalesQuote::class);
+    }
+
     public function requirements(): HasMany
     {
         return $this->hasMany(CrmRequirement::class, 'lead_id')->orderBy('id');

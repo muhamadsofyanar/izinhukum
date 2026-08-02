@@ -11,6 +11,7 @@ use App\Services\FeatureFlagService;
 use App\Services\PartnerReferralService;
 use App\Services\ReferralEventService;
 use App\Services\ServiceOrderService;
+use App\Services\SalesPipelineService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -79,6 +80,7 @@ class InquiryController extends Controller
         ReferralEventService $events,
         FeatureFlagService $features,
         CouponService $coupons,
+        SalesPipelineService $pipeline,
     ): RedirectResponse {
         $validated = $request->validate([
             'service_package_id' => ['nullable', 'exists:service_packages,id'],
@@ -99,11 +101,18 @@ class InquiryController extends Controller
         $attribution = $features->enabled('referral_tracking')
             ? $referrals->attribution($request)
             : null;
+        $marketing = $features->enabled('campaign_tracking')
+            ? array_intersect_key(
+                (array) $request->session()->get('marketing_attribution', []),
+                array_flip(['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'landing_path']),
+            )
+            : [];
         $inquiry = DB::transaction(function () use (
             $validated,
             $couponCode,
             $coupons,
             $attribution,
+            $marketing,
             $journeySource,
             $events,
             $orders,
@@ -116,6 +125,7 @@ class InquiryController extends Controller
             $inquiry = Inquiry::query()->create([
                 ...$validated,
                 ...($attribution ?? []),
+                ...$marketing,
                 'coupon_id' => $quote['coupon']->id ?? null,
                 'coupon_code' => $quote['code'] ?? null,
                 'coupon_discount_type' => $quote['discount_type'] ?? null,
@@ -134,6 +144,14 @@ class InquiryController extends Controller
 
             return $inquiry;
         });
+        if ($features->enabled('sales_pipeline')) {
+            try {
+                $pipeline->syncInquiry($inquiry);
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
+
         SendNewInquiryEmailNotification::dispatch($inquiry->id)->onQueue('default');
         SendNewInquiryWhatsAppNotification::dispatch($inquiry->id)->onQueue('whatsapp');
 

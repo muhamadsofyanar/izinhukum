@@ -82,6 +82,16 @@
 </section>
 
 @if($user->isAdmin())
+@if($invoice->paymentProofs->isNotEmpty())
+<section class="admin-panel mt-3">
+    <div class="admin-panel-head"><h2>Bukti pembayaran pelanggan</h2><strong>{{ $invoice->paymentProofs->where('status', 'pending')->count() }} menunggu</strong></div>
+    <div class="table-responsive"><table class="table admin-table"><thead><tr><th>Pengirim</th><th>Transfer</th><th>File</th><th>Status</th><th>Tindakan</th></tr></thead><tbody>
+    @foreach($invoice->paymentProofs as $proof)<tr><td><strong>{{ $proof->payer_name }}</strong><small>{{ $proof->bank_reference ?: 'Tanpa referensi bank' }}</small>@if($proof->notes)<small>{{ $proof->notes }}</small>@endif</td><td>{{ $proof->transfer_date->format('d/m/Y') }}<small><strong>Rp{{ number_format($proof->claimed_amount,0,',','.') }}</strong></small></td><td><a class="btn btn-sm btn-outline-primary" href="{{ route('admin.payment-proofs.download', $proof) }}">Unduh {{ $proof->original_name }}</a><small>{{ number_format($proof->size / 1024, 0) }} KB</small></td><td><span class="status status-{{ $proof->status === 'approved' ? 'paid' : ($proof->status === 'rejected' ? 'cancelled' : 'sent') }}">{{ $proof->statusLabel() }}</span>@if($proof->reviewer)<small>{{ $proof->reviewer->name }} · {{ $proof->reviewed_at?->format('d/m/Y H:i') }}</small>@endif@if($proof->review_note)<small>{{ $proof->review_note }}</small>@endif</td><td>
+        @if($proof->status === 'pending')<form class="proof-review-form" method="post" action="{{ route('admin.payment-proofs.review', $proof) }}">@csrf<textarea class="form-control form-control-sm" name="review_note" rows="2" placeholder="Catatan/alasan penolakan"></textarea><div class="d-flex gap-1 mt-1"><button class="btn btn-sm btn-primary" name="action" value="approve" onclick="return confirm('Setujui bukti dan buat pembayaran/kwitansi?')">Setujui</button><button class="btn btn-sm btn-outline-danger" name="action" value="reject">Tolak</button></div></form>@elseif($proof->payment)<a class="btn btn-sm btn-outline-primary" href="{{ route('receipts.public', $proof->payment->public_token) }}" target="_blank">Kwitansi</a>@endif
+    </td></tr>@endforeach
+    </tbody></table></div>
+</section>
+@endif
 <section class="admin-panel mt-3">
     <div class="admin-panel-head">
         <h2>Catat pembayaran</h2>

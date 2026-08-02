@@ -8,10 +8,14 @@ use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\FeatureSettingController as AdminFeatureSettingController;
 use App\Http\Controllers\Admin\FinanceController as AdminFinanceController;
+use App\Http\Controllers\Admin\GrowthAnalyticsController as AdminGrowthAnalyticsController;
 use App\Http\Controllers\Admin\InquiryController as AdminInquiryController;
 use App\Http\Controllers\Admin\MailSettingController as AdminMailSettingController;
 use App\Http\Controllers\Admin\PackageController as AdminPackageController;
 use App\Http\Controllers\Admin\PartnerController as AdminPartnerController;
+use App\Http\Controllers\Admin\PaymentProofController as AdminPaymentProofController;
+use App\Http\Controllers\Admin\SalesPipelineController as AdminSalesPipelineController;
+use App\Http\Controllers\Admin\SalesQuoteController as AdminSalesQuoteController;
 use App\Http\Controllers\Admin\ServiceOrderController as AdminServiceOrderController;
 use App\Http\Controllers\Admin\WhatsAppAutomationController;
 use App\Http\Controllers\Admin\WhatsAppCampaignController;
@@ -57,7 +61,9 @@ use App\Http\Controllers\Portal\InvoiceController as PortalInvoiceController;
 use App\Http\Controllers\Portal\PaymentController as PortalPaymentController;
 use App\Http\Controllers\Portal\ProfileController as PortalProfileController;
 use App\Http\Controllers\PublicInvoiceController;
+use App\Http\Controllers\PublicPaymentProofController;
 use App\Http\Controllers\PublicReceiptController;
+use App\Http\Controllers\PublicSalesQuoteController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StarSenderWebhookController;
@@ -92,7 +98,19 @@ Route::post('/lacak-permintaan', [InquiryTrackingController::class, 'search'])->
 Route::get('/kemitraan', [PartnerApplicationController::class, 'create'])->middleware('feature:partner_registration')->name('partnership.create');
 Route::post('/kemitraan', [PartnerApplicationController::class, 'store'])->middleware(['feature:partner_registration', 'throttle:5,1'])->name('partnership.store');
 Route::get('/tagihan/{token}', [PublicInvoiceController::class, 'show'])->middleware('throttle:60,1')->name('invoices.public');
+Route::post('/tagihan/{token}/bukti-pembayaran', [PublicPaymentProofController::class, 'store'])
+    ->middleware(['feature:payment_proof_upload', 'throttle:6,1'])
+    ->name('invoices.payment-proofs.store');
 Route::get('/kwitansi/{token}', [PublicReceiptController::class, 'show'])->middleware('throttle:60,1')->name('receipts.public');
+Route::get('/penawaran/{token}', [PublicSalesQuoteController::class, 'show'])
+    ->middleware(['feature:digital_quotes', 'throttle:60,1'])
+    ->name('quotes.public');
+Route::post('/penawaran/{token}/setujui', [PublicSalesQuoteController::class, 'approve'])
+    ->middleware(['feature:digital_quotes', 'throttle:8,1'])
+    ->name('quotes.approve');
+Route::post('/penawaran/{token}/tolak', [PublicSalesQuoteController::class, 'reject'])
+    ->middleware(['feature:digital_quotes', 'throttle:8,1'])
+    ->name('quotes.reject');
 Route::get('/pelanggan/order/{token}', [CustomerOrderController::class, 'show'])->middleware(['feature:customer_portal', 'throttle:60,1'])->name('customer.orders.show');
 Route::post('/pelanggan/order/{token}/catatan', [CustomerOrderController::class, 'note'])->middleware(['feature:customer_portal', 'throttle:10,1'])->name('customer.orders.note');
 Route::post('/pelanggan/order/{token}/dokumen', [CustomerOrderController::class, 'upload'])->middleware(['feature:customer_portal', 'feature:customer_document_upload', 'throttle:10,1'])->name('customer.orders.documents.store');
@@ -129,6 +147,24 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::delete('/kupon/{coupon}', [AdminCouponController::class, 'destroy'])->name('coupons.destroy');
         Route::get('/permintaan', [AdminInquiryController::class, 'index'])->name('inquiries.index');
         Route::put('/permintaan/{inquiry}', [AdminInquiryController::class, 'update'])->name('inquiries.update');
+        Route::middleware('feature:sales_pipeline')->group(function (): void {
+            Route::get('/pipeline', [AdminSalesPipelineController::class, 'index'])->name('pipeline.index');
+            Route::post('/pipeline', [AdminSalesPipelineController::class, 'store'])->name('pipeline.store');
+            Route::post('/pipeline/sinkronkan', [AdminSalesPipelineController::class, 'sync'])->middleware('throttle:3,1')->name('pipeline.sync');
+            Route::put('/pipeline/{lead}', [AdminSalesPipelineController::class, 'update'])->name('pipeline.update');
+            Route::post('/pipeline/{lead}/aktivitas', [AdminSalesPipelineController::class, 'addActivity'])->name('pipeline.activities.store');
+            Route::put('/pipeline/aktivitas/{activity}/selesai', [AdminSalesPipelineController::class, 'completeActivity'])->name('pipeline.activities.complete');
+        });
+        Route::middleware('feature:digital_quotes')->group(function (): void {
+            Route::get('/penawaran', [AdminSalesQuoteController::class, 'index'])->name('quotes.index');
+            Route::get('/penawaran/buat', [AdminSalesQuoteController::class, 'create'])->name('quotes.create');
+            Route::post('/penawaran', [AdminSalesQuoteController::class, 'store'])->name('quotes.store');
+            Route::get('/penawaran/{quote}', [AdminSalesQuoteController::class, 'show'])->name('quotes.show');
+            Route::get('/penawaran/{quote}/ubah', [AdminSalesQuoteController::class, 'edit'])->name('quotes.edit');
+            Route::put('/penawaran/{quote}', [AdminSalesQuoteController::class, 'update'])->name('quotes.update');
+            Route::post('/penawaran/{quote}/terbitkan', [AdminSalesQuoteController::class, 'send'])->name('quotes.send');
+            Route::post('/penawaran/{quote}/batalkan', [AdminSalesQuoteController::class, 'cancel'])->name('quotes.cancel');
+        });
         Route::get('/mitra', [AdminPartnerController::class, 'index'])->name('partners.index');
         Route::post('/mitra', [AdminPartnerController::class, 'store'])->name('partners.store');
         Route::post('/mitra/permohonan/{application}/setujui', [AdminPartnerController::class, 'approve'])->name('partners.approve');
@@ -162,6 +198,8 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::delete('/invoice/{invoice}', [PortalInvoiceController::class, 'destroy'])->name('invoices.destroy');
         Route::get('/invoice/{invoice}', [PortalInvoiceController::class, 'show'])->name('invoices.show');
         Route::post('/invoice/{invoice}/pembayaran', [PortalPaymentController::class, 'store'])->name('invoices.payments.store');
+        Route::get('/bukti-pembayaran/{proof}/unduh', [AdminPaymentProofController::class, 'download'])->middleware('feature:payment_proof_upload')->name('payment-proofs.download');
+        Route::post('/bukti-pembayaran/{proof}/periksa', [AdminPaymentProofController::class, 'review'])->middleware('feature:payment_proof_upload')->name('payment-proofs.review');
         Route::put('/invoice/{invoice}/status', [PortalInvoiceController::class, 'updateStatus'])->name('invoices.status');
         Route::post('/invoice/{invoice}/batalkan', [PortalInvoiceController::class, 'cancel'])->name('invoices.cancel');
         Route::post('/invoice/{invoice}/kirim', [PortalInvoiceController::class, 'send'])->name('invoices.send');
@@ -169,6 +207,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::put('/pembayaran/{payment}', [PortalPaymentController::class, 'update'])->name('payments.update');
         Route::post('/pembayaran/{payment}/batalkan', [PortalPaymentController::class, 'cancel'])->name('payments.cancel');
         Route::get('/keuangan', [AdminFinanceController::class, 'index'])->name('finance.index');
+        Route::get('/pertumbuhan', AdminGrowthAnalyticsController::class)->middleware('feature:growth_analytics')->name('growth.index');
         Route::post('/keuangan/kategori', [AdminFinanceController::class, 'storeCategory'])->name('finance.categories.store');
         Route::post('/keuangan/pemasukan', [AdminFinanceController::class, 'storeIncome'])->name('finance.incomes.store');
         Route::post('/keuangan/pengeluaran', [AdminFinanceController::class, 'storeExpense'])->name('finance.expenses.store');

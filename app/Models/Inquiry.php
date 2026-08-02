@@ -25,6 +25,12 @@ class Inquiry extends Model
         'city',
         'message',
         'source',
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'utm_term',
+        'utm_content',
+        'landing_path',
         'referral_code',
         'coupon_code',
         'coupon_discount_type',
@@ -71,5 +77,15 @@ class Inquiry extends Model
     public function serviceOrder(): HasOne
     {
         return $this->hasOne(ServiceOrder::class);
+    }
+
+    public function crmLead(): HasOne
+    {
+        return $this->hasOne(CrmLead::class);
+    }
+
+    public function salesQuotes(): HasMany
+    {
+        return $this->hasMany(SalesQuote::class);
     }
 }

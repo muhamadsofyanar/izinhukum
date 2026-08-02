@@ -48,6 +48,8 @@ class InvoicePaymentService
                 'financial_category_id' => $data['financial_category_id'] ?? null,
                 'receipt_number' => 'PENDING-'.Str::uuid(),
                 'public_token' => Str::random(64),
+                'source' => $data['source'] ?? 'manual',
+                'source_key' => $data['source_key'] ?? null,
                 'payment_date' => $data['payment_date'],
                 'amount' => $amount,
                 'payer_name' => $lockedInvoice->recipient_name,

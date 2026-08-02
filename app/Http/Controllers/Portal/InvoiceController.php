@@ -256,6 +256,8 @@ class InvoiceController extends Controller
             'payments.category',
             'payments.cancelledBy',
             'payments.lastEditedBy',
+            'paymentProofs.reviewer',
+            'paymentProofs.payment',
             'cancelledBy',
         ]);
 

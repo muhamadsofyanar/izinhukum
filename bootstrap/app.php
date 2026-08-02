@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdminAuthenticated;
+use App\Http\Middleware\CaptureMarketingAttribution;
 use App\Http\Middleware\CapturePartnerReferral;
 use App\Http\Middleware\PartnerAuthenticated;
 use App\Http\Middleware\RequireFeature;
@@ -24,7 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
             $middleware->trustProxies(at: $trustedProxies);
         }
 
-        $middleware->web(append: [CapturePartnerReferral::class]);
+        $middleware->web(append: [
+            CaptureMarketingAttribution::class,
+            CapturePartnerReferral::class,
+        ]);
 
         $middleware->alias([
             'admin' => AdminAuthenticated::class,

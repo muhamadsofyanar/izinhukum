@@ -34,6 +34,31 @@ class FeatureFlagService
             'description' => 'Klik, lead, order, pembayaran, dan komisi dikaitkan ke mitra.',
             'default' => true,
         ],
+        'campaign_tracking' => [
+            'label' => 'Pelacakan campaign',
+            'description' => 'UTM sumber, media, campaign, dan landing page disimpan pada permintaan untuk mengukur konversi.',
+            'default' => true,
+        ],
+        'sales_pipeline' => [
+            'label' => 'Pipeline penjualan ringan',
+            'description' => 'Permintaan website dan lead manual dikelola melalui tahap, penanggung jawab, catatan, dan jadwal follow-up.',
+            'default' => true,
+        ],
+        'digital_quotes' => [
+            'label' => 'Penawaran digital',
+            'description' => 'Admin membuat penawaran bertautan publik; persetujuan klien menghasilkan invoice otomatis.',
+            'default' => true,
+        ],
+        'payment_proof_upload' => [
+            'label' => 'Unggah bukti pembayaran',
+            'description' => 'Klien dapat mengirim bukti transfer dari halaman invoice untuk diverifikasi admin.',
+            'default' => true,
+        ],
+        'growth_analytics' => [
+            'label' => 'Analitik pertumbuhan',
+            'description' => 'Admin melihat konversi sumber/campaign, layanan, referral, penawaran, invoice, dan pembayaran.',
+            'default' => true,
+        ],
         'partner_academy' => [
             'label' => 'Akademi mitra',
             'description' => 'Mitra dapat membuka LMS, materi, progres, dan sertifikat.',

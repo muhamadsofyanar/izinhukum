@@ -14,7 +14,7 @@ class V10FoundationTest extends TestCase
         $this->getJson('/healthz')
             ->assertOk()
             ->assertJsonPath('status', 'healthy')
-            ->assertJsonPath('version', '15.0.0')
+            ->assertJsonPath('version', '16.0.0')
             ->assertJsonPath('checks.database', 'ok')
             ->assertJsonPath('checks.storage', 'ok');
     }

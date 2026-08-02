@@ -9,6 +9,11 @@ Website legaltech **PT Praktisi Izin Hukum** berbasis Laravel 12, Bootstrap 5, M
 - Label oranye **Harga Perkiraan** untuk harga yang belum final.
 - Form permintaan proposal yang tersimpan ke database.
 - Form proposal membuat order, mengantrekan notifikasi admin, lalu membuka WhatsApp untuk konfirmasi klien.
+- Pelacakan UTM/campaign dan landing page sampai proposal untuk mengukur sumber lead.
+- Pipeline penjualan ringan untuk tahap lead, PIC, nilai, catatan, dan jadwal follow-up tanpa mengaktifkan CRM WhatsApp lama.
+- Penawaran digital bertautan publik; persetujuan klien membuat invoice otomatis.
+- Unggah bukti transfer privat dari halaman invoice, pemeriksaan admin, dan pembuatan pembayaran/kwitansi otomatis.
+- Analitik pertumbuhan untuk lead, campaign, layanan, penawaran, invoice, dan pembayaran, termasuk pembuat tautan UTM.
 - Kupon per layanan dengan persentase/nominal, periode, kuota, minimum transaksi, dan jejak promo hingga invoice; referral mitra tetap tercatat terpisah.
 - Pusat alat gratis untuk perjalanan calon klien sebelum memesan.
 - Generator alternatif nama PT, Perseroan Perorangan, PT PMA, CV, Firma, Persekutuan Perdata, Yayasan, Perkumpulan, dan Koperasi dengan pagar format awal serta rujukan regulasi terbaru.
@@ -81,7 +86,7 @@ Data tersebut dapat diubah melalui environment variables tanpa mengedit kode.
 6. Pastikan halaman publik, `/up`, dan `/admin/masuk` dapat dibuka.
 7. Ubah `SEED_DATABASE=false`, lalu redeploy.
 
-### Memasang pembaruan katalog dan promo V15
+### Memasang Growth Suite V16 dalam satu kali redeploy
 
 Untuk website yang sudah berjalan, pertahankan:
 
@@ -89,7 +94,9 @@ Untuk website yang sudah berjalan, pertahankan:
 SEED_DATABASE=false
 ```
 
-Commit pembaruan lalu lakukan satu kali redeploy. Entrypoint menjalankan migrasi yang belum terpasang, rekonsiliasi keuangan, backfill order, dan `php artisan kbli:ensure` secara otomatis. V15 menambahkan tabel kupon serta lima layanan baru tanpa menjalankan ulang `ServiceSeeder` atau menimpa harga katalog yang telah diubah admin. Harga awal kelima layanan baru ditampilkan sebagai penawaran, bukan angka buatan.
+Commit pembaruan lalu lakukan satu kali redeploy. Entrypoint menjalankan semua migrasi tertunda, termasuk V15 bila belum terpasang, rekonsiliasi keuangan, backfill order, dan `php artisan kbli:ensure` secara otomatis. V16 menambahkan pelacakan campaign, pipeline penjualan, penawaran digital, bukti pembayaran, dan analitik pertumbuhan. Permintaan lama dimasukkan ke pipeline tanpa menjalankan ulang `ServiceSeeder` atau menimpa harga katalog yang telah diubah admin.
+
+Kelima modul V16 memiliki sakelar pada **Admin → Fitur aplikasi**. Dengan demikian source dapat dideploy sekali, lalu peluncuran modul dapat diatur tanpa redeploy berikutnya.
 
 Environment minimal untuk notifikasi:
 
@@ -177,4 +184,4 @@ php artisan test
 npm run build
 ```
 
-Panduan satu kali redeploy tersedia pada `PETUNJUK-REDEPLOY-V15.md`.
+Panduan satu kali redeploy tersedia pada `PETUNJUK-REDEPLOY-V16.md`.

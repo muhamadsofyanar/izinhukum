@@ -12,7 +12,7 @@
     <meta property="og:description" content="@yield('meta_description', 'Layanan legalitas bisnis yang praktis, aman, dan transparan.')">
     <meta property="og:url" content="{{ url()->current() }}">
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=15.0.0">
+    <link rel="stylesheet" href="{{ asset('css/admin-fixes.css') }}?v=16.0.0">
 </head>
 @php($featureFlags = app(\App\Services\FeatureFlagService::class))
 <body>
