@@ -9,6 +9,20 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Sejumlah instalasi V20 sudah mencatat migrasi 000027 sebagai "Ran",
+        // tetapi tabel campaign-nya berasal dari skema awal yang belum memiliki
+        // relasi layanan. Pulihkan kolom tersebut di sini agar migrasi ini aman
+        // dijalankan ulang setelah deploy yang sempat gagal.
+        if (! Schema::hasColumn('marketing_campaigns', 'service_id')) {
+            Schema::table('marketing_campaigns', function (Blueprint $table): void {
+                $table->foreignId('service_id')
+                    ->nullable()
+                    ->after('slug')
+                    ->constrained()
+                    ->nullOnDelete();
+            });
+        }
+
         if (! Schema::hasColumn('marketing_campaigns', 'coupon_id')) {
             Schema::table('marketing_campaigns', function (Blueprint $table): void {
                 $table->foreignId('coupon_id')
@@ -166,6 +180,9 @@ return new class extends Migration
                 $table->dropConstrainedForeignId('coupon_id');
             });
         }
+
+        // service_id sengaja dipertahankan karena merupakan bagian dari skema
+        // inti V20; blok up() di atas hanya memperbaiki instalasi yang drift.
 
         // Konten, paket, campaign, dan kupon tidak dihapus saat rollback agar
         // lead, penggunaan promo, serta perubahan admin tetap dapat diaudit.

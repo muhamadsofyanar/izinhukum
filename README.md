@@ -106,13 +106,13 @@ Modul baru memiliki sakelar pada **Admin → Fitur aplikasi**. Dengan demikian s
 
 Panduan lengkap: `PETUNJUK-REDEPLOY-V21.md`, `RINGKASAN-PERUBAHAN-V21.md`, dan `BRAND-GUIDELINES-V21.md`.
 
-### Campaign closing Yayasan V21.0.2
+### Campaign closing Yayasan V21.0.3
 
-V21.0.2 memasang fokus closing Yayasan langsung ke website melalui satu migration produksi. Halaman `/layanan/pendirian-yayasan` memperoleh konten khusus, ruang lingkup paket yang sesuai Yayasan, promo terlihat, harga setelah potongan, dan kupon otomatis. Landing broadcast tersedia pada `/promo/yayasan-agustus-2026` dengan atribusi campaign sampai inquiry, pipeline, penawaran, dan pembayaran.
+V21.0.3 memasang fokus closing Yayasan langsung ke website melalui satu migration produksi. Halaman `/layanan/pendirian-yayasan` memperoleh konten khusus, ruang lingkup paket yang sesuai Yayasan, promo terlihat, harga setelah potongan, dan kupon otomatis. Landing broadcast tersedia pada `/promo/yayasan-agustus-2026` dengan atribusi campaign sampai inquiry, pipeline, penawaran, dan pembayaran.
 
-Promo bawaan memakai kode `YAYASAN300`: potongan Rp300.000, minimum paket Rp4.000.000, kuota 20 penggunaan, periode 3–17 Agustus 2026. Campaign dan kupon tetap dapat diubah melalui **Admin → Campaign pemasaran** dan **Admin → Kupon** tanpa redeploy. Harga paket yang pernah disunting admin tidak ditimpa oleh migration V21.0.2.
+Promo bawaan memakai kode `YAYASAN300`: potongan Rp300.000, minimum paket Rp4.000.000, kuota 20 penggunaan, periode 3–17 Agustus 2026. Campaign dan kupon tetap dapat diubah melalui **Admin → Campaign pemasaran** dan **Admin → Kupon** tanpa redeploy. Harga paket yang pernah disunting admin tidak ditimpa oleh migration. V21.0.3 juga memperbaiki database produksi lama yang belum memiliki kolom `marketing_campaigns.service_id` meskipun migrasi V20 sudah tercatat berjalan.
 
-Panduan deploy dan pemeriksaan: `PETUNJUK-REDEPLOY-V21.0.2.md`.
+Panduan deploy dan pemeriksaan: `PETUNJUK-REDEPLOY-V21.0.3.md`.
 
 Environment minimal untuk notifikasi:
 
@@ -200,4 +200,4 @@ php artisan test
 npm run build
 ```
 
-Panduan satu kali redeploy terbaru tersedia pada `PETUNJUK-REDEPLOY-V21.0.2.md`.
+Panduan satu kali redeploy terbaru tersedia pada `PETUNJUK-REDEPLOY-V21.0.3.md`.
