@@ -9,29 +9,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Sejumlah instalasi V20 sudah mencatat migrasi 000027 sebagai "Ran",
-        // tetapi tabel campaign-nya berasal dari skema awal yang belum memiliki
-        // relasi layanan. Pulihkan kolom tersebut di sini agar migrasi ini aman
-        // dijalankan ulang setelah deploy yang sempat gagal.
-        if (! Schema::hasColumn('marketing_campaigns', 'service_id')) {
-            Schema::table('marketing_campaigns', function (Blueprint $table): void {
-                $table->foreignId('service_id')
-                    ->nullable()
-                    ->after('slug')
-                    ->constrained()
-                    ->nullOnDelete();
-            });
-        }
-
-        if (! Schema::hasColumn('marketing_campaigns', 'coupon_id')) {
-            Schema::table('marketing_campaigns', function (Blueprint $table): void {
-                $table->foreignId('coupon_id')
-                    ->nullable()
-                    ->after('service_id')
-                    ->constrained()
-                    ->nullOnDelete();
-            });
-        }
+        $this->repairMarketingCampaignSchema();
 
         $now = now();
         $serviceId = DB::table('services')->where('slug', 'pendirian-yayasan')->value('id');
@@ -186,6 +164,115 @@ return new class extends Migration
 
         // Konten, paket, campaign, dan kupon tidak dihapus saat rollback agar
         // lead, penggunaan promo, serta perubahan admin tetap dapat diaudit.
+    }
+
+    /**
+     * Memulihkan seluruh skema campaign yang dipakai V20–V21.
+     *
+     * Beberapa database produksi sudah mencatat migrasi 000027 sebagai "Ran",
+     * tetapi tabelnya berasal dari revisi skema yang lebih awal. Pemeriksaan
+     * lengkap mencegah proses retry berhenti satu per satu pada kolom berikutnya.
+     */
+    private function repairMarketingCampaignSchema(): void
+    {
+        if (! Schema::hasTable('marketing_campaigns')) {
+            Schema::create('marketing_campaigns', function (Blueprint $table): void {
+                $table->id();
+                $table->string('name', 160);
+                $table->string('slug', 180)->unique();
+                $table->foreignId('service_id')->nullable()->constrained()->nullOnDelete();
+                $table->foreignId('coupon_id')->nullable()->constrained()->nullOnDelete();
+                $table->string('source', 120)->default('whatsapp')->index();
+                $table->string('medium', 120)->default('broadcast')->index();
+                $table->string('landing_headline', 180)->nullable();
+                $table->text('landing_subheadline')->nullable();
+                $table->string('cta_text', 80)->default('Konsultasi sekarang');
+                $table->boolean('is_landing_enabled')->default(true)->index();
+                $table->unsignedBigInteger('landing_views')->default(0);
+                $table->date('start_date')->nullable();
+                $table->date('end_date')->nullable();
+                $table->unsignedBigInteger('budget')->default(0);
+                $table->unsignedBigInteger('spend')->default(0);
+                $table->string('status', 24)->default('active')->index();
+                $table->text('notes')->nullable();
+                $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+                $table->timestamps();
+            });
+        } else {
+            $columns = array_fill_keys(Schema::getColumnListing('marketing_campaigns'), true);
+
+            Schema::table('marketing_campaigns', function (Blueprint $table) use ($columns): void {
+                if (! isset($columns['name'])) {
+                    $table->string('name', 160)->default('Campaign');
+                }
+                if (! isset($columns['slug'])) {
+                    $table->string('slug', 180)->nullable()->unique();
+                }
+                if (! isset($columns['service_id'])) {
+                    $table->foreignId('service_id')->nullable()->constrained()->nullOnDelete();
+                }
+                if (! isset($columns['coupon_id'])) {
+                    $table->foreignId('coupon_id')->nullable()->constrained()->nullOnDelete();
+                }
+                if (! isset($columns['source'])) {
+                    $table->string('source', 120)->default('whatsapp')->index();
+                }
+                if (! isset($columns['medium'])) {
+                    $table->string('medium', 120)->default('broadcast')->index();
+                }
+                if (! isset($columns['landing_headline'])) {
+                    $table->string('landing_headline', 180)->nullable();
+                }
+                if (! isset($columns['landing_subheadline'])) {
+                    $table->text('landing_subheadline')->nullable();
+                }
+                if (! isset($columns['cta_text'])) {
+                    $table->string('cta_text', 80)->default('Konsultasi sekarang');
+                }
+                if (! isset($columns['is_landing_enabled'])) {
+                    $table->boolean('is_landing_enabled')->default(true)->index();
+                }
+                if (! isset($columns['landing_views'])) {
+                    $table->unsignedBigInteger('landing_views')->default(0);
+                }
+                if (! isset($columns['start_date'])) {
+                    $table->date('start_date')->nullable();
+                }
+                if (! isset($columns['end_date'])) {
+                    $table->date('end_date')->nullable();
+                }
+                if (! isset($columns['budget'])) {
+                    $table->unsignedBigInteger('budget')->default(0);
+                }
+                if (! isset($columns['spend'])) {
+                    $table->unsignedBigInteger('spend')->default(0);
+                }
+                if (! isset($columns['status'])) {
+                    $table->string('status', 24)->default('active')->index();
+                }
+                if (! isset($columns['notes'])) {
+                    $table->text('notes')->nullable();
+                }
+                if (! isset($columns['created_by'])) {
+                    $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+                }
+                if (! isset($columns['created_at'])) {
+                    $table->timestamp('created_at')->nullable();
+                }
+                if (! isset($columns['updated_at'])) {
+                    $table->timestamp('updated_at')->nullable();
+                }
+            });
+        }
+
+        if (! Schema::hasColumn('inquiries', 'marketing_campaign_id')) {
+            Schema::table('inquiries', function (Blueprint $table): void {
+                $table->foreignId('marketing_campaign_id')
+                    ->nullable()
+                    ->constrained()
+                    ->nullOnDelete();
+            });
+        }
     }
 
     private function upsertPackage(
