@@ -7,10 +7,31 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Inquiry extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
+
+    public const DISPOSITION_NEW = 'new';
+    public const DISPOSITION_CONTACTED = 'contacted';
+    public const DISPOSITION_QUALIFIED = 'qualified';
+    public const DISPOSITION_PROPOSAL_SENT = 'proposal_sent';
+    public const DISPOSITION_WON = 'won';
+    public const DISPOSITION_LOST = 'lost';
+    public const DISPOSITION_DUPLICATE = 'duplicate';
+    public const DISPOSITION_SPAM = 'spam';
+
+    public const DISPOSITIONS = [
+        self::DISPOSITION_NEW => 'Lead baru',
+        self::DISPOSITION_CONTACTED => 'Sudah dihubungi',
+        self::DISPOSITION_QUALIFIED => 'Terverifikasi',
+        self::DISPOSITION_PROPOSAL_SENT => 'Penawaran dikirim',
+        self::DISPOSITION_WON => 'Menjadi proyek',
+        self::DISPOSITION_LOST => 'Tidak lanjut',
+        self::DISPOSITION_DUPLICATE => 'Duplikat',
+        self::DISPOSITION_SPAM => 'Spam',
+    ];
 
     protected $fillable = [
         'reference',
@@ -20,6 +41,7 @@ class Inquiry extends Model
         'coupon_id',
         'name',
         'phone',
+        'phone_normalized',
         'email',
         'company_name',
         'city',
@@ -39,6 +61,12 @@ class Inquiry extends Model
         'coupon_discount_amount',
         'referred_at',
         'status',
+        'disposition',
+        'spam_score',
+        'spam_reasons',
+        'review_note',
+        'reviewed_by',
+        'reviewed_at',
     ];
 
     protected function casts(): array
@@ -47,6 +75,9 @@ class Inquiry extends Model
             'referred_at' => 'datetime',
             'coupon_discount_value' => 'integer',
             'coupon_discount_amount' => 'integer',
+            'spam_score' => 'integer',
+            'spam_reasons' => 'array',
+            'reviewed_at' => 'datetime',
         ];
     }
 
@@ -93,5 +124,27 @@ class Inquiry extends Model
     public function salesQuotes(): HasMany
     {
         return $this->hasMany(SalesQuote::class);
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function isQuarantined(): bool
+    {
+        return in_array($this->disposition, [self::DISPOSITION_DUPLICATE, self::DISPOSITION_SPAM], true);
+    }
+
+    public function canConvertToProject(): bool
+    {
+        return ! $this->trashed()
+            && ! $this->serviceOrder()->exists()
+            && $this->disposition === self::DISPOSITION_QUALIFIED;
+    }
+
+    public function dispositionLabel(): string
+    {
+        return self::DISPOSITIONS[$this->disposition] ?? $this->disposition;
     }
 }

@@ -4,6 +4,7 @@
     $prefix = $user->isAdmin() ? 'admin' : 'partner';
     $canMutate = $user->isAdmin() || $invoice->created_by === $user->id;
     $canEditDraft = $canMutate && $invoice->status === 'draft' && $invoice->payments->isEmpty();
+    $defaultPaymentReceiver = $invoice->payment_recipient === \App\Models\Invoice::PAYMENT_RECIPIENT_NOTARY ? 'notary' : 'izinhukum';
 @endphp
 
 @section('title', $invoice->invoice_number)
@@ -77,6 +78,12 @@
     </div>
 @endif
 
+<div class="admin-note mb-3">
+    Pola pembayaran: <strong>{{ \App\Models\Invoice::PAYMENT_SCHEMES[$invoice->payment_scheme] ?? $invoice->payment_scheme }}</strong>
+    · tujuan pembayaran: <strong>{{ \App\Models\Invoice::PAYMENT_RECIPIENTS[$invoice->payment_recipient] ?? $invoice->payment_recipient }}</strong>.
+    @if($invoice->payment_terms)<div class="mt-1">{{ $invoice->payment_terms }}</div>@endif
+</div>
+
 <section class="invoice-sheet admin-invoice">
     @include('portal.invoices._document')
 </section>
@@ -121,6 +128,14 @@
                 </select>
             </label>
             <label class="field">
+                <span>Diterima oleh</span>
+                <select class="form-select" name="received_by" required>
+                    <option value="izinhukum" @selected(old('received_by', $defaultPaymentReceiver) === 'izinhukum')>IzinHukum — buat kwitansi</option>
+                    <option value="notary" @selected(old('received_by', $defaultPaymentReceiver) === 'notary')>Notaris mitra — bukti dari notaris</option>
+                    <option value="other" @selected(old('received_by', $defaultPaymentReceiver) === 'other')>Pihak lain — bukti eksternal</option>
+                </select>
+            </label>
+            <label class="field">
                 <span>Kategori pemasukan</span>
                 <select class="form-select" name="financial_category_id">
                     <option value="">Pendapatan invoice</option>
@@ -137,7 +152,7 @@
                 <span>Catatan</span>
                 <textarea class="form-control" name="notes" rows="2">{{ old('notes') }}</textarea>
             </label>
-            <div><button class="btn btn-primary">Simpan pembayaran & buat kwitansi</button></div>
+            <div><button class="btn btn-primary">Simpan pembayaran</button></div>
         </form>
     @else
         <div class="p-4"><span class="status status-paid">Lunas</span> Seluruh pembayaran aktif sudah tercatat.</div>
@@ -153,15 +168,20 @@
     </div>
     <div class="table-responsive">
         <table class="table admin-table">
-            <thead><tr><th>Kwitansi</th><th>Tanggal</th><th>Metode</th><th>Referensi</th><th>Nominal</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Bukti / kwitansi</th><th>Tanggal</th><th>Penerima</th><th>Metode</th><th>Referensi</th><th>Nominal</th><th>Status</th><th></th></tr></thead>
             <tbody>
             @foreach($invoice->payments->sortByDesc('payment_date') as $payment)
                 <tr class="{{ $payment->isCancelled() ? 'transaction-cancelled' : '' }}">
                     <td>
-                        <a href="{{ route('receipts.public', $payment->public_token) }}" target="_blank">{{ $payment->receipt_number }}</a>
+                        @if($payment->hasOfficialReceipt())
+                            <a href="{{ route('receipts.public', $payment->public_token) }}" target="_blank">{{ $payment->receipt_number }}</a>
+                        @else
+                            <span>{{ $payment->receipt_number }}</span><small>Bukti diterbitkan pihak penerima</small>
+                        @endif
                         @if($payment->last_edited_at)<small>Dikoreksi {{ $payment->last_edited_at->format('d/m/Y H:i') }}</small>@endif
                     </td>
                     <td>{{ $payment->payment_date->format('d/m/Y') }}</td>
+                    <td>{{ ['izinhukum'=>'IzinHukum','notary'=>'Notaris mitra','other'=>'Pihak lain'][$payment->received_by] ?? $payment->received_by }}</td>
                     <td>{{ ucfirst($payment->payment_method) }}</td>
                     <td>{{ $payment->reference_number ?: '—' }}</td>
                     <td><strong>{{ $payment->formattedAmount() }}</strong></td>

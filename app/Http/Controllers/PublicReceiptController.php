@@ -17,6 +17,7 @@ class PublicReceiptController extends Controller
             ->where('public_token', $token)
             ->with(['invoice', 'creator', 'category', 'cancelledBy', 'lastEditedBy'])
             ->firstOrFail();
+        abort_unless($payment->hasOfficialReceipt(), 404);
 
         return view('receipts.show', [
             'payment' => $payment,

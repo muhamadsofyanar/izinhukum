@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Inquiry;
+use App\Models\AuditLog;
 use App\Models\Invoice;
 use App\Models\ServiceOrder;
 use App\Models\ServiceOrderDocument;
@@ -107,9 +108,30 @@ class ServiceOrderController extends Controller
 
     public function fromInquiry(Request $request, Inquiry $inquiry, ServiceOrderService $orders): RedirectResponse
     {
-        $order = $orders->createFromInquiry($inquiry, $request->attributes->get('currentUser'));
+        if (! $inquiry->canConvertToProject()) {
+            return back()->withErrors([
+                'disposition' => 'Lead harus ditandai Terverifikasi sebelum dapat dijadikan proyek.',
+            ]);
+        }
 
-        return redirect()->route('admin.orders.show', $order)->with('success', 'Permintaan berhasil disinkronkan menjadi order.');
+        $actor = $request->attributes->get('currentUser');
+        $order = $orders->createFromInquiry($inquiry, $actor);
+        $inquiry->update([
+            'disposition' => Inquiry::DISPOSITION_WON,
+            'status' => 'proses',
+            'reviewed_by' => $actor?->id,
+            'reviewed_at' => now(),
+        ]);
+        AuditLog::query()->create([
+            'user_id' => $actor?->id,
+            'action' => 'inquiry_converted_to_project',
+            'subject_type' => Inquiry::class,
+            'subject_id' => $inquiry->id,
+            'metadata' => ['service_order_id' => $order->id, 'order_number' => $order->order_number],
+            'ip_address' => $request->ip(),
+        ]);
+
+        return redirect()->route('admin.orders.show', $order)->with('success', 'Lead terverifikasi berhasil dijadikan proyek.');
     }
 
     public function show(ServiceOrder $order): View

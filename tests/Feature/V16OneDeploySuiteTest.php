@@ -86,6 +86,8 @@ class V16OneDeploySuiteTest extends TestCase
         $this->assertNotNull($quote->invoice_id);
         $this->assertSame(1, Invoice::query()->where('inquiry_id', $inquiry->id)->count());
         $this->assertSame((int) $package->price, (int) $quote->invoice->total);
+        $this->assertDatabaseHas('service_orders', ['inquiry_id' => $inquiry->id]);
+        $this->assertSame(Inquiry::DISPOSITION_WON, $inquiry->fresh()->disposition);
     }
 
     public function test_admin_approval_of_payment_proof_creates_payment_and_receipt(): void

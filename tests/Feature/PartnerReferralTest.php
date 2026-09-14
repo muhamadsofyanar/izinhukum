@@ -83,6 +83,15 @@ class PartnerReferralTest extends TestCase
         ]);
 
         $this->withSession(['portal_user_id' => $admin->id])
+            ->put(route('admin.inquiries.update', $inquiry), [
+                'disposition' => Inquiry::DISPOSITION_QUALIFIED,
+                'review_note' => 'Terverifikasi melalui WhatsApp.',
+            ])->assertRedirect();
+        $this->withSession(['portal_user_id' => $admin->id])
+            ->post(route('admin.orders.from-inquiry', $inquiry->fresh()))
+            ->assertRedirect();
+
+        $this->withSession(['portal_user_id' => $admin->id])
             ->get(route('admin.invoices.create', ['inquiry' => $inquiry->id]))
             ->assertOk()
             ->assertSee('Prospek Menjadi Klien')

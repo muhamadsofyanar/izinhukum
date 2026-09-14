@@ -150,6 +150,26 @@
                     <input class="form-control" id="due_date" name="due_date" type="date"
                            value="{{ old('due_date', $invoice?->due_date?->format('Y-m-d') ?? now()->addDays(7)->format('Y-m-d')) }}">
                 </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="payment_scheme">Pola pembayaran</label>
+                    <select class="form-select" id="payment_scheme" name="payment_scheme" required>
+                        @foreach(\App\Models\Invoice::PAYMENT_SCHEMES as $value => $label)
+                            <option value="{{ $value }}" @selected(old('payment_scheme', $invoice?->payment_scheme ?? 'full') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="payment_recipient">Pembayaran masuk ke</label>
+                    <select class="form-select" id="payment_recipient" name="payment_recipient" required>
+                        @foreach(\App\Models\Invoice::PAYMENT_RECIPIENTS as $value => $label)
+                            <option value="{{ $value }}" @selected(old('payment_recipient', $invoice?->payment_recipient ?? 'izinhukum') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="payment_terms">Rincian termin / pembagian</label>
+                    <textarea class="form-control" id="payment_terms" name="payment_terms" rows="2" placeholder="Contoh: Rp1,5 juta langsung ke notaris; sisanya ke IzinHukum.">{{ old('payment_terms', $invoice?->payment_terms) }}</textarea>
+                </div>
                 <div class="col-12">
                     <label class="form-label" for="notes">Catatan</label>
                     <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Contoh: pekerjaan dimulai setelah pembayaran dan dokumen lengkap.">{{ old('notes', $invoice?->notes) }}</textarea>

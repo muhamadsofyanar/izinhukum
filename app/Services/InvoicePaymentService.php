@@ -55,13 +55,14 @@ class InvoicePaymentService
                 'payer_name' => $lockedInvoice->recipient_name,
                 'description' => 'Pembayaran '.$lockedInvoice->invoice_number,
                 'payment_method' => $data['payment_method'],
+                'received_by' => $data['received_by'] ?? 'izinhukum',
                 'reference_number' => $data['reference_number'] ?? null,
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            $payment->update([
-                'receipt_number' => sprintf('KWT/IH/%s/%05d', $payment->payment_date->format('Ym'), $payment->id),
-            ]);
+            $payment->update(['receipt_number' => $payment->hasOfficialReceipt()
+                ? sprintf('KWT/IH/%s/%05d', $payment->payment_date->format('Ym'), $payment->id)
+                : sprintf('EXT/IH/%s/%05d', $payment->payment_date->format('Ym'), $payment->id)]);
 
             $totalPaid = $paidAmount + $amount;
             $isPaid = $totalPaid >= (int) $lockedInvoice->total;
@@ -70,7 +71,9 @@ class InvoicePaymentService
                 'paid_at' => $isPaid ? now() : null,
             ]);
 
-            $this->commissions->syncForPayment($payment);
+            if ($payment->hasOfficialReceipt()) {
+                $this->commissions->syncForPayment($payment);
+            }
 
             return $payment->fresh(['invoice', 'creator', 'category']);
         });
@@ -150,7 +153,9 @@ class InvoicePaymentService
                 $this->recalculateInvoice($invoice);
             }
 
-            $this->commissions->syncForPayment($lockedPayment);
+            if ($lockedPayment->hasOfficialReceipt()) {
+                $this->commissions->syncForPayment($lockedPayment);
+            }
 
             return $lockedPayment->fresh([
                 'invoice',

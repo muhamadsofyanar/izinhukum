@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CrmActivity;
 use App\Models\CrmLead;
 use App\Models\Invoice;
+use App\Models\Inquiry;
 use App\Models\SalesQuote;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -35,12 +36,26 @@ class SalesQuoteService
             }
 
             $inquiry = $locked->inquiry;
+            $order = $locked->serviceOrder;
+            if ($inquiry && ! $order) {
+                $inquiry->update([
+                    'disposition' => Inquiry::DISPOSITION_QUALIFIED,
+                    'reviewed_by' => $locked->created_by,
+                    'reviewed_at' => now(),
+                ]);
+                $order = $this->orders->createFromInquiry($inquiry->fresh(), $locked->creator);
+                $inquiry->update([
+                    'disposition' => Inquiry::DISPOSITION_WON,
+                    'status' => 'proses',
+                ]);
+                $locked->update(['service_order_id' => $order->id]);
+            }
             $invoice = Invoice::query()->create([
                 'invoice_number' => 'PENDING-'.Str::uuid(),
                 'public_token' => Str::random(56),
                 'created_by' => $locked->created_by,
                 'inquiry_id' => $locked->inquiry_id,
-                'service_order_id' => $locked->service_order_id,
+                'service_order_id' => $order?->id,
                 'referred_by_partner_id' => $locked->referred_by_partner_id,
                 'referral_code' => $locked->referral_code,
                 'coupon_id' => $locked->coupon_id,
@@ -83,10 +98,13 @@ class SalesQuoteService
                 'approved_at' => now(),
                 'invoice_id' => $invoice->id,
             ]);
-            $inquiry?->update(['status' => 'proses']);
+            $inquiry?->update([
+                'status' => 'proses',
+                'disposition' => Inquiry::DISPOSITION_WON,
+            ]);
 
-            if ($locked->serviceOrder) {
-                $this->orders->update($locked->serviceOrder, [
+            if ($order) {
+                $this->orders->update($order, [
                     'status' => 'awaiting_payment',
                     'progress' => $this->orders->progressForStatus('awaiting_payment'),
                 ], $locked->creator);
@@ -105,7 +123,7 @@ class SalesQuoteService
                 CrmActivity::query()->create([
                     'contact_id' => $lead->contact_id,
                     'lead_id' => $lead->id,
-                    'service_order_id' => $locked->service_order_id,
+                    'service_order_id' => $order?->id,
                     'type' => 'quote_approved',
                     'title' => 'Penawaran disetujui',
                     'description' => $locked->quote_number.' · invoice '.$invoice->invoice_number.' dibuat otomatis.',

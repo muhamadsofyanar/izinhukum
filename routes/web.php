@@ -99,7 +99,7 @@ Route::get('/artikel', [ArticleController::class, 'index'])->middleware('feature
 Route::get('/artikel/{article:slug}', [ArticleController::class, 'show'])->middleware('feature:public_articles')->name('articles.show');
 Route::get('/proposal', [InquiryController::class, 'create'])->middleware('feature:public_proposal')->name('proposal.create');
 Route::post('/proposal/cek-kupon', [InquiryController::class, 'checkCoupon'])->middleware(['feature:public_proposal', 'throttle:20,1'])->name('proposal.coupon.check');
-Route::post('/proposal', [InquiryController::class, 'store'])->middleware(['feature:public_proposal', 'throttle:10,1'])->name('proposal.store');
+Route::post('/proposal', [InquiryController::class, 'store'])->middleware(['feature:public_proposal', 'throttle:5,1'])->name('proposal.store');
 Route::get('/proposal/berhasil/{inquiry:reference}', [InquiryController::class, 'success'])->name('proposal.success');
 Route::get('/lacak-permintaan', [InquiryTrackingController::class, 'index'])->name('tracking.index');
 Route::post('/lacak-permintaan', [InquiryTrackingController::class, 'search'])->middleware('throttle:8,1')->name('tracking.search');

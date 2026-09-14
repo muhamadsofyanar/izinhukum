@@ -16,7 +16,7 @@
 <main class="invoice-sheet">
     @include('portal.invoices._document')
 </main>
-@if($proofUploadEnabled && !in_array($invoice->status, ['draft','cancelled','paid'], true) && $invoice->remainingAmount() > 0)
+@if($proofUploadEnabled && $invoice->payment_recipient === \App\Models\Invoice::PAYMENT_RECIPIENT_IZINHUKUM && !in_array($invoice->status, ['draft','cancelled','paid'], true) && $invoice->remainingAmount() > 0)
 <section class="public-document-action payment-proof-upload">
     <h2>Konfirmasi transfer</h2>
     <p>Sudah transfer? Unggah JPG, PNG, atau PDF maksimal 5 MB. Admin akan memeriksa sebelum pembayaran dan kwitansi diterbitkan.</p>

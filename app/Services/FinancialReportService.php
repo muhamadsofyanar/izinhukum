@@ -21,6 +21,7 @@ class FinancialReportService
         // sehingga seluruh transaksi pada tanggal akhir ikut terbaca.
         $payments = Payment::query()
             ->active()
+            ->where('received_by', 'izinhukum')
             ->with(['invoice', 'category'])
             ->where('payment_date', '>=', $fromDate)
             ->where('payment_date', '<', $toExclusiveDate)
@@ -122,6 +123,7 @@ class FinancialReportService
     {
         $income = (int) Payment::query()
             ->active()
+            ->where('received_by', 'izinhukum')
             ->where('payment_date', '<', $fromDate)
             ->sum('amount');
 

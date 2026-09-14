@@ -18,6 +18,7 @@
             <div class="col-lg-7">
                 <form class="form-card" action="{{ route('proposal.store') }}" method="post">
                     @csrf
+                    <x-lead-spam-fields id="proposal" />
                     <input type="hidden" name="journey_source" value="{{ old('journey_source', $journeySource) }}">
                     <div class="form-section">
                         <span class="form-number">01</span>

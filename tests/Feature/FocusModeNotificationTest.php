@@ -36,9 +36,7 @@ class FocusModeNotificationTest extends TestCase
             'name' => 'Klien Baru',
             'source' => 'name_generator',
         ]);
-        $this->assertDatabaseHas('service_orders', [
-            'customer_name' => 'Klien Baru',
-        ]);
+        $this->assertDatabaseCount('service_orders', 0);
 
         Queue::assertPushed(SendNewInquiryEmailNotification::class);
         Queue::assertPushed(SendNewInquiryWhatsAppNotification::class);

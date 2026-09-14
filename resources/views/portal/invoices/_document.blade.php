@@ -41,7 +41,15 @@
     @endif
 </div>
 <div class="invoice-foot">
-    <div><span>Pembayaran resmi</span><strong>{{ $branding['bank_name'] }} {{ $branding['bank_account_number'] }}</strong><small>a.n. {{ $branding['bank_account_holder'] }}</small></div>
-    <div>@if($invoice->notes)<span>Catatan</span><p>{{ $invoice->notes }}</p>@endif</div>
+    <div>
+        <span>Pola dan tujuan pembayaran</span>
+        <strong>{{ \App\Models\Invoice::PAYMENT_SCHEMES[$invoice->payment_scheme] ?? $invoice->payment_scheme }}</strong>
+        <small>{{ \App\Models\Invoice::PAYMENT_RECIPIENTS[$invoice->payment_recipient] ?? $invoice->payment_recipient }}</small>
+        @if($invoice->payment_recipient === \App\Models\Invoice::PAYMENT_RECIPIENT_IZINHUKUM)
+            <strong>{{ $branding['bank_name'] }} {{ $branding['bank_account_number'] }}</strong><small>a.n. {{ $branding['bank_account_holder'] }}</small>
+        @endif
+        @if($invoice->payment_terms)<p>{{ $invoice->payment_terms }}</p>@endif
+    </div>
+    <div>@if($invoice->notes)<span>Catatan layanan</span><p>{{ $invoice->notes }}</p>@endif</div>
 </div>
-<p class="invoice-disclaimer">Mohon konfirmasi pembayaran hanya melalui kontak resmi {{ $branding['name'] }}. Invoice ini dibuat secara elektronik.</p>
+<p class="invoice-disclaimer">Kwitansi IzinHukum hanya diterbitkan untuk dana yang diterima IzinHukum. Pembayaran langsung kepada notaris atau pihak lain menggunakan bukti dari penerima dana. Invoice ini dibuat secara elektronik.</p>

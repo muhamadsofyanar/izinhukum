@@ -96,6 +96,12 @@ class ReferralEventService
             return;
         }
 
+        if (! $payment->hasOfficialReceipt()) {
+            ReferralEvent::query()->where('source_key', 'payment:'.$payment->id)->delete();
+
+            return;
+        }
+
         $payment->loadMissing('invoice.serviceOrder');
         $invoice = $payment->invoice;
         $order = $invoice?->serviceOrder;

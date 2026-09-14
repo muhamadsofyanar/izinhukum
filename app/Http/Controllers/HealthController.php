@@ -14,13 +14,35 @@ class HealthController extends Controller
 {
     public function __invoke(FeatureFlagService $features, StarSenderClient $starSender): JsonResponse
     {
-        $checks = ['database' => 'ok', 'storage' => 'ok', 'queue' => 'ok'];
+        $checks = ['database' => 'ok', 'schema' => 'ok', 'storage' => 'ok', 'queue' => 'ok'];
         $status = 200;
 
         try {
             DB::select('select 1');
         } catch (\Throwable) {
             $checks['database'] = 'error';
+            $status = 503;
+        }
+
+        try {
+            $requiredSchema = [
+                'payment_proofs' => ['invoice_id', 'status'],
+                'inquiries' => ['disposition', 'phone_normalized'],
+                'invoices' => ['payment_scheme', 'payment_recipient'],
+                'payments' => ['received_by'],
+            ];
+            foreach ($requiredSchema as $table => $columns) {
+                if (! Schema::hasTable($table)) {
+                    throw new \RuntimeException('missing_table');
+                }
+                foreach ($columns as $column) {
+                    if (! Schema::hasColumn($table, $column)) {
+                        throw new \RuntimeException('missing_column');
+                    }
+                }
+            }
+        } catch (\Throwable) {
+            $checks['schema'] = 'migration_required';
             $status = 503;
         }
 
@@ -65,7 +87,7 @@ class HealthController extends Controller
 
         return response()->json([
             'status' => $status === 200 ? 'healthy' : 'unhealthy',
-            'version' => '21.0.4',
+            'version' => '22.0.0',
             'checks' => $checks,
             'integrations' => [
                 'email_notifications' => $email,

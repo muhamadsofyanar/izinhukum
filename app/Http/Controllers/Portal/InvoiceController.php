@@ -17,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -122,6 +123,9 @@ class InvoiceController extends Controller
                 'recipient_address',
                 'issue_date',
                 'due_date',
+                'payment_scheme',
+                'payment_recipient',
+                'payment_terms',
                 'subtotal',
                 'discount',
                 'total',
@@ -246,7 +250,7 @@ class InvoiceController extends Controller
     ): View {
         $user = $request->attributes->get('currentUser');
         $this->authorizeInvoice($user, $invoice);
-        $invoice->load([
+        $relations = [
             'items.package.service',
             'creator',
             'partner',
@@ -256,10 +260,16 @@ class InvoiceController extends Controller
             'payments.category',
             'payments.cancelledBy',
             'payments.lastEditedBy',
-            'paymentProofs.reviewer',
-            'paymentProofs.payment',
             'cancelledBy',
-        ]);
+        ];
+        if (Schema::hasTable('payment_proofs')) {
+            $relations[] = 'paymentProofs.reviewer';
+            $relations[] = 'paymentProofs.payment';
+        }
+        $invoice->load($relations);
+        if (! Schema::hasTable('payment_proofs')) {
+            $invoice->setRelation('paymentProofs', collect());
+        }
 
         return view('portal.invoices.show', [
             'invoice' => $invoice,
@@ -346,6 +356,9 @@ class InvoiceController extends Controller
             'recipient_address' => ['nullable', 'string', 'max:1000'],
             'issue_date' => ['required', 'date'],
             'due_date' => ['nullable', 'date', 'after_or_equal:issue_date'],
+            'payment_scheme' => ['nullable', Rule::in(array_keys(Invoice::PAYMENT_SCHEMES))],
+            'payment_recipient' => ['nullable', Rule::in(array_keys(Invoice::PAYMENT_RECIPIENTS))],
+            'payment_terms' => ['nullable', 'string', 'max:3000'],
             'notes' => ['nullable', 'string', 'max:3000'],
             'items' => ['required', 'array', 'min:1', 'max:10'],
             'items.*.service_package_id' => ['required', 'exists:service_packages,id'],
@@ -357,8 +370,13 @@ class InvoiceController extends Controller
         $inquiry = null;
         if ($user->isAdmin() && ! empty($validated['inquiry_id'])) {
             $inquiry = Inquiry::query()
-                ->with('referredByPartner')
+                ->with(['referredByPartner', 'serviceOrder'])
                 ->findOrFail((int) $validated['inquiry_id']);
+            if (! $inquiry->serviceOrder) {
+                throw ValidationException::withMessages([
+                    'inquiry_id' => 'Lead harus diverifikasi dan dijadikan proyek sebelum invoice dibuat.',
+                ]);
+            }
         }
 
         $partner = null;
@@ -479,6 +497,9 @@ class InvoiceController extends Controller
                 'recipient_address' => $partner?->address ?? ($validated['recipient_address'] ?? null),
                 'issue_date' => $validated['issue_date'],
                 'due_date' => $validated['due_date'] ?? null,
+                'payment_scheme' => $validated['payment_scheme'] ?? Invoice::PAYMENT_SCHEME_FULL,
+                'payment_recipient' => $validated['payment_recipient'] ?? Invoice::PAYMENT_RECIPIENT_IZINHUKUM,
+                'payment_terms' => $validated['payment_terms'] ?? null,
                 'notes' => $validated['notes'] ?? null,
             ],
             'items' => $items,

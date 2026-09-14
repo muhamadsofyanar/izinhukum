@@ -26,6 +26,7 @@ class Payment extends Model
         'payer_name',
         'description',
         'payment_method',
+        'received_by',
         'reference_number',
         'notes',
         'cancelled_at',
@@ -107,5 +108,10 @@ class Payment extends Model
     public function formattedAmount(): string
     {
         return 'Rp'.number_format($this->amount, 0, ',', '.');
+    }
+
+    public function hasOfficialReceipt(): bool
+    {
+        return $this->received_by === 'izinhukum';
     }
 }

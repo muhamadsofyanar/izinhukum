@@ -81,6 +81,22 @@ class V15CouponAndCatalogTest extends TestCase
         $inquiry = Inquiry::query()->where('email', 'promo@example.test')->firstOrFail();
         $this->assertSame('LEGAL10', $inquiry->coupon_code);
         $this->assertSame(600000, $inquiry->coupon_discount_amount);
+        $this->assertDatabaseCount('service_orders', 0);
+        $admin = User::query()->create([
+            'role' => 'admin',
+            'name' => 'Admin Promo',
+            'email' => 'admin-promo@example.test',
+            'password' => 'password-aman',
+            'is_active' => true,
+        ]);
+        $this->withSession(['portal_user_id' => $admin->id])
+            ->put(route('admin.inquiries.update', $inquiry), [
+                'disposition' => Inquiry::DISPOSITION_QUALIFIED,
+                'review_note' => 'Terverifikasi melalui WhatsApp.',
+            ])->assertRedirect();
+        $this->withSession(['portal_user_id' => $admin->id])
+            ->post(route('admin.orders.from-inquiry', $inquiry->fresh()))
+            ->assertRedirect();
         $this->assertDatabaseHas('service_orders', [
             'inquiry_id' => $inquiry->id,
             'coupon_code' => 'LEGAL10',
@@ -94,13 +110,6 @@ class V15CouponAndCatalogTest extends TestCase
         Queue::assertPushed(SendNewInquiryEmailNotification::class);
         Queue::assertPushed(SendNewInquiryWhatsAppNotification::class);
 
-        $admin = User::query()->create([
-            'role' => 'admin',
-            'name' => 'Admin Promo',
-            'email' => 'admin-promo@example.test',
-            'password' => 'password-aman',
-            'is_active' => true,
-        ]);
         $this->withSession(['portal_user_id' => $admin->id])->post(route('admin.invoices.store'), [
             'recipient_type' => 'end_user',
             'inquiry_id' => $inquiry->id,

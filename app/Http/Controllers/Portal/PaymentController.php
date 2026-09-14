@@ -27,10 +27,12 @@ class PaymentController extends Controller
             $data,
         );
 
-        return back()->with([
-            'success' => 'Pembayaran dicatat dan kwitansi berhasil dibuat.',
-            'receipt_url' => route('receipts.public', $payment->public_token),
-        ]);
+        return back()->with(array_filter([
+            'success' => $payment->hasOfficialReceipt()
+                ? 'Pembayaran dicatat dan kwitansi IzinHukum berhasil dibuat.'
+                : 'Pembayaran kepada pihak luar dicatat. Gunakan bukti dari pihak penerima; IzinHukum tidak menerbitkan kwitansi untuk transaksi ini.',
+            'receipt_url' => $payment->hasOfficialReceipt() ? route('receipts.public', $payment->public_token) : null,
+        ]));
     }
 
     public function edit(Request $request, Payment $payment): View
@@ -103,6 +105,7 @@ class PaymentController extends Controller
                 'required',
                 Rule::in(['transfer', 'cash', 'card', 'ewallet', 'other']),
             ],
+            'received_by' => ['nullable', Rule::in(['izinhukum', 'notary', 'other'])],
             'reference_number' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'edit_reason' => [

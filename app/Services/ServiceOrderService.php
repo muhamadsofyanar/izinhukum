@@ -15,6 +15,10 @@ class ServiceOrderService
 {
     public function createFromInquiry(Inquiry $inquiry, ?User $actor = null): ServiceOrder
     {
+        if (! in_array($inquiry->disposition, [Inquiry::DISPOSITION_QUALIFIED, Inquiry::DISPOSITION_WON], true)) {
+            throw new \DomainException('Lead harus terverifikasi sebelum dapat dijadikan proyek.');
+        }
+
         return DB::transaction(function () use ($inquiry, $actor): ServiceOrder {
             $inquiry->loadMissing(['package.service', 'referredByPartner']);
             $status = $this->statusFromInquiry($inquiry->status);
@@ -183,18 +187,21 @@ class ServiceOrderService
             ->whereNotNull('inquiry_id')
             ->count();
 
-        Inquiry::query()->orderBy('id')->chunkById(100, function ($inquiries) use (&$result, $dryRun): void {
-            foreach ($inquiries as $inquiry) {
-                $result['checked']++;
-                if (ServiceOrder::query()->where('inquiry_id', $inquiry->id)->exists()) {
-                    continue;
+        Inquiry::query()
+            ->where('disposition', Inquiry::DISPOSITION_WON)
+            ->orderBy('id')
+            ->chunkById(100, function ($inquiries) use (&$result, $dryRun): void {
+                foreach ($inquiries as $inquiry) {
+                    $result['checked']++;
+                    if (ServiceOrder::query()->where('inquiry_id', $inquiry->id)->exists()) {
+                        continue;
+                    }
+                    $result['created']++;
+                    if (! $dryRun) {
+                        $this->createFromInquiry($inquiry);
+                    }
                 }
-                $result['created']++;
-                if (! $dryRun) {
-                    $this->createFromInquiry($inquiry);
-                }
-            }
-        });
+            });
 
         $unlinked = Invoice::query()
             ->whereNull('service_order_id')

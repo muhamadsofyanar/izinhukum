@@ -9,15 +9,16 @@ use App\Models\MarketingCampaign;
 use App\Models\ServicePackage;
 use App\Services\CouponService;
 use App\Services\FeatureFlagService;
+use App\Services\InquiryScreeningService;
 use App\Services\PartnerReferralService;
 use App\Services\ReferralEventService;
-use App\Services\ServiceOrderService;
 use App\Services\SalesPipelineService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class InquiryController extends Controller
@@ -77,11 +78,11 @@ class InquiryController extends Controller
     public function store(
         Request $request,
         PartnerReferralService $referrals,
-        ServiceOrderService $orders,
         ReferralEventService $events,
         FeatureFlagService $features,
         CouponService $coupons,
         SalesPipelineService $pipeline,
+        InquiryScreeningService $screening,
     ): RedirectResponse {
         $validated = $request->validate([
             'service_package_id' => ['nullable', 'exists:service_packages,id'],
@@ -97,7 +98,14 @@ class InquiryController extends Controller
             'journey_source' => ['nullable', 'in:website,service_landing,name_generator,deed_simulator'],
             'coupon_code' => ['nullable', 'string', 'max:32', 'regex:/^[A-Za-z0-9_-]+$/'],
             'privacy_consent' => ['accepted'],
+            'website' => ['nullable', 'string', 'max:255'],
+            'form_started_at' => ['nullable', 'integer'],
         ]);
+        try {
+            $screeningResult = $screening->screen($validated);
+        } catch (\InvalidArgumentException $exception) {
+            throw ValidationException::withMessages(['phone' => $exception->getMessage()]);
+        }
         $journeySource = $validated['journey_source'] ?? 'website';
         $couponCode = Str::upper(trim((string) ($validated['coupon_code'] ?? '')));
         $foundationQualification = array_filter([
@@ -127,6 +135,8 @@ class InquiryController extends Controller
             $validated['foundation_purpose'],
             $validated['foundation_readiness'],
             $validated['foundation_timeline'],
+            $validated['website'],
+            $validated['form_started_at'],
         );
         if ($foundationQualification !== []) {
             $qualificationText = collect($foundationQualification)
@@ -157,7 +167,7 @@ class InquiryController extends Controller
             $marketing,
             $journeySource,
             $events,
-            $orders,
+            $screeningResult,
         ): Inquiry {
             $package = ! empty($validated['service_package_id'])
                 ? ServicePackage::query()->with('service')->find((int) $validated['service_package_id'])
@@ -176,17 +186,19 @@ class InquiryController extends Controller
                 'reference' => 'IH-'.now()->format('ymd').'-'.Str::upper(Str::random(5)),
                 'source' => $attribution ? 'partner_referral' : $journeySource,
                 'status' => 'baru',
+                ...$screeningResult,
             ]);
 
-            if ($quote) {
+            if ($quote && ! $inquiry->isQuarantined()) {
                 $coupons->redeem($quote, $inquiry);
             }
-            $events->recordInquiry($inquiry);
-            $orders->createFromInquiry($inquiry);
+            if (! $inquiry->isQuarantined()) {
+                $events->recordInquiry($inquiry);
+            }
 
             return $inquiry;
         });
-        if ($features->enabled('sales_pipeline')) {
+        if (! $inquiry->isQuarantined() && $features->enabled('sales_pipeline')) {
             try {
                 $pipeline->syncInquiry($inquiry);
             } catch (\Throwable $exception) {
@@ -194,8 +206,10 @@ class InquiryController extends Controller
             }
         }
 
-        SendNewInquiryEmailNotification::dispatch($inquiry->id)->onQueue('default');
-        SendNewInquiryWhatsAppNotification::dispatch($inquiry->id)->onQueue('whatsapp');
+        if (! $inquiry->isQuarantined()) {
+            SendNewInquiryEmailNotification::dispatch($inquiry->id)->onQueue('default');
+            SendNewInquiryWhatsAppNotification::dispatch($inquiry->id)->onQueue('whatsapp');
+        }
 
         return redirect()
             ->route('proposal.success', $inquiry)

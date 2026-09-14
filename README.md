@@ -187,6 +187,10 @@ Admin dapat membuka:
 
 Laporan menggunakan basis kas. Nilai invoice belum dihitung sebagai pemasukan sampai pembayaran dicatat.
 
+V22.0.0 menambahkan pola pembayaran per invoice (lunas, DP, termin, atau sesuai penawaran) dan tujuan dana per proyek (IzinHukum, notaris mitra, dibagi, atau pihak lain). Pembayaran kepada pihak luar dapat dicatat sebagai pelunasan invoice, tetapi tidak menghasilkan kwitansi IzinHukum dan tidak dihitung sebagai kas masuk IzinHukum.
+
+Form publik pada V22.0.0 hanya membuat lead. Admin harus memverifikasi melalui WhatsApp dan menandai lead **Terverifikasi** sebelum menjadikannya proyek. Honeypot, normalisasi nomor WhatsApp, deteksi pengiriman terlalu cepat, deduplikasi 24 jam, dan antrean karantina mengurangi spam tanpa mengganggu alur komunikasi WhatsApp.
+
 ## Keamanan file portal
 
 Materi PDF LMS disimpan pada disk privat. File hanya dikirim melalui controller setelah pengguna melewati middleware portal dan pemeriksaan enrollment. Saat deployment, `php artisan portal:secure-files` memindahkan file lama dari disk publik apabila file tersebut masih tersedia.
@@ -200,4 +204,4 @@ php artisan test
 npm run build
 ```
 
-Panduan satu kali redeploy terbaru tersedia pada `PETUNJUK-REDEPLOY-V21.0.4.md`.
+Panduan satu kali redeploy terbaru tersedia pada `PETUNJUK-REDEPLOY-V22.0.0.md`.

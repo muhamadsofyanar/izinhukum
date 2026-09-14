@@ -104,6 +104,7 @@
             <div class="col-lg-7">
                 <form class="service-v21-form" action="{{ route('proposal.store') }}" method="post">
                     @csrf
+                    <x-lead-spam-fields id="service" />
                     <input type="hidden" name="journey_source" value="service_landing">
                     <div class="service-v21-form-head"><span>Konsultasi {{ $service->short_name }}</span><h2>Ceritakan kebutuhan Anda</h2><p>Setelah tersimpan, Anda memperoleh nomor referensi dan melanjutkan pembahasan melalui WhatsApp.</p></div>
                     @if($errors->any())<div class="alert alert-danger">Periksa kembali data yang ditandai.</div>@endif

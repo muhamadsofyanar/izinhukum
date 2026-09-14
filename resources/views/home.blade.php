@@ -27,6 +27,7 @@
                 @if($proposalEnabled)
                 <form class="home-lead-card" id="home-lead-form" action="{{ route('proposal.store') }}" method="post">
                     @csrf
+                    <x-lead-spam-fields id="home" />
                     <input type="hidden" name="journey_source" value="website">
                     <div class="home-lead-head"><div><span>Mulai di sini</span><h2>Kebutuhan legalitas Anda</h2></div><span class="live-dot">Siap ditindaklanjuti</span></div>
                     @if($errors->any())<div class="alert alert-danger py-2">Periksa kembali data yang ditandai.</div>@endif

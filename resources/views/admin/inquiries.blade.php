@@ -16,9 +16,9 @@
                 <input class="form-control" id="q" name="q" value="{{ $search }}" placeholder="Referensi, nama, telepon, email, atau perusahaan">
             </div>
             <div class="col-8 col-lg-2">
-                <label class="form-label" for="status">Status</label>
+                <label class="form-label" for="status">Hasil pemeriksaan</label>
                 <select class="form-select" id="status" name="status">
-                    @foreach(['' => 'Semua', 'baru' => 'Baru', 'dihubungi' => 'Dihubungi', 'proses' => 'Proses', 'selesai' => 'Selesai', 'batal' => 'Batal'] as $value => $label)
+                    @foreach(['' => 'Semua'] + \App\Models\Inquiry::DISPOSITIONS as $value => $label)
                         <option value="{{ $value }}" @selected((string) $status === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
@@ -50,7 +50,7 @@
                         <small>{{ $inquiry->company_name ?: 'Tanpa nama perusahaan' }}</small>
                         <small>{{ $inquiry->created_at->format('d/m/Y H:i') }}</small>
                         @if($inquiry->coupon_code)<span class="status status-paid">Kupon {{ $inquiry->coupon_code }} · −Rp{{ number_format($inquiry->coupon_discount_amount, 0, ',', '.') }}</span>@endif
-                        <a class="btn btn-sm btn-outline-primary mt-2" href="{{ route('admin.invoices.create', ['inquiry' => $inquiry->id]) }}">Buat invoice</a>
+                        @if($inquiry->serviceOrder)<a class="btn btn-sm btn-outline-primary mt-2" href="{{ route('admin.invoices.create', ['inquiry' => $inquiry->id]) }}">Buat invoice</a>@endif
                     </td>
                     <td>
                         @if($inquiry->referredByPartner)
@@ -68,22 +68,29 @@
                             <a href="{{ route('admin.orders.show', $inquiry->serviceOrder) }}"><strong>{{ $inquiry->serviceOrder->order_number }}</strong></a>
                             <small>{{ $inquiry->serviceOrder->statusLabel() }} · {{ $inquiry->serviceOrder->progress }}%</small>
                         @else
-                            <form action="{{ route('admin.orders.from-inquiry', $inquiry) }}" method="post">
+                            @if($inquiry->canConvertToProject())
+                            <form action="{{ route('admin.orders.from-inquiry', $inquiry) }}" method="post" onsubmit="return confirm('Jadikan lead terverifikasi ini sebagai proyek?');">
                                 @csrf
-                                <button class="btn btn-sm btn-outline-primary" type="submit">Buat order</button>
+                                <button class="btn btn-sm btn-outline-primary" type="submit">Jadikan proyek</button>
                             </form>
+                            @else
+                                <small>Verifikasi dahulu melalui WhatsApp</small>
+                            @endif
                         @endif
                     </td>
                     <td>
                         <form action="{{ route('admin.inquiries.update', $inquiry) }}" method="post">
                             @csrf
                             @method('PUT')
-                            <select class="form-select form-select-sm mb-2" name="status">
-                                @foreach(['baru', 'dihubungi', 'proses', 'selesai', 'batal'] as $option)
-                                    <option value="{{ $option }}" @selected($inquiry->status === $option)>{{ ucfirst($option) }}</option>
+                            <select class="form-select form-select-sm mb-2" name="disposition">
+                                @foreach(\App\Models\Inquiry::DISPOSITIONS as $option => $label)
+                                    @continue($option === \App\Models\Inquiry::DISPOSITION_WON && ! $inquiry->serviceOrder)
+                                    <option value="{{ $option }}" @selected($inquiry->disposition === $option)>{{ $label }}</option>
                                 @endforeach
                             </select>
-                            <button class="btn btn-sm btn-primary w-100" type="submit">Perbarui</button>
+                            <textarea class="form-control form-control-sm mb-2" name="review_note" rows="2" maxlength="2000" placeholder="Catatan verifikasi WhatsApp">{{ $inquiry->review_note }}</textarea>
+                            @if($inquiry->spam_score > 0)<small>Skor spam {{ $inquiry->spam_score }} · {{ implode(', ', $inquiry->spam_reasons ?? []) }}</small>@endif
+                            <button class="btn btn-sm btn-primary w-100" type="submit">Simpan pemeriksaan</button>
                         </form>
                     </td>
                 </tr>

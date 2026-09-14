@@ -82,6 +82,7 @@
             <div class="col-lg-7">
                 <form class="campaign-lead-form" action="{{ route('proposal.store') }}" method="post">
                     @csrf
+                    <x-lead-spam-fields id="campaign" />
                     <input type="hidden" name="journey_source" value="website">
                     <div class="campaign-form-heading">
                         <span>Langkah berikutnya</span>

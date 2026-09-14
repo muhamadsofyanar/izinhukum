@@ -15,6 +15,28 @@ class Invoice extends Model
 {
     use HasFactory;
 
+    public const PAYMENT_SCHEME_FULL = 'full';
+    public const PAYMENT_SCHEME_DOWN_PAYMENT = 'down_payment';
+    public const PAYMENT_SCHEME_INSTALLMENTS = 'installments';
+    public const PAYMENT_SCHEME_CUSTOM = 'custom';
+    public const PAYMENT_SCHEMES = [
+        self::PAYMENT_SCHEME_FULL => 'Lunas sekaligus',
+        self::PAYMENT_SCHEME_DOWN_PAYMENT => 'Uang muka (DP) dan pelunasan',
+        self::PAYMENT_SCHEME_INSTALLMENTS => 'Bertahap / termin',
+        self::PAYMENT_SCHEME_CUSTOM => 'Sesuai penawaran',
+    ];
+
+    public const PAYMENT_RECIPIENT_IZINHUKUM = 'izinhukum';
+    public const PAYMENT_RECIPIENT_NOTARY = 'notary';
+    public const PAYMENT_RECIPIENT_SPLIT = 'split';
+    public const PAYMENT_RECIPIENT_CUSTOM = 'custom';
+    public const PAYMENT_RECIPIENTS = [
+        self::PAYMENT_RECIPIENT_IZINHUKUM => 'IzinHukum',
+        self::PAYMENT_RECIPIENT_NOTARY => 'Notaris mitra',
+        self::PAYMENT_RECIPIENT_SPLIT => 'Dibagi IzinHukum dan notaris',
+        self::PAYMENT_RECIPIENT_CUSTOM => 'Pihak lain sesuai penawaran',
+    ];
+
     protected $fillable = [
         'invoice_number',
         'public_token',
@@ -36,6 +58,9 @@ class Invoice extends Model
         'recipient_address',
         'issue_date',
         'due_date',
+        'payment_scheme',
+        'payment_recipient',
+        'payment_terms',
         'status',
         'subtotal',
         'discount',
