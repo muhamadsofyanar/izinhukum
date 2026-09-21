@@ -48,15 +48,10 @@ class WhatsAppDashboardController extends Controller
             'integration' => [
                 'environment_enabled' => (bool) config('starsender.enabled'),
                 'account_key' => $client->hasAccountKey(),
-                'transaction_key' => $client->hasDeviceKey('transaction'),
-                'support_key' => $client->hasDeviceKey('support'),
-                'campaign_key' => $client->hasDeviceKey('campaign'),
+                'device_key' => $client->hasDeviceKey(),
                 'webhook_secret' => trim((string) config('starsender.webhook_secret')) !== '',
                 'queue' => config('queue.default'),
             ],
-            'webhookUrl' => trim((string) config('starsender.webhook_secret')) !== ''
-                ? route('webhooks.starsender', config('starsender.webhook_secret'))
-                : null,
             'devices' => $ready ? WhatsAppDevice::query()->orderByDesc('is_default')->orderBy('name')->get() : collect(),
             'automations' => $ready ? WhatsAppAutomation::query()->with('template')->orderBy('name')->get() : collect(),
             'latestMessages' => $ready ? WhatsAppMessage::query()->latest()->limit(10)->get() : collect(),

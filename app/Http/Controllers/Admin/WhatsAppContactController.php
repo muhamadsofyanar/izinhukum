@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CrmContact;
+use App\Models\CrmContactImport;
 use App\Models\CrmLabel;
 use App\Models\CrmSequence;
 use App\Models\User;
@@ -61,7 +62,7 @@ class WhatsAppContactController extends Controller
     }
 
 
-    public function export(Request $request): StreamedResponse
+    public function export(Request $request, WhatsAppAuditService $audit): StreamedResponse
     {
         $search = trim((string) $request->query('q'));
         $labelId = (int) $request->query('label_id');
@@ -75,6 +76,8 @@ class WhatsAppContactController extends Controller
             ->when($stage !== '', fn (Builder $builder) => $builder->where('lifecycle_stage', $stage))
             ->when($source !== '', fn (Builder $builder) => $builder->where('source', $source))
             ->orderBy('id');
+
+        $audit->record($request, 'crm.contacts_exported', null, ['filters' => compact('search', 'labelId', 'stage', 'source')]);
 
         return response()->streamDownload(function () use ($query): void {
             $output = fopen('php://output', 'wb');
@@ -101,10 +104,9 @@ class WhatsAppContactController extends Controller
 
     public function import(
         Request $request,
-        CrmContactService $contacts,
         PhoneNumberNormalizer $phones,
         WhatsAppAuditService $audit,
-    ): RedirectResponse {
+    ): RedirectResponse|View {
         $request->validate([
             'csv_file' => ['required', 'file', 'max:5120', 'mimes:csv,txt'],
             'default_source' => ['required', 'string', 'max:60'],
@@ -128,54 +130,67 @@ class WhatsAppContactController extends Controller
             return back()->withErrors(['csv_file' => 'Header wajib memiliki kolom phone, nomor, nomor_whatsapp, whatsapp, atau wa.']);
         }
 
-        $created = 0;
-        $updated = 0;
-        $skipped = 0;
+        $import = CrmContactImport::create([
+            'created_by' => $request->attributes->get('currentUser')->id,
+            'filename' => $request->file('csv_file')->getClientOriginalName(),
+            'default_source' => $request->string('default_source'),
+            'status' => 'preview',
+        ]);
+        $seen = [];
+        $valid = 0;
+        $excluded = 0;
         $rowNumber = 1;
         $column = fn (array $row, string $name) => (($index = array_search($name, $header, true)) !== false ? trim((string) ($row[$index] ?? '')) : null);
 
         while (($row = fgetcsv($handle)) !== false) {
             $rowNumber++;
-            if ($rowNumber > 5001) {
-                $skipped++;
-                continue;
-            }
+            if ($rowNumber > ((int) config('content-hub.max_import_rows', 5000)) + 1) break;
             if (count(array_filter($row, fn ($value) => trim((string) $value) !== '')) === 0) {
                 continue;
             }
+            $payload = [
+                'name' => $column($row, 'name'), 'email' => $column($row, 'email'),
+                'company' => $column($row, 'company'), 'source' => $column($row, 'source') ?: $import->default_source,
+                'service_interest' => $column($row, 'service_interest'), 'labels' => $column($row, 'labels'),
+            ];
             try {
                 $normalized = $phones->normalize((string) ($row[$phoneColumn] ?? ''));
-                if (! $normalized) {
-                    $skipped++;
-                    continue;
-                }
-                $existing = CrmContact::query()->where('phone', $normalized)->exists();
-                $source = $column($row, 'source') ?: (string) $request->input('default_source');
-                $contact = $contacts->upsertFromWhatsApp($normalized, $column($row, 'name'), $source, ['created_from' => 'csv_import']);
-                if (! $contact) {
-                    $skipped++;
-                    continue;
-                }
-                $contact->update([
-                    'email' => $column($row, 'email') ?: $contact->email,
-                    'company' => $column($row, 'company') ?: $contact->company,
-                    'service_interest' => $column($row, 'service_interest') ?: $contact->service_interest,
-                ]);
-                $labels = preg_split('/[|;,]+/', (string) ($column($row, 'labels') ?: ''), -1, PREG_SPLIT_NO_EMPTY) ?: [];
-                foreach (array_slice(array_unique(array_map('trim', $labels)), 0, 30) as $label) {
-                    if ($label !== '') {
-                        $contacts->attachLabel($contact, mb_substr($label, 0, 100), 'custom', '#0f766e', $request->attributes->get('currentUser')?->id);
-                    }
-                }
-                $existing ? $updated++ : $created++;
-            } catch (Throwable) {
-                $skipped++;
+                $status = ! $normalized ? 'invalid' : (isset($seen[$normalized]) ? 'duplicate' : 'valid');
+                $errors = $status === 'invalid' ? ['Nomor tidak valid.'] : ($status === 'duplicate' ? ['Nomor berulang di file.'] : []);
+                $payload['operation'] = $status === 'valid' && CrmContact::where('phone', $normalized)->exists() ? 'update' : 'create';
+            } catch (Throwable $exception) {
+                $normalized = null; $status = 'invalid'; $errors = [$exception->getMessage()];
             }
+            if ($normalized) $seen[$normalized] = true;
+            $status === 'valid' ? $valid++ : $excluded++;
+            $import->rows()->create(['row_number' => $rowNumber, 'normalized_phone' => $normalized, 'payload' => $payload, 'status' => $status, 'errors' => $errors]);
         }
         fclose($handle);
+        $import->update(['total_rows' => $valid + $excluded, 'valid_rows' => $valid, 'excluded_rows' => $excluded]);
+        $audit->record($request, 'crm.contacts_import_previewed', $import, compact('valid', 'excluded'));
+        return view('admin.whatsapp.contacts.import-preview', ['import' => $import->load('rows')]);
+    }
 
-        $audit->record($request, 'crm.contacts_imported', null, compact('created', 'updated', 'skipped'));
-        return back()->with('success', "Impor selesai: {$created} baru, {$updated} diperbarui, {$skipped} dilewati.");
+    public function confirmImport(Request $request, CrmContactImport $import, CrmContactService $contacts, WhatsAppAuditService $audit): RedirectResponse
+    {
+        abort_unless($import->status === 'preview' && $import->created_by === $request->attributes->get('currentUser')?->id, 409);
+        $created = 0; $updated = 0;
+        DB::transaction(function () use ($import, $contacts, $request, &$created, &$updated): void {
+            foreach ($import->rows()->where('status', 'valid')->get() as $row) {
+                $payload = (array) $row->payload;
+                $exists = CrmContact::where('phone', $row->normalized_phone)->exists();
+                $contact = $contacts->upsert($row->normalized_phone, $payload, $payload['source'] ?: $import->default_source, ['created_from' => 'csv_import', 'import_id' => $import->id]);
+                if (! $contact) continue;
+                foreach (array_slice(array_unique(array_filter(array_map('trim', preg_split('/[|;,]+/', (string) ($payload['labels'] ?? '')) ?: []))), 0, 30) as $label) {
+                    $contacts->attachLabel($contact, mb_substr($label, 0, 100), 'custom', '#0f766e', $request->attributes->get('currentUser')?->id);
+                }
+                $exists ? $updated++ : $created++;
+                $row->update(['status' => 'imported']);
+            }
+            $import->update(['status' => 'confirmed', 'confirmed_at' => now()]);
+        });
+        $audit->record($request, 'crm.contacts_imported', $import, compact('created', 'updated'));
+        return redirect()->route('admin.whatsapp.contacts.index')->with('success', "Impor selesai: {$created} baru dan {$updated} diperbarui.");
     }
 
     public function show(CrmContact $contact): View

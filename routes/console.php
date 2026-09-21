@@ -8,4 +8,6 @@ Artisan::command('inspire', function (): void {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('whatsapp:dispatch-due --limit=1000')->everyMinute()->withoutOverlapping();
+Schedule::command('whatsapp:sync-status --limit=500')->everyTwoMinutes()->withoutOverlapping();
+Schedule::command('whatsapp:sync-groups')->hourly()->withoutOverlapping();
 Schedule::command('whatsapp:prune')->dailyAt('02:20')->withoutOverlapping();

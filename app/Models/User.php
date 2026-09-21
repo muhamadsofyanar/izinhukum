@@ -12,6 +12,7 @@ class User extends Model
 
     protected $fillable = [
         'role',
+        'admin_role',
         'partner_code',
         'partner_level',
         'name',
@@ -99,6 +100,22 @@ class User extends Model
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function adminRole(): string
+    {
+        return $this->isAdmin() ? ($this->admin_role ?: 'owner') : '';
+    }
+
+    public function hasAdminAbility(string $ability): bool
+    {
+        if (! $this->isAdmin() || ! $this->is_active) {
+            return false;
+        }
+
+        $abilities = (array) config('content-hub.abilities.'.$this->adminRole(), []);
+
+        return in_array('*', $abilities, true) || in_array($ability, $abilities, true);
     }
 
     public function isPartner(): bool

@@ -1,8 +1,10 @@
 @extends('layouts.admin')
+@php($dashboardFullAccess = in_array(request()->attributes->get('currentUser')?->adminRole(), ['owner','admin'], true))
+@php($dashboardCsAccess = $dashboardFullAccess || request()->attributes->get('currentUser')?->adminRole() === 'customer_service')
 @section('title', 'Pusat WhatsApp')
 @section('heading', 'Pusat WhatsApp')
 @section('header_action')
-    <a class="btn btn-primary" href="{{ route('admin.whatsapp.inbox.index') }}">Buka percakapan</a>
+    @if($dashboardCsAccess)<a class="btn btn-primary" href="{{ route('admin.whatsapp.inbox.index') }}">Buka percakapan</a>@endif
 @endsection
 @section('content')
 @include('admin.whatsapp._nav')
@@ -18,17 +20,17 @@
         <p>Buka chat yang perlu dibalas, lanjutkan peluang penjualan, atau siapkan pengiriman berikutnya.</p>
     </div>
     <div class="wa-dashboard-actions">
-        <a class="btn btn-primary" href="{{ route('admin.whatsapp.inbox.index', ['status' => 'pending']) }}">Lihat yang perlu dibalas</a>
-        <a class="btn btn-outline-primary" href="{{ route('admin.whatsapp.campaigns.index') }}">Buat kampanye</a>
+        @if($dashboardCsAccess)<a class="btn btn-primary" href="{{ route('admin.whatsapp.inbox.index', ['status' => 'pending']) }}">Lihat yang perlu dibalas</a>@endif
+        @if($dashboardFullAccess)<a class="btn btn-outline-primary" href="{{ route('admin.whatsapp.campaigns.index') }}">Buat kampanye</a>@endif
     </div>
 </section>
 
 <div class="wa-priority-stats">
-    <a href="{{ route('admin.whatsapp.inbox.index') }}">
+    @if($dashboardCsAccess)<a href="{{ route('admin.whatsapp.inbox.index') }}">
         <span>Belum dibaca</span>
         <strong>{{ number_format($stats['unread'], 0, ',', '.') }}</strong>
         <small>Buka percakapan →</small>
-    </a>
+    </a>@endif
     <a href="{{ route('admin.whatsapp.messages.index') }}">
         <span>Terkirim hari ini</span>
         <strong>{{ number_format($stats['sent_today'], 0, ',', '.') }}</strong>
@@ -52,10 +54,11 @@
             <div><span>Jalan pintas</span><h2>Mau mengerjakan apa?</h2></div>
         </header>
         <div class="wa-quick-links">
-            <a href="{{ route('admin.whatsapp.inbox.index') }}"><strong>Balas percakapan</strong><small>Baca pesan personal dan grup</small><b>→</b></a>
-            <a href="{{ route('admin.whatsapp.contacts.index') }}"><strong>Kelola kontak</strong><small>Tambah kontak, label, dan data pelanggan</small><b>→</b></a>
-            <a href="{{ route('admin.whatsapp.groups.index') }}"><strong>Kirim ke grup</strong><small>Pilih grup dan kirim pesan bersama</small><b>→</b></a>
-            <a href="{{ route('admin.whatsapp.leads.index') }}"><strong>Lanjutkan peluang</strong><small>Pantau prospek sampai menjadi order</small><b>→</b></a>
+            @if($dashboardCsAccess)<a href="{{ route('admin.whatsapp.inbox.index') }}"><strong>Balas percakapan</strong><small>Baca pesan personal dan grup</small><b>→</b></a>
+            <a href="{{ route('admin.whatsapp.contacts.index') }}"><strong>Kelola kontak</strong><small>Tambah kontak, label, dan data pelanggan</small><b>→</b></a>@endif
+            @if($dashboardFullAccess)<a href="{{ route('admin.whatsapp.groups.index') }}"><strong>Kirim ke grup</strong><small>Pilih grup dan kirim pesan bersama</small><b>→</b></a>
+            <a href="{{ route('admin.whatsapp.leads.index') }}"><strong>Lanjutkan peluang</strong><small>Pantau prospek sampai menjadi order</small><b>→</b></a>@endif
+            @if(request()->attributes->get('currentUser')?->hasAdminAbility('content.manage'))<a href="{{ route('admin.whatsapp.content.index') }}"><strong>Kelola bank konten</strong><small>Siapkan materi yang dapat digunakan ulang</small><b>→</b></a>@endif
         </div>
     </section>
 
@@ -94,7 +97,7 @@
     </section>
 </div>
 
-<details class="wa-system-details">
+@if($dashboardFullAccess)<details class="wa-system-details">
     <summary>
         <span><strong>Status sistem</strong><small>Koneksi, perangkat, dan fitur teknis</small></span>
         <em>{{ collect($integration)->except('queue')->every(fn ($value) => (bool) $value) ? 'Siap' : 'Perlu diperiksa' }}</em>
@@ -106,18 +109,14 @@
                 @foreach([
                     'Integrasi WhatsApp'=>$integration['environment_enabled'],
                     'Account API Key'=>$integration['account_key'],
-                    'Perangkat transaksi'=>$integration['transaction_key'],
-                    'Perangkat support'=>$integration['support_key'],
-                    'Perangkat kampanye'=>$integration['campaign_key'],
+                    'Satu perangkat pengirim'=>$integration['device_key'],
                     'Keamanan webhook'=>$integration['webhook_secret'],
                 ] as $label => $value)
                     <tr><td>{{ $label }}</td><td><span class="wa-status {{ $value ? 'ok' : 'bad' }}">{{ $value ? 'Siap' : 'Belum' }}</span></td></tr>
                 @endforeach
                 <tr><td>Sistem antrean</td><td><span class="wa-status {{ $integration['queue'] === 'database' ? 'ok' : 'warn' }}">{{ $integration['queue'] }}</span></td></tr>
             </tbody></table></div>
-            @if($webhookUrl)
-                <p class="wa-muted mb-1">URL webhook StarSender</p><code class="wa-code">{{ $webhookUrl }}</code>
-            @endif
+            @if($integration['webhook_secret'])<p class="wa-muted mb-1">Webhook StarSender sudah dikonfigurasi; secret disembunyikan.</p>@endif
         </section>
         <section>
             <h3>Fitur yang tersedia</h3>
@@ -132,5 +131,5 @@
             </div>
         </section>
     </div>
-</details>
+</details>@endif
 @endsection

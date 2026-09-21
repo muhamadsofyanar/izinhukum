@@ -32,6 +32,10 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Email atau kata sandi tidak sesuai.'])->onlyInput('email');
         }
 
+        if (! array_key_exists($user->adminRole(), (array) config('content-hub.abilities', []))) {
+            return back()->withErrors(['email' => 'Akun belum memiliki peran aplikasi yang valid.'])->onlyInput('email');
+        }
+
         $request->session()->regenerate();
         $request->session()->put([
             'portal_user_id' => $user->id,
@@ -39,7 +43,7 @@ class AuthController extends Controller
         ]);
         $user->update(['last_login_at' => now()]);
 
-        return redirect()->route('admin.dashboard');
+        return redirect()->route('admin.whatsapp.dashboard');
     }
 
     public function destroy(Request $request): RedirectResponse

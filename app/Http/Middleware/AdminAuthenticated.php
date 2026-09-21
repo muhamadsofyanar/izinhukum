@@ -24,6 +24,10 @@ class AdminAuthenticated
             return redirect()->route('admin.login');
         }
 
+        if (! array_key_exists($user->adminRole(), (array) config('content-hub.abilities', []))) {
+            abort(403, 'Peran pengguna internal tidak dikenali.');
+        }
+
         $request->attributes->set('currentUser', $user);
         View::share('currentUser', $user);
 

@@ -5,7 +5,6 @@ namespace App\Services\WhatsApp;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
-use RuntimeException;
 
 class StarSenderClient
 {
@@ -24,12 +23,12 @@ class StarSenderClient
         return trim((string) $this->deviceKey($alias)) !== '';
     }
 
-    public function send(array $payload, string $deviceAlias = 'transaction', bool $group = false): array
+    public function send(array $payload, bool $group = false): array
     {
         return $this->request(
             'post',
             $group ? '/api/send/grup' : '/api/send',
-            $this->deviceKey($deviceAlias),
+            $this->deviceKey(),
             $payload,
         );
     }
@@ -185,11 +184,11 @@ class StarSenderClient
         array $query = [],
     ): array {
         if (! $this->isEnabled()) {
-            throw new RuntimeException('Integrasi StarSender belum diaktifkan pada environment.');
+            throw new StarSenderException('Integrasi StarSender belum diaktifkan pada environment.');
         }
 
         if (trim((string) $apiKey) === '') {
-            throw new RuntimeException('API key StarSender untuk operasi ini belum dikonfigurasi.');
+            throw new StarSenderException('API key StarSender untuk operasi ini belum dikonfigurasi.');
         }
 
         $url = rtrim((string) config('starsender.base_url'), '/').'/'.ltrim($path, '/');
@@ -207,7 +206,12 @@ class StarSenderClient
                 default => $client->{$method}($url, $payload),
             };
         } catch (ConnectionException $exception) {
-            throw new RuntimeException('Tidak dapat terhubung ke StarSender: '.$exception->getMessage(), 0, $exception);
+            throw new StarSenderException(
+                'Tidak dapat terhubung ke StarSender: '.$exception->getMessage(),
+                retryable: true,
+                outcomeUnknown: true,
+                previous: $exception,
+            );
         }
 
         $json = $response->json();
@@ -216,7 +220,12 @@ class StarSenderClient
 
         if (! $response->successful() || data_get($data, 'success') === false) {
             $message = (string) (data_get($data, 'message') ?: 'StarSender mengembalikan respons gagal.');
-            throw new RuntimeException($message.' [HTTP '.$response->status().']');
+            $status = $response->status();
+            throw new StarSenderException(
+                $message.' [HTTP '.$status.']',
+                retryable: $status === 408 || $status === 429 || $status >= 500,
+                httpStatus: $status,
+            );
         }
 
         return $data;
@@ -227,9 +236,10 @@ class StarSenderClient
         return config('starsender.account_api_key');
     }
 
-    private function deviceKey(string $alias): ?string
+    private function deviceKey(string $alias = 'default'): ?string
     {
-        return config('starsender.device_keys.'.$alias)
+        return config('starsender.device_key')
+            ?: config('starsender.device_keys.'.$alias)
             ?: config('starsender.device_keys.default');
     }
 
@@ -237,7 +247,7 @@ class StarSenderClient
     {
         $key = trim((string) $this->deviceKey($alias));
         if ($key === '') {
-            throw new RuntimeException("Device API Key {$alias} belum dikonfigurasi.");
+            throw new StarSenderException("Device API Key {$alias} belum dikonfigurasi.");
         }
 
         return $key;

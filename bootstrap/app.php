@@ -5,6 +5,9 @@ use App\Http\Middleware\CaptureMarketingAttribution;
 use App\Http\Middleware\CapturePartnerReferral;
 use App\Http\Middleware\PartnerAuthenticated;
 use App\Http\Middleware\RequireFeature;
+use App\Http\Middleware\RequireAdminPermission;
+use App\Http\Middleware\RequireContentHubHost;
+use App\Http\Middleware\RestrictContentHubRoutes;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -34,6 +37,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => AdminAuthenticated::class,
             'partner' => PartnerAuthenticated::class,
             'feature' => RequireFeature::class,
+            'admin.permission' => RequireAdminPermission::class,
+            'content-hub.host' => RequireContentHubHost::class,
+            'content-hub.routes' => RestrictContentHubRoutes::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

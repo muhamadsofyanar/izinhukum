@@ -57,10 +57,7 @@ class WhatsAppSettingsController extends Controller
                 'enabled' => (bool) config('starsender.enabled'),
                 'base_url' => config('starsender.base_url'),
                 'account_key' => $client->hasAccountKey(),
-                'transaction_key' => $client->hasDeviceKey('transaction'),
-                'support_key' => $client->hasDeviceKey('support'),
-                'partner_key' => $client->hasDeviceKey('partner'),
-                'campaign_key' => $client->hasDeviceKey('campaign'),
+                'device_key' => $client->hasDeviceKey(),
                 'webhook_secret' => trim((string) config('starsender.webhook_secret')) !== '',
                 'rotator' => (bool) config('starsender.rotator_enabled'),
                 'premium_webhook' => (bool) config('starsender.premium_webhook_enabled'),
@@ -69,9 +66,6 @@ class WhatsAppSettingsController extends Controller
             ],
             'consents' => $consents,
             'settingsWarning' => $settingsWarning,
-            'webhookUrl' => trim((string) config('starsender.webhook_secret')) !== ''
-                ? route('webhooks.starsender', config('starsender.webhook_secret'))
-                : null,
         ]);
     }
 
@@ -83,7 +77,7 @@ class WhatsAppSettingsController extends Controller
         $data = $request->validate([
             'phone' => ['required', 'string', 'max:32'],
             'body' => ['required', 'string', 'min:3', 'max:3000'],
-            'device_alias' => ['required', 'in:transaction,support,partner,campaign,default'],
+            'device_alias' => ['required', 'in:default'],
         ]);
 
         try {

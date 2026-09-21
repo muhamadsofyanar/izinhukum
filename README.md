@@ -123,7 +123,7 @@ ORDER_NOTIFICATION_WHATSAPP_ENABLED=true
 ORDER_NOTIFICATION_WHATSAPP=628xxxxxxxxxx
 
 STARSENDER_ENABLED=true
-STARSENDER_TRANSACTION_DEVICE_KEY=isi-device-api-key
+STARSENDER_DEVICE_KEY=isi-device-api-key
 QUEUE_CONNECTION=database
 ```
 
@@ -144,6 +144,8 @@ Password SMTP disimpan terenkripsi menggunakan `APP_KEY`. Jangan mengganti `APP_
 MariaDB, folder storage privat, dan unggahan publik menggunakan persistent volume. Jangan menghapus volume saat melakukan redeploy.
 
 ## Pengembangan lokal tanpa Docker
+
+Untuk instalasi manual aplikasi internal Content & StarSender Hub, ikuti `PETUNJUK-INSTALASI-CONTENT-HUB.md`.
 
 Persyaratan: PHP 8.4+, Composer 2, Node.js 22+, dan MySQL/MariaDB atau SQLite.
 
