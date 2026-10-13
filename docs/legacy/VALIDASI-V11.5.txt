@@ -1,0 +1,9 @@
+IzinHukum V11.5 validation
+- PHP syntax lint: PASS for 67 PHP files
+- New table: whatsapp_group_presets
+- Legacy V11.4 selection migration: included
+- Named category create/update/delete routes: included
+- One-click category loading: dropdown and buttons
+- Multi-group text and image sending: retained
+- Application group limit: not reintroduced
+- Healthcheck version: 11.5.0

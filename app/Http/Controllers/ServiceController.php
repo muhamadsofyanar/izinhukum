@@ -47,31 +47,9 @@ class ServiceController extends Controller
             ->take(3)
             ->get();
 
-        $activeCampaign = MarketingCampaign::query()
-            ->with('coupon')
-            ->where('service_id', $service->id)
-            ->whereNotNull('coupon_id')
-            ->where('status', 'active')
-            ->where('is_landing_enabled', true)
-            ->orderByDesc('start_date')
-            ->get()
-            ->first(fn (MarketingCampaign $campaign): bool => $campaign->isLandingLive());
-        $activeCoupon = $activeCampaign?->coupon;
+        $activeCampaign = null;
+        $activeCoupon = null;
         $promoOffers = [];
-        if ($activeCoupon) {
-            $activeCoupon->loadCount('redemptions');
-            foreach ($service->packages as $package) {
-                try {
-                    $promoOffers[$package->id] = $coupons->quote($activeCoupon->code, $package);
-                } catch (ValidationException) {
-                    // Paket yang tidak memenuhi minimum atau kuota tidak ditampilkan sebagai promo.
-                }
-            }
-        }
-        if ($promoOffers === []) {
-            $activeCoupon = null;
-            $activeCampaign = null;
-        }
 
         return view('services.show', compact(
             'service',

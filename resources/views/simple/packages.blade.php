@@ -1,0 +1,6 @@
+@extends('layouts.admin')
+@section('title','Paket & harga')
+@section('heading','Paket & harga')
+@section('content')
+@foreach($services as $service)<section class="admin-panel mb-4"><div class="admin-panel-head"><h2>{{ $service->name }}</h2></div><div class="p-4">@foreach($service->packages as $package)<form method="post" action="{{ route('admin.packages.update',$package) }}" class="row g-3 border-bottom pb-4 mb-4">@csrf @method('PUT')<div class="col-md-4"><strong>{{ $package->name }}</strong></div><div class="col-md-4"><label class="form-label">Harga (Rp)</label><input class="form-control" type="number" name="price" value="{{ $package->price }}" min="0" required><small>Harga 0 ditampilkan sebagai penawaran.</small></div><div class="col-md-4"><label><input type="checkbox" name="is_active" value="1" @checked($package->is_active)> Aktif</label><br><label><input type="checkbox" name="is_estimated" value="1" @checked($package->is_estimated)> Estimasi</label><br><label><input type="checkbox" name="is_popular" value="1" @checked($package->is_popular)> Unggulan</label></div><div class="col-12"><button class="btn btn-primary">Simpan harga</button></div></form>@endforeach</div></section>@endforeach
+@endsection

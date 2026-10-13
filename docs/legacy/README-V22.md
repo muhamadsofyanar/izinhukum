@@ -1,0 +1,207 @@
+# IzinHukum
+
+Website legaltech **PT Praktisi Izin Hukum** berbasis Laravel 12, Bootstrap 5, MariaDB, dan Docker. Proyek ini disiapkan untuk disimpan di GitHub dan dideploy melalui Coolify.
+
+## Fitur
+
+- Homepage responsif dengan mega menu.
+- Homepage utama menjadi landing page konversi: formulir singkat tampil di hero, lead langsung tercatat, lalu calon klien diteruskan ke WhatsApp untuk deal manual.
+- Katalog 19 layanan, termasuk PKP, RUPS, penyusunan laporan keuangan, brand identity, dan perizinan lainnya.
+- Label oranye **Harga Perkiraan** untuk harga yang belum final.
+- Form permintaan proposal yang tersimpan ke database.
+- Form proposal membuat order, mengantrekan notifikasi admin, lalu membuka WhatsApp untuk konfirmasi klien.
+- Pelacakan UTM/campaign dan landing page sampai proposal untuk mengukur sumber lead.
+- Landing page campaign yang dapat disunting admin: fokus layanan, judul, penawaran singkat, CTA, formulir lead, dan kelanjutan otomatis ke WhatsApp.
+- Pipeline penjualan ringan untuk tahap lead, PIC, nilai, catatan, dan jadwal follow-up tanpa mengaktifkan CRM WhatsApp lama.
+- Penawaran digital bertautan publik; persetujuan klien membuat invoice otomatis.
+- Unggah bukti transfer privat dari halaman invoice, pemeriksaan admin, dan pembuatan pembayaran/kwitansi otomatis.
+- Analitik pertumbuhan untuk lead, campaign, layanan, penawaran, invoice, dan pembayaran, termasuk pembuat tautan UTM.
+- Skor lead otomatis dan prioritas panas/hangat/dingin agar tim mendahulukan peluang yang paling dekat ke deal.
+- Playbook penjualan manual dengan pesan WhatsApp siap isi; sistem tidak mengirim pesan atau broadcast otomatis.
+- Template penawaran per layanan, alasan lead tidak lanjut, dan jadwal aktivasi ulang lead.
+- Funnel lead–kontak–penawaran–deal–selesai, rekomendasi tindakan harian, biaya per lead, serta ROI campaign.
+- Kupon per layanan dengan persentase/nominal, periode, kuota, minimum transaksi, dan jejak promo hingga invoice; referral mitra tetap tercatat terpisah.
+- Pusat alat gratis untuk perjalanan calon klien sebelum memesan.
+- Generator alternatif nama PT, Perseroan Perorangan, PT PMA, CV, Firma, Persekutuan Perdata, Yayasan, Perkumpulan, dan Koperasi dengan pagar format awal serta rujukan regulasi terbaru.
+- Simulasi edukatif bahan akta/pernyataan pendirian yang dapat dicetak tanpa menghimpun NIK.
+- Pencarian 1.559 kode resmi KBLI 2025.
+- Detail risiko OSS-RBA per ruang lingkup dan skala usaha, termasuk perizinan, persyaratan, kewajiban, kewenangan, dan jangka waktu.
+- Dashboard admin fokus untuk pesanan, tenggat, pembayaran, dan mitra.
+- Harga tiga tingkat: website, minimum end user, dan Mitra LegaOne.
+- Portal mitra dengan aktivasi akun, katalog harga khusus, profil, dan invoice end user.
+- Invoice untuk mitra/end user, email transaksi, tautan publik, dan tampilan cetak/PDF.
+- Branding dokumen terpusat untuk logo, kontak, rekening, tanda tangan, dan stempel.
+- Pembayaran sebagian/penuh dengan status invoice otomatis dan kwitansi unik.
+- Laporan keuangan operasional basis kas: pemasukan, pengeluaran, kategori, piutang, arus kas, cetak, dan CSV.
+- LMS internal dengan judul bab dan materi yang dapat diedit, penggantian PDF privat, video YouTube tertanam, progres belajar, dan sertifikat khusus.
+- Bank konten untuk materi iklan dan promosi mitra.
+- Pendaftaran kemitraan dengan alur persetujuan admin.
+- Tiga paket mitra, tautan referral, atribusi proposal, dan komisi berbasis pembayaran aktif.
+- Rekonsiliasi otomatis invoice lama berstatus lunas tanpa kwitansi.
+- Notifikasi pesanan baru ke WhatsApp dan email admin melalui antrean terpisah.
+- Pengaturan SMTP Mailketing dan sender untuk email transaksi.
+- Pelacakan status permintaan, kebijakan privasi, dan syarat layanan.
+- Sitemap, robots.txt, health check, konfigurasi Nginx/PHP-FPM, dan container MariaDB.
+
+WhatsApp CRM, inbox, campaign, sequence, autoresponder, webhook masuk, community, dan inbox internal dinonaktifkan pada mode fokus. Tabel lama tidak dihapus agar pembaruan aman dan dapat diaudit.
+
+## Identitas perusahaan
+
+- **Perusahaan:** PT Praktisi Izin Hukum
+- **Alamat:** Jl. Kolonel Ahmad Syam No.189, Kecamatan Jatinangor, Kabupaten Sumedang, Provinsi Jawa Barat
+- **Telepon:** 0895-4154-36593
+- **Email:** izinhukum@gmail.com
+- **Rekening resmi:** BCA 7405175363 a.n. Muhamad Sofyan AR
+
+Data tersebut dapat diubah melalui environment variables tanpa mengedit kode.
+
+## Menjalankan dengan Docker
+
+1. Salin file environment:
+
+   ```bash
+   cp .env.docker.example .env
+   ```
+
+2. Buat `APP_KEY`:
+
+   ```bash
+   printf 'base64:%s\n' "$(openssl rand -base64 32)"
+   ```
+
+   Salin hasilnya ke `APP_KEY` pada `.env`.
+
+3. Ganti seluruh password contoh, lalu jalankan:
+
+   ```bash
+   docker compose up -d --build
+   ```
+
+4. Buka `http://localhost:8080`. Admin tersedia di `/admin/masuk`.
+
+5. Setelah data awal berhasil dibuat, ubah `SEED_DATABASE=false`. Hal ini mencegah harga yang diubah melalui admin tertimpa oleh seeder pada deployment berikutnya.
+
+## Deploy melalui Coolify
+
+1. Buat repository GitHub baru dan unggah seluruh isi folder ini.
+2. Di Coolify, hubungkan repository menggunakan resource Dockerfile atau Docker Compose yang sudah dikonfigurasi.
+3. Masukkan environment variables berdasarkan `.env.docker.example`.
+   Untuk domain HTTPS, set `APP_URL=https://izinhukum.com` dan `SESSION_SECURE_COOKIE=true`.
+4. Gunakan domain `izinhukum.com` dan arahkan ke service `app` port `8080`.
+5. Pada deployment pertama, set `SEED_DATABASE=true`.
+6. Pastikan halaman publik, `/up`, dan `/admin/masuk` dapat dibuka.
+7. Ubah `SEED_DATABASE=false`, lalu redeploy.
+
+### Memasang Conversion Suite V17–V21 dalam satu kali redeploy
+
+Untuk website yang sudah berjalan, pertahankan:
+
+```dotenv
+SEED_DATABASE=false
+```
+
+Commit pembaruan lalu lakukan satu kali redeploy. Entrypoint menjalankan semua migrasi tertunda, termasuk versi sebelumnya bila belum terpasang, rekonsiliasi keuangan, backfill order, dan `php artisan kbli:ensure` secara otomatis. V17–V20 menambahkan landing campaign, prioritas lead, playbook manual, template penawaran, pemulihan lead, funnel konversi, dan ROI. V21 menyempurnakan seluruh landing layanan dengan konten spesifik, form lead, SEO/schema, editor admin, serta branding navy–gold resmi. Data lama tetap dipertahankan tanpa menjalankan ulang `ServiceSeeder` atau menimpa harga katalog yang telah diubah admin.
+
+Modul baru memiliki sakelar pada **Admin → Fitur aplikasi**. Dengan demikian source dapat dideploy sekali, lalu peluncuran modul dapat diatur tanpa redeploy berikutnya. Konten landing dapat disunting melalui **Admin → Landing layanan** tanpa redeploy. Playbook dan form hanya membuka pesan WhatsApp yang telah diisi; pengguna/admin tetap memeriksa dan menekan tombol kirim sendiri.
+
+Panduan lengkap: `PETUNJUK-REDEPLOY-V21.md`, `RINGKASAN-PERUBAHAN-V21.md`, dan `BRAND-GUIDELINES-V21.md`.
+
+### Campaign closing Yayasan V21.0.4
+
+V21.0.4 memasang fokus closing Yayasan langsung ke website melalui satu migration produksi. Halaman `/layanan/pendirian-yayasan` memperoleh konten khusus, ruang lingkup paket yang sesuai Yayasan, promo terlihat, harga setelah potongan, dan kupon otomatis. Landing broadcast tersedia pada `/promo/yayasan-agustus-2026` dengan atribusi campaign sampai inquiry, pipeline, penawaran, dan pembayaran.
+
+Promo bawaan memakai kode `YAYASAN300`: potongan Rp300.000, minimum paket Rp4.000.000, kuota 20 penggunaan, periode 3–17 Agustus 2026. Campaign dan kupon tetap dapat diubah melalui **Admin → Campaign pemasaran** dan **Admin → Kupon** tanpa redeploy. Harga paket yang pernah disunting admin tidak ditimpa oleh migration. V21.0.4 merekonsiliasi seluruh kolom tabel `marketing_campaigns` yang tertinggal pada database produksi lama, bukan hanya satu kolom.
+
+Panduan deploy dan pemeriksaan: `PETUNJUK-REDEPLOY-V21.0.4.md`.
+
+Environment minimal untuk notifikasi:
+
+```dotenv
+ORDER_NOTIFICATION_EMAIL_ENABLED=true
+ORDER_NOTIFICATION_EMAIL=operasional@izinhukum.com
+ORDER_NOTIFICATION_WHATSAPP_ENABLED=true
+ORDER_NOTIFICATION_WHATSAPP=628xxxxxxxxxx
+
+STARSENDER_ENABLED=true
+STARSENDER_TRANSACTION_DEVICE_KEY=isi-device-api-key
+QUEUE_CONNECTION=database
+```
+
+`ORDER_NOTIFICATION_EMAIL` dapat dikosongkan untuk memakai `ADMIN_EMAIL`. `ORDER_NOTIFICATION_WHATSAPP` dapat dikosongkan untuk memakai `COMPANY_WHATSAPP`. Gateway satu arah tidak memerlukan account API key atau webhook secret StarSender.
+
+Sesudah login, buka **Notifikasi email** untuk menyimpan kredensial SMTP, memastikan sender berstatus approved, dan mengirim email tes.
+
+### Memasang integrasi referral dan keuangan V8
+
+1. Cadangkan database SQLite.
+2. Pastikan `RUN_MIGRATIONS=true` dan `SEED_DATABASE=false`.
+3. Deploy source terbaru.
+4. Startup menjalankan migrasi dan `finance:reconcile-legacy-paid-invoices`.
+5. Baca `PETUNJUK-UPGRADE-REFERRAL-KEUANGAN-V8.md` untuk pengujian referral, invoice, pembayaran, laporan, dan komisi.
+
+Password SMTP disimpan terenkripsi menggunakan `APP_KEY`. Jangan mengganti `APP_KEY` setelah password SMTP tersimpan.
+
+MariaDB, folder storage privat, dan unggahan publik menggunakan persistent volume. Jangan menghapus volume saat melakukan redeploy.
+
+## Pengembangan lokal tanpa Docker
+
+Persyaratan: PHP 8.4+, Composer 2, Node.js 22+, dan MySQL/MariaDB atau SQLite.
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate --seed
+npm install
+npm run build
+php artisan serve
+```
+
+Untuk SQLite, ubah `.env` menjadi:
+
+```dotenv
+DB_CONNECTION=sqlite
+DB_DATABASE=/path/absolut/ke/database/database.sqlite
+```
+
+## Catatan data KBLI
+
+Dataset memuat 1.559 kelompok KBLI 2025 dari Peraturan BPS Nomor 7 Tahun 2025/publikasi KBLI 2025 dan profil risiko publik OSS-RBA berdasarkan PP Nomor 28 Tahun 2025. Data menyimpan tanggal pembaruan dan URL detail OSS pada setiap kode.
+
+Untuk memeriksa dan memperbaiki dataset pada server, jalankan:
+
+```bash
+php artisan kbli:ensure
+```
+
+Perintah tersebut tidak mengubah data jika 1.559 kode sudah tersedia. Pada Coolify, pertahankan `SEED_DATABASE=false` setelah pemasangan awal agar data layanan yang pernah diubah admin tidak disemai ulang.
+
+## Modul keuangan dan dokumen
+
+Admin dapat membuka:
+
+- **Logo & branding** untuk identitas invoice, kwitansi, dan sertifikat.
+- **Invoice** untuk mencatat pembayaran serta membuat kwitansi.
+- **Laporan keuangan** untuk pemasukan lain, pengeluaran, kategori, arus kas, piutang, laporan cetak, dan CSV.
+
+Laporan menggunakan basis kas. Nilai invoice belum dihitung sebagai pemasukan sampai pembayaran dicatat.
+
+V22.0.0 menambahkan pola pembayaran per invoice (lunas, DP, termin, atau sesuai penawaran) dan tujuan dana per proyek (IzinHukum, notaris mitra, dibagi, atau pihak lain). Pembayaran kepada pihak luar dapat dicatat sebagai pelunasan invoice, tetapi tidak menghasilkan kwitansi IzinHukum dan tidak dihitung sebagai kas masuk IzinHukum.
+
+Form publik pada V22.0.0 hanya membuat lead. Admin harus memverifikasi melalui WhatsApp dan menandai lead **Terverifikasi** sebelum menjadikannya proyek. Honeypot, normalisasi nomor WhatsApp, deteksi pengiriman terlalu cepat, deduplikasi 24 jam, dan antrean karantina mengurangi spam tanpa mengganggu alur komunikasi WhatsApp.
+
+## Keamanan file portal
+
+Materi PDF LMS disimpan pada disk privat. File hanya dikirim melalui controller setelah pengguna melewati middleware portal dan pemeriksaan enrollment. Saat deployment, `php artisan portal:secure-files` memindahkan file lama dari disk publik apabila file tersebut masih tersedia.
+
+Skrip `scripts/sync-kbli-2025.mjs` digunakan untuk membangun ulang snapshot dari sumber resmi. Hasil pemeriksaan pada website tetap merupakan informasi awal karena penetapan resmi dipengaruhi data proyek, lokasi, persyaratan dasar, dan ketentuan sektoral pada OSS.
+
+## Pengujian
+
+```bash
+php artisan test
+npm run build
+```
+
+Panduan satu kali redeploy terbaru tersedia pada `PETUNJUK-REDEPLOY-V22.0.0.md`.

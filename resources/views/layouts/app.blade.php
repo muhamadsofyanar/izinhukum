@@ -68,20 +68,10 @@
                                 @endif
                             </div>
                         </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="{{ route('tools.index') }}" data-bs-toggle="dropdown">Alat Gratis</a>
-                            <div class="dropdown-menu">
-                                <a class="dropdown-item" href="{{ route('tools.index') }}">Semua alat</a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="{{ route('tools.name-generator') }}">Generator nama</a>
-                                <a class="dropdown-item" href="{{ route('tools.deed-simulator') }}">Simulasi bahan akta</a>
-                                <a class="dropdown-item" href="{{ route('kbli.index') }}">Cek KBLI & risiko</a>
-                            </div>
-                        </li>
                         @if($featureFlags->enabled('public_articles'))<li class="nav-item"><a class="nav-link" href="{{ route('articles.index') }}">Artikel</a></li>@endif
                         @if($featureFlags->enabled('partner_registration'))<li class="nav-item"><a class="nav-link" href="{{ route('partnership.create') }}">Kemitraan</a></li>@endif
                         <li class="nav-item"><a class="nav-link" href="{{ route('contact') }}">Kontak</a></li>
-                        @if($featureFlags->enabled('public_proposal'))<li class="nav-item ms-lg-3"><a class="btn btn-primary btn-sm" href="{{ route('proposal.create') }}">Minta Proposal</a></li>@endif
+                        @if($featureFlags->enabled('public_proposal'))<li class="nav-item ms-lg-3"><a class="btn btn-primary btn-sm" href="{{ route('proposal.create') }}">Pesan layanan</a></li>@endif
                     </ul>
                 </div>
             </div>
@@ -105,7 +95,7 @@
                     <p>Ceritakan kebutuhan Anda. Tim kami membantu memilih layanan dan menjelaskan tahap berikutnya.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    @if($featureFlags->enabled('public_proposal'))<a class="btn btn-light" href="{{ route('proposal.create') }}">Minta penawaran</a>@endif
+                    @if($featureFlags->enabled('public_proposal'))<a class="btn btn-light" href="{{ route('proposal.create') }}">Pesan layanan</a>@endif
                     <a class="btn btn-outline-light" target="_blank" rel="noopener" href="https://wa.me/{{ config('company.whatsapp') }}?text={{ urlencode('Halo IzinHukum, saya ingin konsultasi legalitas.') }}">Chat WhatsApp</a>
                 </div>
             </div>
@@ -124,13 +114,9 @@
                 <div class="col-6 col-lg-2">
                     <h3>Jelajahi</h3>
                     <a href="{{ route('services.index') }}">Semua layanan</a>
-                    <a href="{{ route('tools.index') }}">Alat gratis</a>
-                    <a href="{{ route('kbli.index') }}">Cek KBLI</a>
                     @if($featureFlags->enabled('public_articles'))<a href="{{ route('articles.index') }}">Artikel</a>@endif
-                    <a href="{{ route('tracking.index') }}">Lacak permintaan</a>
                     @if($featureFlags->enabled('partner_registration'))<a href="{{ route('partnership.create') }}">Kemitraan LegaOne</a>@endif
-                    <a href="{{ route('partner.login') }}">Masuk mitra</a>
-                    @if($featureFlags->enabled('public_proposal'))<a href="{{ route('proposal.create') }}">Minta proposal</a>@endif
+                    @if($featureFlags->enabled('public_proposal'))<a href="{{ route('proposal.create') }}">Pesan layanan</a>@endif
                     <a href="{{ route('contact') }}">Kontak</a>
                 </div>
                 <div class="col-6 col-lg-3">

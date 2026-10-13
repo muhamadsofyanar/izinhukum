@@ -11,7 +11,7 @@
         <div><label>Nomor atau ID grup</label><input class="form-control" name="phone" required></div>
         <div><label>Nama penerima</label><input class="form-control" name="recipient_name"></div>
         <div><label>Kanal</label><select class="form-select" name="channel"><option value="personal">Personal</option><option value="group">Grup</option></select></div>
-        <input type="hidden" name="device_alias" value="default">
+        <div><label>Perangkat</label><select class="form-select" name="device_alias"><option value="transaction">Transaksi</option><option value="support">Support</option><option value="partner">Mitra</option><option value="campaign">Campaign</option><option value="default">Default</option></select></div>
         <div><label>Tipe pesan</label><select class="form-select" name="message_type"><option value="text">Teks</option><option value="image">Gambar</option><option value="document">Dokumen</option><option value="video">Video</option><option value="audio">Audio</option><option value="media">Media lain</option></select></div>
         <div><label>Jadwal opsional</label><input class="form-control" type="datetime-local" name="scheduled_at"></div>
         <div class="full"><label>Isi pesan</label><textarea class="form-control" name="body" rows="6"></textarea></div>
@@ -23,7 +23,7 @@
     <h2>Filter riwayat</h2>
     <form method="get" class="wa-form-grid">
         <div><label>Pencarian</label><input class="form-control" name="q" value="{{ $search }}" placeholder="Nomor, nama, isi, atau message ID"></div>
-        <div><label>Status</label><select class="form-select" name="status"><option value="">Semua</option>@foreach(['queued','scheduled','processing','accepted','sent','retrying','reconciling','failed','received','cancelled'] as $item)<option value="{{ $item }}" @selected($status===$item)>{{ $item }}</option>@endforeach</select></div>
+        <div><label>Status</label><select class="form-select" name="status"><option value="">Semua</option>@foreach(['queued','scheduled','processing','accepted','sent','retrying','failed','received','cancelled'] as $item)<option value="{{ $item }}" @selected($status===$item)>{{ $item }}</option>@endforeach</select></div>
         <div><label>Arah</label><select class="form-select" name="direction"><option value="">Semua</option><option value="inbound" @selected($direction==='inbound')>Masuk</option><option value="outbound" @selected($direction==='outbound')>Keluar</option></select></div>
         <div class="d-flex align-items-end"><button class="btn btn-outline-primary" type="submit">Terapkan</button></div>
     </form>

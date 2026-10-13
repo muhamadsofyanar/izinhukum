@@ -1,0 +1,24 @@
+IZINHUKUM V21.0.2 · FILE BARU
+database/migrations/2026_08_03_000029_add_v21_0_2_yayasan_closing_campaign.php
+tests/Feature/V2102YayasanClosingTest.php
+RINGKASAN-PERUBAHAN-V21.0.2.md
+PETUNJUK-REDEPLOY-V21.0.2.md
+VALIDASI-V21.0.2.md
+DAFTAR-FILE-V21.0.2.txt
+
+IZINHUKUM V21.0.2 · FILE DIPERBARUI
+app/Http/Controllers/Admin/MarketingCampaignController.php
+app/Http/Controllers/CampaignLandingController.php
+app/Http/Controllers/HealthController.php
+app/Http/Controllers/InquiryController.php
+app/Http/Controllers/ServiceController.php
+app/Models/MarketingCampaign.php
+database/seeders/ServiceSeeder.php
+resources/css/app.scss
+resources/views/admin/marketing-campaigns/index.blade.php
+resources/views/campaign-landing.blade.php
+resources/views/services/show.blade.php
+tests/Feature/V10FoundationTest.php
+README.md
+public/build/manifest.json
+public/build/assets/app-DXu9vL_o.css

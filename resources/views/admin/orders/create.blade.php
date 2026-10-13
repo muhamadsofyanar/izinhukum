@@ -54,7 +54,7 @@
                     <div class="col-md-6"><label class="form-label">Prioritas</label><select class="form-select" name="priority">@foreach(\App\Models\ServiceOrder::PRIORITIES as $value => $label)<option value="{{ $value }}" @selected(old('priority', 'normal') === $value)>{{ $label }}</option>@endforeach</select></div>
                     <div class="col-md-6"><label class="form-label">Deadline</label><input class="form-control" type="datetime-local" name="due_at" value="{{ old('due_at') }}"></div>
                     <div class="col-12"><label class="form-label">Petugas</label><select class="form-select" name="assigned_to"><option value="">Belum ditugaskan</option>@foreach($admins as $admin)<option value="{{ $admin->id }}" @selected(old('assigned_to') == $admin->id)>{{ $admin->name }}</option>@endforeach</select></div>
-                    <div class="col-12"><label class="form-label">Mitra referral</label><select class="form-select" name="referred_by_partner_id"><option value="">Tanpa referral</option>@foreach($partners as $partner)<option value="{{ $partner->id }}" @selected(old('referred_by_partner_id') == $partner->id)>{{ $partner->partner_code }} · {{ $partner->name }}</option>@endforeach</select></div>
+                    
                     <div class="col-12"><label class="form-label">Catatan internal</label><textarea class="form-control" name="internal_notes" rows="5">{{ old('internal_notes') }}</textarea></div>
                 </div>
             </section>

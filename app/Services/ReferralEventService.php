@@ -134,6 +134,9 @@ class ReferralEventService
 
     private function available(): bool
     {
+        if (! app(FeatureFlagService::class)->enabled('referral_tracking')) {
+            return false;
+        }
         return Schema::hasTable('referral_events');
     }
 }

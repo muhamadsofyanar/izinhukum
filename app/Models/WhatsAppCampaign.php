@@ -14,7 +14,6 @@ class WhatsAppCampaign extends Model
         'name', 'template_id', 'created_by', 'audience_type', 'status', 'use_rotator',
         'rotator_mode', 'delay_seconds', 'scheduled_at', 'started_at', 'completed_at',
         'recipient_count', 'queued_count', 'sent_count', 'failed_count', 'filters', 'notes',
-        'body', 'message_type', 'media_path', 'audience_snapshot', 'confirmation_token_hash',
     ];
 
     protected function casts(): array
@@ -30,7 +29,6 @@ class WhatsAppCampaign extends Model
             'sent_count' => 'integer',
             'failed_count' => 'integer',
             'filters' => 'array',
-            'audience_snapshot' => 'array',
         ];
     }
 

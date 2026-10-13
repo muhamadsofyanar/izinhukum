@@ -28,10 +28,10 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFive();
 
-        ServiceOrder::observe(ServiceOrderObserver::class);
-        Invoice::observe(InvoiceObserver::class);
-        Payment::observe(PaymentObserver::class);
-        Commission::observe(CommissionObserver::class);
+
+
+
+
 
         View::composer('layouts.app', function ($view): void {
             $services = collect();

@@ -1,0 +1,50 @@
+IZINHUKUM V7 - LMS DAN KONTROL TRANSAKSI
+
+FILE BARU
+- database/migrations/2026_07_29_000013_add_transaction_audit_fields.php
+- resources/views/portal/payments/edit.blade.php
+- docs/superpowers/specs/2026-07-29-lms-transaction-controls-design.md
+- docs/superpowers/plans/2026-07-29-lms-transaction-controls.md
+
+FILE UTAMA YANG DIPERBARUI
+- app/Http/Controllers/Partner/LearningController.php
+- app/Http/Controllers/Portal/InvoiceController.php
+- app/Http/Controllers/Portal/PaymentController.php
+- app/Http/Controllers/PublicReceiptController.php
+- app/Models/Invoice.php
+- app/Models/Payment.php
+- app/Services/FinancialReportService.php
+- app/Services/InvoicePaymentService.php
+- resources/css/app.scss
+- resources/views/admin/finance/index.blade.php
+- resources/views/partner/learning/show.blade.php
+- resources/views/portal/invoices/_document.blade.php
+- resources/views/portal/invoices/create.blade.php
+- resources/views/portal/invoices/index.blade.php
+- resources/views/portal/invoices/show.blade.php
+- resources/views/receipts/show.blade.php
+- routes/web.php
+- tests/Feature/FinancialReportTest.php
+- tests/Feature/PartnerAcademyTest.php
+- tests/Feature/PartnerInvoiceTest.php
+- tests/Feature/PaymentReceiptTest.php
+- PETUNJUK-UPGRADE-KEUANGAN-LMS-KBLI.md
+
+PERUBAHAN PERILAKU
+- LMS menampilkan satu materi aktif dengan daftar bab di kiri.
+- Video YouTube tetap tertanam di portal.
+- Invoice draf tanpa pembayaran dapat diedit atau dihapus.
+- Invoice terkirim dikunci dan hanya dapat dibatalkan dengan alasan.
+- Kwitansi dapat dikoreksi admin dengan alasan dan audit log.
+- Kwitansi dibatalkan tanpa menghapus data.
+- Pembayaran dibatalkan tidak masuk laporan keuangan.
+- Status invoice dihitung ulang dari pembayaran aktif.
+
+MIGRASI PRODUKSI
+php artisan migrate --force
+
+VALIDASI PRODUKSI
+php artisan test
+vendor/bin/pint --test
+npm ci
+npm run build

@@ -38,41 +38,7 @@
                     @endif
                 </div>
             @endif
-            @if($user->isAdmin())
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label" for="recipient_type">Jenis penerima</label>
-                        <select class="form-select" id="recipient_type" name="recipient_type">
-                            @php($selectedRecipient = old('recipient_type', $invoice?->recipient_type ?? 'end_user'))
-                            <option value="end_user" @selected($selectedRecipient === 'end_user')>End user</option>
-                            <option value="partner" @selected($selectedRecipient === 'partner')>Mitra LegaOne</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6 partner-picker d-none">
-                        <label class="form-label" for="partner_id">Pilih mitra</label>
-                        <select class="form-select" id="partner_id" name="partner_id">
-                            <option value="">Pilih mitra</option>
-                            @foreach($partners as $partner)
-                                <option value="{{ $partner->id }}" @selected(old('partner_id', $invoice?->partner_id) == $partner->id)>
-                                    {{ $partner->partner_code }} · {{ $partner->name }}{{ $partner->company_name ? ' · '.$partner->company_name : '' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label" for="referred_by_partner_id">Sumber pemasaran mitra</label>
-                        <select class="form-select" id="referred_by_partner_id" name="referred_by_partner_id">
-                            <option value="">Tanpa referral mitra</option>
-                            @foreach($referredPartners as $referralPartner)
-                                <option value="{{ $referralPartner->id }}" @selected(old('referred_by_partner_id', $selectedReferralPartnerId) == $referralPartner->id)>
-                                    {{ $referralPartner->partner_code }} · {{ $referralPartner->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <small class="text-muted">Dipakai untuk atribusi penjualan dan komisi otomatis.</small>
-                    </div>
-                </div>
-            @endif
+            <input type="hidden" name="recipient_type" id="recipient_type" value="end_user">
 
             <div class="end-user-fields row g-3">
                 <div class="col-md-6">
@@ -208,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
         priceInput.readOnly = isAdmin && isPartnerRecipient();
         row.querySelector('.price-help').textContent = isAdmin && isPartnerRecipient()
             ? `Harga mitra ${rupiah(data.partner)}`
-            : `Minimum jual ${rupiah(data.minimum)}`;
+            : `Harga katalog ${rupiah(data.website)}`;
     }
 
     function bindRow(row) {

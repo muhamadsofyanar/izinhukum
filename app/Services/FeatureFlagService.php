@@ -222,23 +222,9 @@ class FeatureFlagService
 
     public function enabled(string $feature): bool
     {
-        $definition = self::DEFINITIONS[$feature] ?? null;
-        if ($definition === null) {
-            return false;
-        }
+        // Khóa phạm vi sản phẩm; cài đặt cũ không thể bật lại CRM/AI/mitra.
+        return in_array($feature, ['public_proposal', 'service_landing_pages'], true);
 
-        if (! Schema::hasTable('system_settings')) {
-            return (bool) $definition['default'];
-        }
-
-        return Cache::remember(
-            'feature_flag:'.$feature,
-            now()->addMinutes(5),
-            fn (): bool => filter_var(
-                SystemSetting::valueFor('feature_'.$feature, $definition['default'] ? '1' : '0'),
-                FILTER_VALIDATE_BOOL,
-            ),
-        );
     }
 
     public function all(): array

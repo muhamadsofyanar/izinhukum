@@ -1,0 +1,18 @@
+IzinHukum V12.0 validation summary
+Generated: 2026-07-30 Asia/Jakarta
+
+PASS: PHP syntax lint for 124 PHP/Blade PHP files in the V12 work tree.
+PASS: Required CRM routes are registered in routes/web.php.
+PASS: V12 Blade route references resolve to registered WhatsApp route names.
+PASS: Core V12 migration tables are declared.
+PASS: V12 feature flags are present and default to false.
+PASS: Exposed credentials from the conversation are not present in the patch work tree.
+PASS: Healthcheck version is 12.0.0 and includes CRM schema validation.
+PASS: Queue and scheduler commands for sequence and media archive are registered.
+PASS: Inbound media downloader requires HTTPS, host allowlist, size limit, MIME allowlist, and revalidates redirects.
+PASS: Provider document links use hashed independent tokens with expiry.
+
+Static validation limitations:
+- The workspace is an overlay and does not contain the complete production vendor directory.
+- Full PHPUnit, browser, Coolify, SQLite production migration, and live StarSender API tests were not executed in this environment.
+- Live inbound behavior still depends on StarSender webhook configuration and active account add-ons.

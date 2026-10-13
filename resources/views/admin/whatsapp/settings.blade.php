@@ -12,7 +12,10 @@
             @foreach([
                 'STARSENDER_ENABLED'=>$integration['enabled'],
                 'STARSENDER_ACCOUNT_API_KEY'=>$integration['account_key'],
-                'STARSENDER_DEVICE_KEY'=>$integration['device_key'],
+                'STARSENDER_TRANSACTION_DEVICE_KEY'=>$integration['transaction_key'],
+                'STARSENDER_SUPPORT_DEVICE_KEY'=>$integration['support_key'],
+                'STARSENDER_PARTNER_DEVICE_KEY'=>$integration['partner_key'],
+                'STARSENDER_CAMPAIGN_DEVICE_KEY'=>$integration['campaign_key'],
                 'STARSENDER_WEBHOOK_SECRET'=>$integration['webhook_secret'],
                 'STARSENDER_ROTATOR_ENABLED'=>$integration['rotator'],
                 'STARSENDER_WEBHOOK_PREMIUM_ENABLED'=>$integration['premium_webhook'],
@@ -23,7 +26,11 @@
             @endforeach
             <tr><td>Base URL</td><td><code>{{ $integration['base_url'] }}</code></td></tr>
         </tbody></table></div>
-        @if($integration['webhook_secret'])<p class="mt-3 wa-muted">Webhook sudah dikonfigurasi. Nilai secret dan URL lengkap disembunyikan dari panel; lihat konfigurasi server saat menghubungkan StarSender.</p>@endif
+        @if($webhookUrl)
+            <p class="mt-3 mb-1"><strong>URL webhook pesan personal</strong></p>
+            <code class="wa-code">{{ $webhookUrl }}</code>
+            <p class="wa-muted mt-2">Pasang URL yang sama pada pengaturan Webhook device StarSender. Untuk pesan grup, aktifkan Add-On Webhook Group dan gunakan URL ini pada kolom webhook grup.</p>
+        @endif
     </section>
 
     <section class="wa-card wa-span-5">
@@ -40,7 +47,7 @@
         <form method="post" action="{{ route('admin.whatsapp.settings.test-message') }}" class="wa-form-grid">
             @csrf
             <div><label>Nomor tujuan</label><input class="form-control" name="phone" placeholder="08xxxxxxxxxx" required></div>
-            <input type="hidden" name="device_alias" value="default">
+            <div><label>Perangkat</label><select class="form-select" name="device_alias"><option value="transaction">Transaksi</option><option value="support">Support</option><option value="partner">Mitra</option><option value="campaign">Campaign</option><option value="default">Default</option></select></div>
             <div class="full"><label>Isi pesan</label><textarea class="form-control" name="body" rows="5" required>Pesan uji IzinHukum V12. Mohon abaikan pesan ini.</textarea></div>
             <div class="full"><button class="btn btn-primary" type="submit">Masukkan ke antrean</button></div>
         </form>

@@ -232,7 +232,7 @@ class InvoicePaymentService
         $invoice->update([
             'status' => $isPaid
                 ? 'paid'
-                : ($totalPaid > 0 ? 'partial' : ($invoice->sent_at ? 'sent' : 'draft')),
+                : ($totalPaid > 0 ? 'partial' : ($invoice->sent_at || $invoice->payments()->exists() ? 'sent' : 'draft')),
             'paid_at' => $isPaid ? ($invoice->paid_at ?: now()) : null,
         ]);
     }

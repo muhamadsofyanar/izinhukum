@@ -1,0 +1,22 @@
+IZINHUKUM V12.1
+Pembaruan antarmuka Pusat WhatsApp
+
+FILE BARU
+resources/views/admin/whatsapp/_inbox_sidebar.blade.php
+PETUNJUK-V12.1.md
+DAFTAR-FILE-V12.1.txt
+
+FILE DIPERBARUI
+app/Http/Controllers/Admin/WhatsAppInboxController.php
+app/Http/Controllers/HealthController.php
+app/Models/WhatsAppConversation.php
+app/Models/WhatsAppMessage.php
+public/css/whatsapp-v11.css
+resources/views/admin/whatsapp/_nav.blade.php
+resources/views/admin/whatsapp/conversation.blade.php
+resources/views/admin/whatsapp/dashboard.blade.php
+resources/views/admin/whatsapp/inbox.blade.php
+resources/views/layouts/admin.blade.php
+
+MIGRATION BARU
+Tidak ada.

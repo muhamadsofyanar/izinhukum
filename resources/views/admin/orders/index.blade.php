@@ -5,10 +5,7 @@
 
 @section('header_action')
 <div class="d-flex flex-wrap gap-2">
-    <form action="{{ route('admin.orders.sync') }}" method="post" onsubmit="return confirm('Sinkronkan seluruh permintaan dan invoice lama ke pusat order?')">
-        @csrf
-        <button class="btn btn-outline-primary" type="submit">Sinkronkan data lama</button>
-    </form>
+    
     <a class="btn btn-primary" href="{{ route('admin.orders.create') }}">+ Buat order</a>
 </div>
 @endsection

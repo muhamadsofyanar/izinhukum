@@ -1,0 +1,18 @@
+FILES TO UPLOAD / REPLACE
+
+app/Http/Controllers/Admin/FinanceController.php
+app/Http/Controllers/Partner/DashboardController.php
+app/Services/FinancialReportService.php
+app/Services/LegacyPaidInvoiceReconciler.php
+public/css/admin-fixes.css
+resources/views/admin/finance/index.blade.php
+resources/views/admin/finance/print.blade.php
+resources/views/components/price-card.blade.php
+resources/views/layouts/admin.blade.php
+resources/views/partner/dashboard.blade.php
+resources/views/services/show.blade.php
+
+DOCUMENTATION
+PETUNJUK-UPDATE-V9.md
+UPDATE-V9-FILE-LIST.txt
+VALIDATION-V9.txt

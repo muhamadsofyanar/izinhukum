@@ -10,6 +10,10 @@ class CommissionService
     public function syncForPayment(Payment $payment): ?Commission
     {
         $payment->loadMissing(['invoice.referredByPartner', 'commission']);
+        // Komisi baru dinonaktifkan. Kewajiban historis tetap dikoreksi saat pembayaran dikoreksi.
+        if (! app(FeatureFlagService::class)->enabled('referral_tracking') && ! $payment->commission) {
+            return null;
+        }
 
         if ($payment->isCancelled()) {
             return $this->cancelForPayment($payment);

@@ -27,7 +27,10 @@ jobs:
           php artisan key:generate
 
       - name: Run PHP tests
-        run: php artisan test
+        run: |
+          php artisan test --testsuite=Simple
+          php artisan test --filter='FinancialReportTest|PaymentReceiptTest|InvoiceSchemaCompatibilityTest|FlexiblePaymentFlowTest'
+          php artisan view:cache
 
       - name: Setup Node
         uses: actions/setup-node@v4

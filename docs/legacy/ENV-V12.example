@@ -1,0 +1,19 @@
+# Tambahan V12. Jangan isi secret dalam GitHub.
+
+# Domain media inbound yang boleh diunduh ke Document Vault.
+# Pisahkan dengan koma dan gunakan domain spesifik provider.
+STARSENDER_MEDIA_ALLOWED_HOSTS=starsender.online
+
+# Maksimal ukuran lampiran inbound, default 20 MiB.
+STARSENDER_MEDIA_ARCHIVE_MAX_BYTES=20971520
+
+# Aktifkan hanya sesuai add-on pada akun StarSender.
+STARSENDER_WEBHOOK_PREMIUM_ENABLED=false
+STARSENDER_WEBHOOK_MEDIA_ENABLED=false
+STARSENDER_WEBHOOK_GROUP_ENABLED=false
+
+# V12 tetap membutuhkan queue database.
+QUEUE_CONNECTION=database
+DB_QUEUE=default
+DB_QUEUE_RETRY_AFTER=300
+QUEUE_FAILED_DRIVER=database-uuids

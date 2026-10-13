@@ -1,0 +1,83 @@
+IzinHukum V6 - file utama baru dan diperbarui
+
+Dokumentasi:
+- README.md
+- PETUNJUK-INSTALASI-FINAL.md
+- PETUNJUK-UPDATE-KBLI-2025.md
+- PETUNJUK-UPGRADE-KEUANGAN-LMS-KBLI.md
+
+Deployment dan keamanan:
+- .env.docker.example
+- .env.example
+- .github/workflows/ci.yml
+- Dockerfile
+- bootstrap/app.php
+- docker-compose.yml
+- docker/entrypoint.sh
+- docker/nginx.conf
+- docker/php.ini
+- app/Console/Commands/EnsureKbliCatalog.php
+- app/Console/Commands/SecurePortalFiles.php
+
+LMS:
+- app/Http/Controllers/Admin/AcademyController.php
+- app/Http/Controllers/Partner/CertificateController.php
+- app/Http/Controllers/Partner/LearningController.php
+- app/Http/Controllers/Partner/LearningMaterialController.php
+- app/Models/CourseEnrollment.php
+- app/Support/VideoEmbed.php
+- resources/views/partner/learning/certificate.blade.php
+- resources/views/partner/learning/index.blade.php
+- resources/views/partner/learning/show.blade.php
+
+Branding, invoice, pembayaran, dan kwitansi:
+- app/Http/Controllers/Admin/BrandingController.php
+- app/Http/Controllers/Portal/InvoiceController.php
+- app/Http/Controllers/Portal/PaymentController.php
+- app/Http/Controllers/PublicInvoiceController.php
+- app/Http/Controllers/PublicReceiptController.php
+- app/Mail/InvoiceMail.php
+- app/Models/FinancialCategory.php
+- app/Models/Invoice.php
+- app/Models/Payment.php
+- app/Services/BrandingService.php
+- app/Services/IncomeService.php
+- app/Services/InvoicePaymentService.php
+- app/Support/Terbilang.php
+- database/migrations/2026_07_29_000011_add_payments_and_financial_categories.php
+- resources/views/admin/branding.blade.php
+- resources/views/emails/invoice.blade.php
+- resources/views/invoice-public.blade.php
+- resources/views/portal/invoices/_document.blade.php
+- resources/views/portal/invoices/index.blade.php
+- resources/views/portal/invoices/show.blade.php
+- resources/views/receipts/show.blade.php
+
+Laporan keuangan:
+- app/Http/Controllers/Admin/FinanceController.php
+- app/Models/Expense.php
+- app/Services/FinancialReportService.php
+- database/migrations/2026_07_29_000012_add_expenses.php
+- resources/views/admin/finance/index.blade.php
+- resources/views/admin/finance/print.blade.php
+
+Community privat:
+- app/Http/Controllers/Portal/CommunityAttachmentController.php
+- app/Http/Controllers/Portal/CommunityController.php
+- resources/views/portal/community.blade.php
+
+Integrasi umum:
+- app/Models/User.php
+- database/migrations/2026_07_28_000008_complete_production_catalog_and_partner_registration.php
+- database/migrations/2026_07_28_000009_publish_complete_service_catalog.php
+- resources/css/app.scss
+- resources/views/layouts/admin.blade.php
+- routes/web.php
+
+Pengujian:
+- tests/Feature/BrandingTest.php
+- tests/Feature/FinancialReportTest.php
+- tests/Feature/KbliCatalogTest.php
+- tests/Feature/PartnerAcademyTest.php
+- tests/Feature/PaymentReceiptTest.php
+- tests/Feature/PortalFileSecurityTest.php

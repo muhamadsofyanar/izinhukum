@@ -14,8 +14,6 @@
     <article><span>Permintaan baru</span><strong>{{ number_format($newInquiries, 0, ',', '.') }}</strong></article>
     <article><span>Invoice belum lunas</span><strong>{{ number_format($unpaidInvoices, 0, ',', '.') }}</strong></article>
     <article><span>Selesai bulan ini</span><strong>{{ number_format($completedOrdersThisMonth, 0, ',', '.') }}</strong></article>
-    <article><span>Mitra aktif</span><strong>{{ number_format($activePartners, 0, ',', '.') }}</strong></article>
-    <article><span>Pendaftaran mitra</span><strong>{{ number_format($pendingPartners, 0, ',', '.') }}</strong></article>
 </div>
 
 <section class="admin-panel">
@@ -45,7 +43,7 @@
                         <td><a class="btn btn-sm btn-outline-primary" href="{{ route('admin.orders.show', $order) }}">Buka</a></td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="text-center py-5">Belum ada order. Gunakan sinkronisasi data lama dari menu Order Layanan.</td></tr>
+                    <tr><td colspan="7" class="text-center py-5">Belum ada pesanan. Pesanan website akan muncul di sini.</td></tr>
                 @endforelse
             </tbody>
         </table>

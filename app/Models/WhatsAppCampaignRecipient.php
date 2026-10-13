@@ -11,12 +11,11 @@ class WhatsAppCampaignRecipient extends Model
 
     protected $fillable = [
         'whatsapp_campaign_id', 'whatsapp_message_id', 'phone', 'name', 'status', 'error', 'variables',
-        'channel', 'contact_id', 'group_id', 'exclusion_reason', 'retry_generation',
     ];
 
     protected function casts(): array
     {
-        return ['variables' => 'array', 'retry_generation' => 'integer'];
+        return ['variables' => 'array'];
     }
 
     public function campaign(): BelongsTo
@@ -28,7 +27,4 @@ class WhatsAppCampaignRecipient extends Model
     {
         return $this->belongsTo(WhatsAppMessage::class, 'whatsapp_message_id');
     }
-
-    public function contact(): BelongsTo { return $this->belongsTo(CrmContact::class, 'contact_id'); }
-    public function group(): BelongsTo { return $this->belongsTo(WhatsAppGroup::class, 'group_id'); }
 }

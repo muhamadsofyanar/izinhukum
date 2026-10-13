@@ -14,16 +14,14 @@ class PackageController extends Controller
     {
         $packages = ServicePackage::with('service')->orderBy('service_id')->orderBy('sort_order')->get();
 
-        return view('admin.packages', compact('packages'));
+        $services = $packages->groupBy('service_id')->map(fn ($items) => $items->first()->service->setRelation('packages', $items));
+        return view('simple.packages', compact('services')); 
     }
 
     public function update(Request $request, ServicePackage $package): RedirectResponse
     {
         $validated = $request->validate([
             'price' => ['required', 'integer', 'min:0'],
-            'minimum_end_user_price' => ['required', 'integer', 'min:0', 'lte:price'],
-            'partner_price' => ['required', 'integer', 'min:0', 'lte:minimum_end_user_price'],
-            'original_price' => ['nullable', 'integer', 'min:0'],
             'is_estimated' => ['nullable', 'boolean'],
             'is_popular' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
@@ -31,9 +29,6 @@ class PackageController extends Controller
 
         $package->update([
             'price' => $validated['price'],
-            'minimum_end_user_price' => $validated['minimum_end_user_price'],
-            'partner_price' => $validated['partner_price'],
-            'original_price' => $validated['original_price'] ?? null,
             'is_estimated' => $request->boolean('is_estimated'),
             'is_popular' => $request->boolean('is_popular'),
             'is_active' => $request->boolean('is_active'),

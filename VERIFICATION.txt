@@ -1,0 +1,1 @@
+21 tests, 118 assertions passed on PHP 8.3.6. Vite build passed. Blade/route cache passed. Composer validate passed. Deployment target PHP 8.4; Docker build not executed locally. Historic module tests retained in tests/Legacy.

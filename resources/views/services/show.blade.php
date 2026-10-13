@@ -72,13 +72,13 @@
                 <article class="service-v21-package {{ $package->is_popular ? 'is-popular' : '' }}">
                     @if($package->is_popular)<span class="service-v21-popular">Paling dipilih</span>@endif
                     <div class="service-v21-package-head"><small>{{ $service->short_name }}</small><h3>{{ $package->name }}</h3><p>{{ $package->tagline }}</p></div>
-                    <div class="service-v21-price">@if($promoOffer)<del>{{ $package->formattedPrice() }}</del><strong>Rp{{ number_format($promoOffer['total'], 0, ',', '.') }}</strong><small>Dengan kupon {{ $activeCoupon->code }}</small>@else @if($package->original_price)<del>Rp{{ number_format($package->original_price, 0, ',', '.') }}</del>@endif<strong>{{ $package->price > 0 ? $package->formattedPrice() : 'Minta penawaran' }}</strong>@if($package->price_suffix && !in_array($package->price_suffix, ['mulai','penawaran'], true))<small>{{ $package->price_suffix }}</small>@endif @endif</div>
+                    <div class="service-v21-price">@if($promoOffer)<del>{{ $package->formattedPrice() }}</del><strong>Rp{{ number_format($promoOffer['total'], 0, ',', '.') }}</strong><small>Dengan kupon {{ $activeCoupon->code }}</small>@else <strong>{{ $package->price > 0 ? $package->formattedPrice() : 'Harga melalui penawaran' }}</strong>@if($package->price_suffix && !in_array($package->price_suffix, ['mulai','penawaran'], true))<small>{{ $package->price_suffix }}</small>@endif @endif</div>
                     @if($package->is_estimated)<span class="badge badge-estimated mb-3">Harga Perkiraan</span>@endif
                     <ul>@foreach($package->features ?: [] as $feature)<li><span>✓</span>{{ $feature }}</li>@endforeach</ul>
-                    <button class="btn {{ $package->is_popular ? 'btn-primary' : 'btn-outline-primary' }} w-100 service-package-select" type="button" data-package="{{ $package->id }}">Pilih & konsultasikan</button>
+                    <a class="btn btn-primary w-100" href="{{ route('proposal.create', ['paket'=>$package->id]) }}">Pilih paket</a>
                 </article>
             @empty
-                <div class="empty-state"><h2>Paket sedang disiapkan</h2><p>Isi formulir konsultasi untuk mendapatkan ruang lingkup dan penawaran.</p></div>
+                <div class="empty-state"><h2>Paket sedang disiapkan</h2><p>Hubungi admin melalui WhatsApp untuk mendapatkan penawaran.</p></div>
             @endforelse
         </div>
     </div>
@@ -102,35 +102,7 @@
     <div class="container">
         <div class="row g-4 align-items-start">
             <div class="col-lg-7">
-                <form class="service-v21-form" action="{{ route('proposal.store') }}" method="post">
-                    @csrf
-                    <x-lead-spam-fields id="service" />
-                    <input type="hidden" name="journey_source" value="service_landing">
-                    <div class="service-v21-form-head"><span>Konsultasi {{ $service->short_name }}</span><h2>Ceritakan kebutuhan Anda</h2><p>Setelah tersimpan, Anda memperoleh nomor referensi dan melanjutkan pembahasan melalui WhatsApp.</p></div>
-                    @if($errors->any())<div class="alert alert-danger">Periksa kembali data yang ditandai.</div>@endif
-                    <label class="field"><span>Paket yang diminati</span><select class="form-select @error('service_package_id') is-invalid @enderror" id="service-v21-package" name="service_package_id"><option value="">Konsultasi dahulu</option>@foreach($service->packages as $package)<option value="{{ $package->id }}" @selected($defaultPackage == $package->id)>{{ $package->name }} · {{ $package->price > 0 ? $package->formattedPrice() : 'Penawaran' }}</option>@endforeach</select>@error('service_package_id')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
-                    @if($service->slug === 'pendirian-yayasan')
-                    <div class="service-v21-qualification mb-3"><strong>3 pertanyaan cepat agar konsultasi lebih tepat</strong><small>Opsional, dapat dilewati bila belum tahu.</small></div>
-                    <div class="row g-3">
-                        <label class="field col-md-4"><span>Fokus kegiatan</span><select class="form-select" name="foundation_purpose"><option value="">Belum ditentukan</option><option value="social_education" @selected(old('foundation_purpose') === 'social_education')>Sosial/pendidikan</option><option value="religious" @selected(old('foundation_purpose') === 'religious')>Keagamaan</option><option value="humanitarian" @selected(old('foundation_purpose') === 'humanitarian')>Kemanusiaan</option><option value="mixed" @selected(old('foundation_purpose') === 'mixed')>Gabungan</option><option value="other" @selected(old('foundation_purpose') === 'other')>Lainnya</option></select></label>
-                        <label class="field col-md-4"><span>Kesiapan saat ini</span><select class="form-select" name="foundation_readiness"><option value="">Belum ditentukan</option><option value="ready" @selected(old('foundation_readiness') === 'ready')>Nama & struktur siap</option><option value="partial" @selected(old('foundation_readiness') === 'partial')>Sebagian sudah siap</option><option value="starting" @selected(old('foundation_readiness') === 'starting')>Mulai dari awal</option></select></label>
-                        <label class="field col-md-4"><span>Target mulai</span><select class="form-select" name="foundation_timeline"><option value="">Belum ditentukan</option><option value="immediately" @selected(old('foundation_timeline') === 'immediately')>Secepatnya</option><option value="thirty_days" @selected(old('foundation_timeline') === 'thirty_days')>Dalam 30 hari</option><option value="three_months" @selected(old('foundation_timeline') === 'three_months')>Dalam 1–3 bulan</option><option value="research" @selected(old('foundation_timeline') === 'research')>Masih riset</option></select></label>
-                    </div>
-                    @endif
-                    <div class="row g-3">
-                        <label class="field col-md-6"><span>Nama lengkap *</span><input class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" required maxlength="120" autocomplete="name">@error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
-                        <label class="field col-md-6"><span>Nomor WhatsApp *</span><input class="form-control @error('phone') is-invalid @enderror" name="phone" value="{{ old('phone') }}" required maxlength="32" inputmode="tel" autocomplete="tel">@error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
-                        <label class="field col-md-6"><span>Email</span><input class="form-control @error('email') is-invalid @enderror" type="email" name="email" value="{{ old('email') }}" maxlength="160" autocomplete="email">@error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
-                        <label class="field col-md-6"><span>Nama usaha/organisasi</span><input class="form-control @error('company_name') is-invalid @enderror" name="company_name" value="{{ old('company_name') }}" maxlength="160">@error('company_name')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
-                        <label class="field col-md-6"><span>Kota/Kabupaten</span><input class="form-control @error('city') is-invalid @enderror" name="city" value="{{ old('city') }}" maxlength="120">@error('city')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
-                        <label class="field col-md-6"><span>Kode kupon</span><input class="form-control text-uppercase @error('coupon_code') is-invalid @enderror" name="coupon_code" value="{{ old('coupon_code', $activeCoupon?->code) }}" maxlength="32" placeholder="Jika ada" @readonly($activeCoupon)>@if($activeCoupon)<small>Promo otomatis aktif selama periode dan kuota tersedia.</small>@endif @error('coupon_code')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
-                        <label class="field col-12"><span>Kebutuhan Anda</span><textarea class="form-control @error('message') is-invalid @enderror" name="message" rows="4" maxlength="3000">{{ old('message', $defaultMessage) }}</textarea>@error('message')<div class="invalid-feedback">{{ $message }}</div>@enderror</label>
-                    </div>
-                    <label class="consent-line mt-3"><input type="checkbox" name="privacy_consent" value="1" required @checked(old('privacy_consent'))> Saya menyetujui pemrosesan data untuk tindak lanjut sesuai <a href="{{ route('legal.privacy') }}" target="_blank">Kebijakan Privasi</a>.</label>
-                    @error('privacy_consent')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
-                    <button class="btn btn-warning btn-lg w-100 mt-4" type="submit">Kirim & lanjut ke WhatsApp →</button>
-                    <small class="service-v21-safe">Pesan WhatsApp belum terkirim sampai Anda menekan kirim pada aplikasi WhatsApp.</small>
-                </form>
+                <a class="btn btn-primary" href="{{ route('proposal.create') }}">Pilih paket dan lanjutkan pesanan</a>
             </div>
             <div class="col-lg-5"><aside class="service-v21-assurance"><span>Yang terjadi berikutnya</span><ol><li><strong>Permintaan tercatat</strong><small>Nomor referensi dibuat otomatis.</small></li><li><strong>WhatsApp terbuka</strong><small>Anda mengirim konfirmasi secara manual.</small></li><li><strong>Admin memeriksa</strong><small>Kebutuhan, dokumen, biaya, dan estimasi dikonfirmasi.</small></li><li><strong>Penawaran resmi</strong><small>Ruang lingkup disetujui sebelum proses dimulai.</small></li></ol><div><small>Kontak resmi</small><strong>{{ config('company.phone') }}</strong><span>{{ config('company.email') }}</span></div></aside></div>
         </div>
@@ -144,16 +116,3 @@
 <a class="service-v21-mobile-cta" href="#service-consultation">Konsultasi {{ $service->short_name }} →</a>
 @endsection
 
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const select = document.getElementById('service-v21-package');
-    document.querySelectorAll('.service-package-select').forEach(button => {
-        button.addEventListener('click', () => {
-            select.value = button.dataset.package;
-            document.getElementById('service-consultation').scrollIntoView({behavior: 'smooth'});
-        });
-    });
-});
-</script>
-@endpush

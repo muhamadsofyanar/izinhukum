@@ -16,8 +16,6 @@ class DashboardController extends Controller
     {
         return view('admin.dashboard', [
             'newInquiries' => Inquiry::query()->where('status', 'baru')->count(),
-            'activePartners' => User::query()->where('role', 'partner')->where('is_active', true)->count(),
-            'pendingPartners' => PartnerApplication::query()->where('status', 'pending')->count(),
             'unpaidInvoices' => Invoice::query()->whereIn('status', ['draft', 'sent'])->count(),
             'openOrders' => ServiceOrder::query()->open()->count(),
             'overdueOrders' => ServiceOrder::query()

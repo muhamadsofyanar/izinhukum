@@ -39,48 +39,14 @@
             <span class="sidebar-section-label">Utama</span>
             <a class="{{ request()->routeIs($prefix.'.dashboard') ? 'active' : '' }}" href="{{ route($prefix.'.dashboard') }}">Ringkasan</a>
 
-            @if($isAdmin)
-                <span class="sidebar-section-label">Operasional</span>
-                <a class="{{ request()->routeIs('admin.inquiries.*') ? 'active' : '' }}" href="{{ route('admin.inquiries.index') }}">Permintaan masuk</a>
-                @if($featureFlags->enabled('sales_pipeline'))<a class="{{ request()->routeIs('admin.pipeline.*') ? 'active' : '' }}" href="{{ route('admin.pipeline.index') }}">Pipeline penjualan</a>@endif
-                @if($featureFlags->enabled('manual_sales_playbooks'))<a class="{{ request()->routeIs('admin.sales-messages.*') ? 'active' : '' }}" href="{{ route('admin.sales-messages.index') }}">Playbook penjualan</a>@endif
-                @if($featureFlags->enabled('digital_quotes'))<a class="{{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}" href="{{ route('admin.quotes.index') }}">Penawaran digital</a>@endif
-                @if($featureFlags->enabled('quote_templates'))<a class="{{ request()->routeIs('admin.quote-templates.*') ? 'active' : '' }}" href="{{ route('admin.quote-templates.index') }}">Template penawaran</a>@endif
-                <a class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">Pesanan</a>
-                <a class="{{ request()->routeIs('admin.packages.*') ? 'active' : '' }}" href="{{ route('admin.packages.index') }}">Layanan & harga</a>
-                @if($featureFlags->enabled('service_landing_pages'))<a class="{{ request()->routeIs('admin.service-landings.*') ? 'active' : '' }}" href="{{ route('admin.service-landings.index') }}">Landing layanan</a>@endif
-                <a class="{{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">Kupon & promo</a>
+            <a href="{{ route('admin.orders.index') }}">Pesanan</a>
+            <a href="{{ route('admin.invoices.index') }}">Invoice & pembayaran</a>
+            <a href="{{ route('admin.finance.index') }}">Keuangan</a>
+            <a href="{{ route('admin.packages.index') }}">Paket & harga</a>
+            <a href="{{ route('admin.service-landings.index') }}">Detail layanan</a>
+            <a href="{{ route('admin.branding.edit') }}">Logo & identitas</a>
+            <a href="{{ route('admin.profile.edit') }}">Profil admin</a>
 
-                <span class="sidebar-section-label">Keuangan</span>
-                @if($featureFlags->enabled('growth_analytics'))<a class="{{ request()->routeIs('admin.growth.*') ? 'active' : '' }}" href="{{ route('admin.growth.index') }}">Analitik pertumbuhan</a>@endif
-                @if($featureFlags->enabled('campaign_roi'))<a class="{{ request()->routeIs('admin.marketing-campaigns.*') ? 'active' : '' }}" href="{{ route('admin.marketing-campaigns.index') }}">Campaign & ROI</a>@endif
-                <a class="{{ request()->routeIs('admin.finance.*') ? 'active' : '' }}" href="{{ route('admin.finance.index') }}">Laporan keuangan</a>
-                <a class="{{ request()->routeIs('admin.invoices.*') || request()->routeIs('admin.payments.*') ? 'active' : '' }}" href="{{ route('admin.invoices.index') }}">Invoice & kwitansi</a>
-
-                <span class="sidebar-section-label">Mitra</span>
-                <a class="{{ request()->routeIs('admin.partners.*') ? 'active' : '' }}" href="{{ route('admin.partners.index') }}">Mitra & referral</a>
-                <a class="{{ (request()->routeIs('admin.operations.*') && $operationModule === 'commissions') || request()->routeIs('admin.commissions.*') ? 'active' : '' }}" href="{{ route('admin.operations.index', 'commissions') }}">Komisi mitra</a>
-                <a class="{{ request()->routeIs('admin.academy.*') ? 'active' : '' }}" href="{{ route('admin.academy.index') }}">LMS mitra</a>
-                <a class="{{ request()->routeIs('admin.operations.*') && $operationModule === 'materials' ? 'active' : '' }}" href="{{ route('admin.operations.index', 'materials') }}">Bank konten</a>
-
-                <span class="sidebar-section-label">Pengaturan</span>
-                <a class="{{ request()->routeIs('admin.mail.*') ? 'active' : '' }}" href="{{ route('admin.mail.edit') }}">Notifikasi email</a>
-                <a class="{{ request()->routeIs('admin.features.*') ? 'active' : '' }}" href="{{ route('admin.features.edit') }}">Fitur aplikasi</a>
-                <a class="{{ request()->routeIs('admin.branding.*') ? 'active' : '' }}" href="{{ route('admin.branding.edit') }}">Logo & branding</a>
-                <a class="{{ request()->routeIs('admin.profile.*') ? 'active' : '' }}" href="{{ route('admin.profile.edit') }}">Profil admin</a>
-            @else
-                <span class="sidebar-section-label">Bisnis</span>
-                <a class="{{ request()->routeIs('partner.prices.*') ? 'active' : '' }}" href="{{ route('partner.prices.index') }}">Harga mitra</a>
-                <a class="{{ request()->routeIs('partner.invoices.*') ? 'active' : '' }}" href="{{ route('partner.invoices.index') }}">Invoice</a>
-                <a class="{{ request()->routeIs('partner.operations.*') && $operationModule === 'commissions' ? 'active' : '' }}" href="{{ route('partner.operations.index', 'commissions') }}">Komisi saya</a>
-
-                <span class="sidebar-section-label">Pengembangan</span>
-                @if($featureFlags->enabled('partner_academy'))<a class="{{ request()->routeIs('partner.learning.*') ? 'active' : '' }}" href="{{ route('partner.learning.index') }}">Kelas saya</a>@endif
-                <a class="{{ request()->routeIs('partner.operations.*') && $operationModule === 'materials' ? 'active' : '' }}" href="{{ route('partner.operations.index', 'materials') }}">Bank konten</a>
-
-                <span class="sidebar-section-label">Akun</span>
-                <a class="{{ request()->routeIs('partner.profile.*') ? 'active' : '' }}" href="{{ route('partner.profile.edit') }}">Profil</a>
-            @endif
         </nav>
 
         <div class="admin-sidebar-footer">

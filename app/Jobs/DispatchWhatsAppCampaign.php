@@ -59,10 +59,6 @@ class DispatchWhatsAppCampaign implements ShouldQueue
         } else {
             foreach ($campaign->recipients()->where('status', 'pending')->get() as $recipient) {
                 try {
-                    if ($recipient->channel !== 'group' && $manager->isBlocked($recipient->phone, true)) {
-                        $recipient->update(['status' => 'skipped', 'exclusion_reason' => 'consent_or_opt_out', 'error' => 'Tidak memiliki consent promosi aktif atau memilih berhenti.']);
-                        continue;
-                    }
                     $variables = [
                         ...(array) $recipient->variables,
                         'nama_pelanggan' => $recipient->name ?: 'Bapak/Ibu',
@@ -71,14 +67,12 @@ class DispatchWhatsAppCampaign implements ShouldQueue
                         'template_id' => $campaign->template_id,
                         'phone' => $recipient->phone,
                         'recipient_name' => $recipient->name,
-                        'body' => $renderer->render($campaign->body ?? $campaign->template?->body ?? '', $variables),
-                        'message_type' => $campaign->message_type ?: ($campaign->template?->message_type ?? 'text'),
-                        'media_url' => $campaign->media_path ?: $campaign->template?->media_url,
+                        'body' => $renderer->render($campaign->template?->body ?? '', $variables),
+                        'message_type' => $campaign->template?->message_type ?? 'text',
+                        'media_url' => $campaign->template?->media_url,
                         'device_alias' => 'campaign',
-                        'channel' => $recipient->channel ?: 'personal',
-                        'contact_id' => $recipient->contact_id,
                         'idempotency_key' => 'campaign:'.$campaign->id.':'.$recipient->id,
-                        'is_marketing' => $recipient->channel !== 'group',
+                        'is_marketing' => true,
                         'metadata' => [
                             'campaign_id' => $campaign->id,
                             'delay' => max(30, $campaign->delay_seconds),

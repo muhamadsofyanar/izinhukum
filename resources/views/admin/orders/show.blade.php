@@ -151,30 +151,13 @@
 
     <div class="col-12 col-xxl-4">
         <section class="admin-panel mb-4">
-            <div class="admin-panel-head"><h2>Portal pelanggan</h2></div>
-            <div class="p-4">
-                @if(app(\App\Services\FeatureFlagService::class)->enabled('customer_portal'))
-                    @php($portalUrl = route('customer.orders.show', $order->public_token))
-                    <p class="text-muted">Tautan ini menjadi akses pelanggan. Kirim hanya kepada pemilik order.</p>
-                    <div class="input-group mb-3"><input class="form-control" id="portal-url" value="{{ $portalUrl }}" readonly><button class="btn btn-outline-primary" id="copy-portal-url" type="button">Salin</button></div>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a class="btn btn-primary" href="{{ $portalUrl }}" target="_blank" rel="noopener">Buka portal ↗</a>
-                        <form action="{{ route('admin.orders.portal-token', $order) }}" method="post" onsubmit="return confirm('Tautan lama akan langsung tidak berlaku. Lanjutkan?')">@csrf<button class="btn btn-outline-danger" type="submit">Ganti token</button></form>
-                    </div>
-                @else
-                    <div class="alert alert-warning mb-0">Portal pelanggan sedang dinonaktifkan dari Pengaturan Fitur. Data order tetap tersimpan.</div>
-                @endif
-            </div>
-        </section>
-
-        <section class="admin-panel mb-4">
             <div class="admin-panel-head"><h2>Informasi sumber</h2></div>
             <dl class="order-meta-list p-4 mb-0">
                 <div><dt>Proposal</dt><dd>{{ $order->inquiry?->reference ?: 'Order manual' }}</dd></div>
                 <div><dt>Paket</dt><dd>{{ $order->package?->name ?: $order->inquiry?->package?->name ?: 'Tidak dipilih' }}</dd></div>
-                <div><dt>Mitra referral</dt><dd>{{ $order->referredByPartner?->name ?: 'Tanpa referral' }}</dd></div>
-                <div><dt>Kode referral</dt><dd>{{ $order->referral_code ?: '-' }}</dd></div>
-                <div><dt>Kupon promo</dt><dd>{{ $order->coupon_code ? $order->coupon_code.' · −Rp'.number_format($order->coupon_discount_amount, 0, ',', '.') : '-' }}</dd></div>
+                
+                
+                
                 <div><dt>Dibuat oleh</dt><dd>{{ $order->creator?->name ?: 'Sistem' }}</dd></div>
                 <div><dt>Mulai proses</dt><dd>{{ $order->started_at?->format('d/m/Y H:i') ?: '-' }}</dd></div>
                 <div><dt>Selesai</dt><dd>{{ $order->completed_at?->format('d/m/Y H:i') ?: '-' }}</dd></div>

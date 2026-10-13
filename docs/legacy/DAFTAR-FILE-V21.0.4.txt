@@ -1,0 +1,13 @@
+IZINHUKUM V21.0.4 · REKONSILIASI SKEMA CAMPAIGN
+
+FILE DIPERBARUI
+app/Http/Controllers/HealthController.php
+database/migrations/2026_08_03_000029_add_v21_0_2_yayasan_closing_campaign.php
+tests/Feature/V10FoundationTest.php
+README.md
+
+FILE BARU
+PETUNJUK-REDEPLOY-V21.0.4.md
+RINGKASAN-PERUBAHAN-V21.0.4.md
+VALIDASI-V21.0.4.md
+DAFTAR-FILE-V21.0.4.txt

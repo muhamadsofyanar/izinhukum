@@ -23,11 +23,6 @@ class CrmContactService
         string $source = 'whatsapp',
         array $metadata = [],
     ): ?CrmContact {
-        return $this->upsert($phone, ['name' => $name], $source, $metadata);
-    }
-
-    public function upsert(string $phone, array $attributes = [], string $source = 'manual', array $metadata = []): ?CrmContact
-    {
         if (! Schema::hasTable('crm_contacts')) {
             return null;
         }
@@ -37,19 +32,14 @@ class CrmContactService
             return null;
         }
 
-        return DB::transaction(function () use ($normalized, $attributes, $source, $metadata): CrmContact {
+        return DB::transaction(function () use ($normalized, $name, $source, $metadata): CrmContact {
             $contact = CrmContact::query()->firstOrNew(['phone' => $normalized]);
-            foreach (['name', 'email', 'company', 'service_interest'] as $field) {
-                if (filled($attributes[$field] ?? null)) {
-                    $contact->{$field} = trim((string) $attributes[$field]);
-                }
-            }
+            $contact->name = filled($name) ? trim((string) $name) : ($contact->name ?: null);
             $contact->source = $contact->exists ? ($contact->source ?: $source) : $source;
             $contact->status = $contact->status ?: 'active';
             $contact->lifecycle_stage = $contact->lifecycle_stage ?: 'contact';
             $contact->last_contact_at = now();
-            $sources = array_values(array_unique([...((array) data_get($contact->metadata, 'sources', [])), $source]));
-            $contact->metadata = array_replace((array) $contact->metadata, $metadata, ['sources' => $sources]);
+            $contact->metadata = array_replace((array) $contact->metadata, $metadata);
             $contact->save();
 
             if (str_starts_with($source, 'whatsapp')) {

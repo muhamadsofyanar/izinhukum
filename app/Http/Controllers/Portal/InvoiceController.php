@@ -341,9 +341,8 @@ class InvoiceController extends Controller
 
     private function prepareInvoice(Request $request, User $user): array
     {
-        $recipientType = $user->isAdmin()
-            ? $request->input('recipient_type', 'end_user')
-            : 'end_user';
+        $recipientType = 'end_user';
+        $request->merge(['recipient_type'=>'end_user','partner_id'=>null,'referred_by_partner_id'=>null]);
         $validated = $request->validate([
             'recipient_type' => ['nullable', Rule::in(['partner', 'end_user'])],
             'partner_id' => ['nullable', 'exists:users,id'],
@@ -403,10 +402,7 @@ class InvoiceController extends Controller
         }
 
         $referredPartner = null;
-        $referredPartnerId = $user->isPartner()
-            ? $user->id
-            : ($validated['referred_by_partner_id']
-                ?? $inquiry?->referred_by_partner_id);
+        $referredPartnerId = null;
 
         if ($referredPartnerId) {
             $referredPartner = User::query()
@@ -446,7 +442,7 @@ class InvoiceController extends Controller
                 $unitPrice = isset($item['unit_price']) && $item['unit_price'] !== ''
                     ? (int) $item['unit_price']
                     : (int) $package->price;
-                $minimum = (int) $package->minimum_end_user_price;
+                $minimum = 0; // Harga sesuai kesepakatan admin melalui WhatsApp.
 
                 if ($unitPrice < $minimum) {
                     throw ValidationException::withMessages([
@@ -470,7 +466,7 @@ class InvoiceController extends Controller
         }
 
         $couponDiscount = 0;
-        $couponApplies = $recipientType === 'end_user'
+        $couponApplies = false && $recipientType === 'end_user'
             && $inquiry?->coupon_id
             && collect($items)->contains(
                 fn (array $item): bool => (int) $item['service_package_id'] === (int) $inquiry->service_package_id,
@@ -524,13 +520,7 @@ class InvoiceController extends Controller
             ->orderBy('service_id')
             ->orderBy('sort_order')
             ->get();
-        $partners = $user->isAdmin()
-            ? User::query()
-                ->where('role', 'partner')
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get()
-            : collect();
+        $partners = collect();
         $referredPartners = $partners;
         $packageOptions = $packages->map(fn (ServicePackage $package): array => [
             'id' => $package->id,
@@ -581,6 +571,9 @@ class InvoiceController extends Controller
 
     private function ensureDraftEditable(Invoice $invoice): void
     {
+        if ($invoice->recipient_type === 'partner' || $invoice->referred_by_partner_id || $invoice->coupon_id) {
+            throw ValidationException::withMessages(['invoice'=>'Invoice lama dengan data mitra/referral/kupon hanya dapat dilihat dan dicatat pembayarannya. Buat invoice baru jika perlu mengubah rincian.']);
+        }
         if ($invoice->status !== 'draft' || $invoice->payments()->exists()) {
             throw ValidationException::withMessages([
                 'invoice' => 'Hanya invoice draf tanpa pembayaran yang dapat diedit atau dihapus.',

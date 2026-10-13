@@ -8,7 +8,6 @@ use App\Models\WhatsAppMessage;
 use App\Models\WhatsAppMessageAttempt;
 use App\Services\FeatureFlagService;
 use App\Services\WhatsApp\StarSenderClient;
-use App\Services\WhatsApp\StarSenderException;
 use App\Services\WhatsApp\WhatsAppCampaignProgressService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -57,6 +56,16 @@ class SendWhatsAppMessage implements ShouldQueue, ShouldBeUnique
             return;
         }
 
+        if ($this->belongsToDisabledMarketingFlow($message)) {
+            $message->forceFill([
+                'status' => 'cancelled',
+                'last_error' => 'Pengiriman marketing dinonaktifkan pada mode fokus IzinHukum.',
+                'scheduled_at' => null,
+            ])->save();
+
+            return;
+        }
+
         if ($message->scheduled_at?->isFuture()) {
             $this->release(max(1, now()->diffInSeconds($message->scheduled_at, false)));
             return;
@@ -95,7 +104,7 @@ class SendWhatsAppMessage implements ShouldQueue, ShouldBeUnique
         ], fn (mixed $value): bool => $value !== null && $value !== '');
 
         try {
-            $response = $client->send($payload, $message->channel === 'group');
+            $response = $client->send($payload, $message->device_alias, $message->channel === 'group');
             $providerId = $client->extractProviderMessageId($response);
 
             WhatsAppMessageAttempt::query()->updateOrCreate(
@@ -139,22 +148,20 @@ class SendWhatsAppMessage implements ShouldQueue, ShouldBeUnique
                 ],
             );
 
-            $providerFailure = $exception instanceof StarSenderException ? $exception : null;
-            $maxAttempts = max(1, min(10, (int) config('starsender.max_attempts', 3)));
-            $willRetry = ($providerFailure?->retryable ?? true) && $attemptNumber < $maxAttempts;
+            $maxAttempts = max(1, min(10, (int) config('starsender.max_attempts', 4)));
+            $willRetry = $attemptNumber < $maxAttempts;
             $retryDelays = [120, 600, 1800];
             $retryDelay = $retryDelays[max(0, $attemptNumber - 1)] ?? 1800;
-            $outcomeUnknown = $providerFailure?->outcomeUnknown ?? false;
             $message->forceFill([
-                'status' => $outcomeUnknown ? 'reconciling' : ($willRetry ? 'retrying' : 'failed'),
-                'scheduled_at' => $willRetry && ! $outcomeUnknown ? now()->addSeconds((int) $retryDelay) : null,
+                'status' => $willRetry ? 'retrying' : 'failed',
+                'scheduled_at' => $willRetry ? now()->addSeconds((int) $retryDelay) : null,
                 'last_error' => $exception->getMessage(),
-                'failed_at' => ($willRetry || $outcomeUnknown) ? null : now(),
+                'failed_at' => $willRetry ? null : now(),
             ])->save();
 
             $this->updateCampaignRecipient(
                 $message,
-                ($willRetry || $providerFailure?->outcomeUnknown) ? 'queued' : 'failed',
+                $willRetry ? 'queued' : 'failed',
                 $willRetry ? null : $exception->getMessage(),
                 $campaignProgress,
             );
@@ -210,4 +217,20 @@ class SendWhatsAppMessage implements ShouldQueue, ShouldBeUnique
         }
     }
 
+    private function belongsToDisabledMarketingFlow(WhatsAppMessage $message): bool
+    {
+        if ($message->channel !== 'personal') {
+            return true;
+        }
+
+        if (WhatsAppCampaignRecipient::query()->where('whatsapp_message_id', $message->id)->exists()) {
+            return true;
+        }
+
+        return empty($message->inquiry_id)
+            && empty($message->service_order_id)
+            && empty($message->invoice_id)
+            && empty($message->payment_id)
+            && empty($message->partner_id);
+    }
 }

@@ -16,7 +16,7 @@ class HomeController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        return view('home', [
+        return view('simple.home', [
             'services' => $services,
             'featuredServices' => $services->where('is_featured', true)->take(6),
             'packages' => $services->flatMap->packages->sortByDesc('is_popular')->values(),

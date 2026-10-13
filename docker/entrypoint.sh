@@ -67,14 +67,12 @@ php artisan optimize:clear
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
     php artisan migrate --force
     php artisan finance:reconcile-legacy-paid-invoices --no-interaction
-    php artisan app:backfill-orders --no-interaction
 fi
 
 if [ "${SEED_DATABASE:-false}" = "true" ]; then
     php artisan db:seed --force
 fi
 
-php artisan kbli:ensure
 php artisan portal:secure-files
 php artisan optimize
 

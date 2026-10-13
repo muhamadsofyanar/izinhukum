@@ -1,0 +1,13 @@
+IZINHUKUM V21.0.3 · HOTFIX MIGRASI
+
+FILE DIPERBARUI
+app/Http/Controllers/HealthController.php
+database/migrations/2026_08_03_000029_add_v21_0_2_yayasan_closing_campaign.php
+tests/Feature/V10FoundationTest.php
+README.md
+
+FILE BARU
+PETUNJUK-REDEPLOY-V21.0.3.md
+RINGKASAN-PERUBAHAN-V21.0.3.md
+VALIDASI-V21.0.3.md
+DAFTAR-FILE-V21.0.3.txt

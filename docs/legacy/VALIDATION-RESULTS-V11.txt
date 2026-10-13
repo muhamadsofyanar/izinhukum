@@ -1,0 +1,32 @@
+IzinHukum V11 final static validation
+Generated: 2026-07-29T17:57:18Z
+
+PHP/Blade files linted: 71
+PHP syntax errors: 0
+Shell syntax: PASS
+Entrypoint executable: PASS
+JSON syntax: PASS
+Symlinks: 0
+Debug/unfinished markers: PASS
+Secret scan: PASS
+WhatsApp route definitions: 40
+WhatsApp route references: 40
+Unknown WhatsApp route references: 0
+WhatsApp view references: 12
+Missing WhatsApp views: 0
+V10 named route leafs checked: 115
+Prior route leafs missing: 0
+Migration up() destructive operations: 0
+Required migration structures missing: 0
+Pure PHP smoke tests: PASS
+Required documentation: PASS
+Safe default flags: PASS
+
+Not executed in this environment:
+- composer install / php artisan test (vendor unavailable)
+- real database migration
+- Docker image build
+- browser end-to-end tests
+- live StarSender API calls
+
+FINAL STATIC RESULT: PASS

@@ -1,0 +1,9 @@
+VALIDASI STATIS V11.4
+- PHP lint seluruh file PHP patch: LULUS
+- Migration bersifat additive: YA
+- Batas 50 grup dihapus: YA
+- Pilihan grup tersimpan per user/device: YA
+- Upload gambar dibatasi format dan 10 MB: YA
+- Form multipart aktif: YA
+- Pesan media memakai body + file: YA
+- Healthcheck version: 11.4.0
