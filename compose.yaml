@@ -1,0 +1,46 @@
+name: stifin-kantor-virtual
+services:
+  app:
+    build: .
+    environment:
+      STIFIN_VOUCHER_PRODUCT_ID: ${STIFIN_VOUCHER_PRODUCT_ID:-}
+      STIFIN_BRANCH_CODE: ${STIFIN_BRANCH_CODE:-}
+      STIFIN_VOUCHER_TRANSFER: ${STIFIN_VOUCHER_TRANSFER:-0}
+      STIFIN_API_USER_ID: ${STIFIN_API_USER_ID:-}
+      STIFIN_API_BASE: ${STIFIN_API_BASE:-}
+      STIFIN_API_AUTH_HEADER: ${STIFIN_API_AUTH_HEADER:-}
+      STIFIN_API_AUTH_VALUE: ${STIFIN_API_AUTH_VALUE:-}
+      DARMUTIARA_APP_URL: ${DARMUTIARA_APP_URL:-}
+      DARMUTIARA_ISSUER_PUBLIC_KEY: ${DARMUTIARA_ISSUER_PUBLIC_KEY:-}
+      DARMUTIARA_DEPLOY_WEBHOOK: ${DARMUTIARA_DEPLOY_WEBHOOK:-}
+      DARMUTIARA_DEPLOY_TOKEN: ${DARMUTIARA_DEPLOY_TOKEN:-}
+    expose:
+      - "80"
+    volumes:
+      - app_config:/data
+      - app_uploads:/var/www/html/assets/uploads
+      - app_storage:/var/www/html/storage
+      - app_backups:/var/www/html/backups
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: mariadb:10.11
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    environment:
+      MARIADB_DATABASE: darmutiara
+      MARIADB_USER: darmutiara
+      MARIADB_PASSWORD: '${DARMUTIARA_DB_PASSWORD:?Isi password database di .env}'
+      MARIADB_ROOT_PASSWORD: '${DARMUTIARA_DB_ROOT_PASSWORD:?Isi password root MariaDB di .env}'
+    volumes:
+      - db_data:/var/lib/mysql
+volumes:
+  app_config:
+  app_uploads:
+  app_storage:
+  app_backups:
+  db_data:

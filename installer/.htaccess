@@ -1,0 +1,24 @@
+# ════════════════════════════════════════════════════════════════
+# Hardening folder installer/
+# ════════════════════════════════════════════════════════════════
+# Catatan: penjaga UTAMA "tolak akses jika sudah terpasang" ada di
+# installer/index.php (cek install.lock + config.php) dan bersifat
+# portabel di subpath manapun. Aturan di bawah ini lapisan tambahan
+# (defense-in-depth) di level web server.
+
+Options -Indexes
+
+# ─── Blokir akses langsung ke file sensitif ──────────────────────
+# install.lock: jangan bocorkan status/timestamp instalasi.
+# .sql/.log/.bak: jaga-jaga bila ada file dump ikut ter-upload di sini.
+<FilesMatch "(?i)(^install\.lock$|\.(sql|sqlite|env|log|bak|backup|dump|old)$)">
+  Require all denied
+</FilesMatch>
+
+# Fallback Apache 2.2 (tanpa mod_authz_core)
+<IfModule !mod_authz_core.c>
+  <FilesMatch "(?i)(^install\.lock$|\.(sql|sqlite|env|log|bak|backup|dump|old)$)">
+    Order allow,deny
+    Deny from all
+  </FilesMatch>
+</IfModule>

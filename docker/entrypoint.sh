@@ -1,84 +1,39 @@
 #!/bin/sh
-
 set -eu
-
-cd /var/www/html
-
-mkdir -p database/migrations database/seeders database/data database/uploads
-touch database/database.sqlite
-cp -R /opt/izinhukum-database/migrations/. database/migrations/
-cp -R /opt/izinhukum-database/seeders/. database/seeders/
-cp -R /opt/izinhukum-database/data/. database/data/
-
-mkdir -p \
-    storage/app/private \
-    storage/app/public \
-    storage/framework/cache/data \
-    storage/framework/sessions \
-    storage/framework/views \
-    storage/logs \
-    bootstrap/cache
-
-chown -R www-data:www-data storage bootstrap/cache database
-
-if [ ! -L public/storage ]; then
-    php artisan storage:link || true
-fi
-
-fail_config() {
-    echo "ERROR: $1"
-    exit 1
-}
-
-if [ -z "${APP_KEY:-}" ]; then
-    fail_config "APP_KEY wajib diisi. Buat dengan: printf 'base64:%s\\n' \"\$(openssl rand -base64 32)\""
-fi
-
-case "${APP_KEY}" in
-    *GANTI*|*ganti*|*CHANGE*|*change*|*CONTOH*|*contoh*|*EXAMPLE*|*example*)
-        fail_config "APP_KEY masih memakai nilai contoh. Ganti sebelum aplikasi dijalankan."
-        ;;
-esac
-
-if [ "${#APP_KEY}" -lt 32 ]; then
-    fail_config "APP_KEY terlalu pendek. Gunakan key Laravel yang valid."
-fi
-
-for value in "${ADMIN_PASSWORD:-}" "${DB_PASSWORD:-}"; do
-    case "$value" in
-        *GANTI*|*ganti*|*CHANGE*|*change*|*CONTOH*|*contoh*|*EXAMPLE*|*example*|password|admin123|12345678)
-            fail_config "Terdapat password environment yang masih memakai nilai contoh atau terlalu mudah."
-            ;;
-    esac
-done
-
-if [ "${STARSENDER_ENABLED:-false}" = "true" ]; then
-    if [ "${QUEUE_CONNECTION:-database}" != "database" ]; then
-        fail_config "QUEUE_CONNECTION wajib database ketika StarSender aktif agar transaksi tidak menunggu API WhatsApp."
+mkdir -p /data /var/www/html/assets/uploads /var/www/html/storage/downloads /var/www/html/storage/ticket-attachments /var/www/html/storage/update-tmp
+ln -sfn /data/config.php /var/www/html/config.php
+ln -sfn /data/install.lock /var/www/html/installer/install.lock
+chown -h www-data:www-data /var/www/html/config.php /var/www/html/installer/install.lock
+chown -R www-data:www-data /data /var/www/html/assets/uploads /var/www/html/storage
+install -d -m 0700 -o www-data -g www-data /data/php-sessions
+printf '%s\n' 'session.save_path = "/data/php-sessions"' > /usr/local/etc/php/conf.d/darmutiara-sessions.ini
+if [ "${1:-}" = apache2-foreground ]; then
+    if [ -s /data/config.php ] && [ -f /data/install.lock ]; then
+        if ! runuser -u www-data -- /usr/local/bin/php /var/www/html/scripts/setup-stifin-office.php; then
+            printf '%s\n' '[STIFIn] Migrasi kantor belum berhasil; periksa database dan log.' >&2
+        fi
     fi
-
-    if [ -z "${STARSENDER_TRANSACTION_DEVICE_KEY:-${STARSENDER_DEFAULT_DEVICE_KEY:-}}" ]; then
-        fail_config "Device API Key transaksi/default wajib diisi ketika integrasi StarSender aktif."
-    fi
+    export DARMUTIARA_CONTAINER_CRON=1
+    export STIFIN_CONTAINER_VOUCHER_WORKER=1
+    run_stifin_worker() {
+        while :; do
+            if [ -s /data/config.php ] && [ -f /data/install.lock ]; then
+                runuser -u www-data -- /usr/local/bin/php /var/www/html/scripts/process-stifin-background.php "$1" ||
+                    printf '%s\n' "[STIFIn] Worker $1 gagal." >&2
+            fi
+            sleep "$2"
+        done
+    }
+    run_stifin_worker voucher 30 &
+    run_stifin_worker results 15 &
+    (
+        while :; do
+            if [ -s /data/config.php ] && [ -f /data/install.lock ]; then
+                runuser -u www-data -- /usr/local/bin/php /var/www/html/cron/process.php >/dev/null ||
+                    printf '%s\n' '[Darmutiara] Proses cron gagal.' >&2
+            fi
+            sleep 300
+        done
+    ) &
 fi
-
-php artisan optimize:clear
-
-if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
-    php artisan migrate --force
-    php artisan finance:reconcile-legacy-paid-invoices --no-interaction
-fi
-
-if [ "${SEED_DATABASE:-false}" = "true" ]; then
-    php artisan db:seed --force
-fi
-
-php artisan portal:secure-files
-php artisan optimize
-
-# Artisan startup commands run as root and may recreate cache files.
-# Restore ownership before PHP-FPM, queue, and scheduler begin serving traffic.
-chown -R www-data:www-data storage bootstrap/cache database
-chmod -R ug+rwX storage bootstrap/cache database
-
-exec "$@"
+exec docker-php-entrypoint "$@"

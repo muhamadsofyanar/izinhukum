@@ -1,62 +1,33 @@
-FROM node:24-alpine AS assets
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-COPY vite.config.js ./
-COPY resources ./resources
-RUN mkdir -p public && npm run build
-
-FROM composer:2.8 AS vendor
-WORKDIR /app
-COPY composer.* ./
-RUN composer install \
-    --no-dev \
-    --no-interaction \
-    --no-progress \
-    --no-scripts \
-    --no-autoloader \
-    --prefer-dist
-COPY . .
-RUN composer dump-autoload --no-dev --optimize
-
-FROM php:8.4-fpm-alpine AS runtime
-RUN apk add --no-cache \
-        curl \
-        nginx \
-        oniguruma-dev \
-        sqlite-dev \
-        supervisor \
-    && docker-php-ext-install -j"$(nproc)" \
-        bcmath \
-        mbstring \
-        opcache \
-        pdo_sqlite \
-        pdo_mysql \
-    && rm -rf /tmp/* /var/cache/apk/*
-
+FROM php:8.2-apache
+RUN apt-get update && apt-get install -y --no-install-recommends libcurl4-openssl-dev libonig-dev libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev util-linux \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" pdo_mysql mysqli mbstring curl gd zip \
+    && php -r 'exit(extension_loaded("sodium") ? 0 : 1);' \
+    && a2enmod rewrite headers expires \
+    && rm -rf /var/lib/apt/lists/*
+COPY . /var/www/html/
+RUN php -l /var/www/html/index.php \
+    && php -l /var/www/html/scripts/process-stifin-background.php \
+    && php -l /var/www/html/pages/admin/stifin-office.php \
+    && php -l /var/www/html/pages/admin/stifin-participants.php \
+    && php -l /var/www/html/pages/admin/stifin-official-reports.php \
+    && php -l /var/www/html/helpers/stifin-official-reports.php \
+    && php -l /var/www/html/pages/admin/stifin-reports.php \
+    && php -l /var/www/html/pages/admin/stifin-promoters.php \
+    && php -l /var/www/html/helpers/stifin-voucher-transfers.php \
+    && php -l /var/www/html/helpers/stifin-promoters.php \
+    && php -l /var/www/html/pages/user/stifin-vouchers.php \
+    && php -l /var/www/html/pages/admin/stifin-vouchers.php \
+    && php -l /var/www/html/cron/process.php \
+    && php -l /var/www/html/pages/user/stifin-office.php \
+    && php -l /var/www/html/scripts/setup-stifin-office.php
+COPY docker/entrypoint.sh /usr/local/bin/stifin-entrypoint
+RUN chmod +x /usr/local/bin/stifin-entrypoint \
+    && mkdir -p /var/www/html/assets/uploads /var/www/html/storage/downloads /var/www/html/storage/ticket-attachments /var/www/html/storage/update-tmp /var/www/html/backups /data \
+    && chown -R www-data:www-data /var/www/html /data \
+    && printf '%s\n' '<Directory /var/www/html>' 'AllowOverride All' 'Require all granted' '</Directory>' > /etc/apache2/conf-available/stifin.conf \
+    && a2enconf stifin
 WORKDIR /var/www/html
-COPY docker/nginx.conf /etc/nginx/http.d/default.conf
-COPY docker/supervisord.conf /etc/supervisord.conf
-COPY docker/php.ini /usr/local/etc/php/conf.d/99-izinhukum.ini
-COPY docker/entrypoint.sh /usr/local/bin/izinhukum-entrypoint
-COPY --from=vendor --chown=www-data:www-data /app .
-COPY --from=assets --chown=www-data:www-data /app/public/build ./public/build
-RUN chmod +x /usr/local/bin/izinhukum-entrypoint \
-    && mkdir -p /opt/izinhukum-database \
-    && cp -R database/migrations database/seeders database/data /opt/izinhukum-database/ \
-    && mkdir -p \
-        storage/app/private \
-        storage/app/public \
-        storage/framework/cache/data \
-        storage/framework/sessions \
-        storage/framework/views \
-        storage/logs \
-        bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache
-
-EXPOSE 8080
-HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD curl --fail --silent --header "Accept: application/json" http://127.0.0.1:8080/healthz || exit 1
-
-ENTRYPOINT ["izinhukum-entrypoint"]
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+EXPOSE 80
+ENTRYPOINT ["stifin-entrypoint"]
+CMD ["apache2-foreground"]

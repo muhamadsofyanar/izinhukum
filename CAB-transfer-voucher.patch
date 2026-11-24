@@ -1,0 +1,522 @@
+From 4bb8c6cd2d23b04cee33a4831299a29b37047f56 Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Sun, 22 Nov 2026 13:50:10 +0700
+Subject: [PATCH] Otomatiskan transfer voucher STIFIn setelah pembayaran lunas
+
+---
+ .env.example                            |   2 +
+ README-INSTALASI-STIFIN.md              |   7 ++
+ actions/admin/stifin-vouchers.php       |   5 ++
+ actions/checkout/process.php            |   9 ++
+ bootstrap.php                           |   1 +
+ compose.yaml                            |   2 +
+ cron/process.php                        |   8 ++
+ helpers/order-core.php                  |   2 +-
+ helpers/stifin-promoters.php            |  17 +++-
+ helpers/stifin-voucher-transfers.php    | 113 ++++++++++++++++++++++++
+ helpers/stifin-vouchers.php             |  13 ++-
+ migrations/stifin-voucher-transfers.sql |   7 ++
+ pages/admin/stifin-vouchers.php         |  43 ++++++++-
+ pages/public/checkout.php               |   4 +
+ pages/user/stifin-vouchers.php          |  16 +++-
+ scripts/setup-stifin-voucher.php        |   8 +-
+ 16 files changed, 244 insertions(+), 13 deletions(-)
+ create mode 100644 helpers/stifin-voucher-transfers.php
+ create mode 100644 migrations/stifin-voucher-transfers.sql
+
+diff --git a/.env.example b/.env.example
+index ac474d8..666c78f 100644
+--- a/.env.example
++++ b/.env.example
+@@ -4,6 +4,8 @@ DARMUTIARA_DB_ROOT_PASSWORD=
+ DARMUTIARA_APP_URL=
+ DARMUTIARA_ISSUER_PUBLIC_KEY=
+ STIFIN_BRANCH_CODE=
++STIFIN_VOUCHER_TRANSFER=0
++STIFIN_API_USER_ID=
+ STIFIN_API_BASE=https://apro.stifin.id/api
+ STIFIN_API_AUTH_HEADER=
+ STIFIN_API_AUTH_VALUE=
+diff --git a/README-INSTALASI-STIFIN.md b/README-INSTALASI-STIFIN.md
+index 67afea2..65bb7b5 100644
+--- a/README-INSTALASI-STIFIN.md
++++ b/README-INSTALASI-STIFIN.md
+@@ -31,6 +31,13 @@ Paket ini memakai Darmutiara Kajian 1.2.262 sebagai dasar. Installer dan aktivas
+ 
+ Cadangkan database, data unggahan, dan konfigurasi sebelum mengganti kode. Pertahankan `.env`, project Compose, serta volume yang sudah dipakai. Isi variabel penerbit dan URL pada `.env`. Periksa juga `APP_URL` di `config.php` yang sudah ada dan pastikan menunjuk domain HTTPS final. Variabel URL dipakai oleh installer ketika membuat config baru. Jalankan ulang `docker compose up -d --build` dan aktivasi ulang dengan lisensi DRM untuk domain tersebut. Untuk database lama yang belum punya tabel Kajian, jalankan `migrations/stifin-kajian.sql` setelah pencadangan.
+ 
++## Aktifkan transfer otomatis voucher CAB
++
++1. Pada instalasi dengan produk voucher yang sudah aktif, jalankan `migrations/stifin-voucher-transfers.sql` di database aplikasi. Untuk pemasangan produk voucher baru, `php scripts/setup-stifin-voucher.php` memasang kedua migrasi voucher. Pastikan akun promotor sudah ditautkan dan kode cabang sudah benar.
++2. Setel `STIFIN_BRANCH_CODE=JML-CAB-62` untuk cabang JML, isi `STIFIN_API_USER_ID` dengan UserID resmi pengirim, lalu setel `STIFIN_VOUCHER_TRANSFER=1`. Simpan kredensial API di environment server jika STIFIn mensyaratkannya. Di Compose, buat ulang container app agar konfigurasi terbaca.
++3. Antrean dibuat ketika pembayaran lunas. Cron Docker memeriksanya setiap siklus, sekitar lima menit, dan admin dapat memeriksanya langsung melalui **Stok Voucher Tes → Proses transfer tertunda**. Pakai invoice baru untuk uji transfer. Invoice lama tidak dimasukkan ulang oleh migrasi.
++4. Untuk status **Perlu dicek**, cocokkan mutasi STIFIn dengan nomor invoice sebelum melakukan transfer manual. Aplikasi hanya mencoba ulang otomatis jika saldo awal gagal dibaca sebelum permintaan transfer dikirim.
++
+ ## Pemasangan tanpa Docker
+ 
+ Untuk Apache di cPanel, gunakan PHP 8.2 dengan PDO MySQL, cURL dan Sodium. Periksa ekstensi tambahan yang ditampilkan installer, aktifkan dukungan `.htaccess`, gunakan HTTPS, dan pakai database kosong yang dibuat melalui cPanel. Sediakan `DARMUTIARA_ISSUER_PUBLIC_KEY` untuk proses PHP atau definisikan konstanta dengan nama yang sama di `config.php` setelah installer selesai. Mode ini perlu diuji sesuai konfigurasi hosting.
+diff --git a/actions/admin/stifin-vouchers.php b/actions/admin/stifin-vouchers.php
+index 964100e..cc623bb 100644
+--- a/actions/admin/stifin-vouchers.php
++++ b/actions/admin/stifin-vouchers.php
+@@ -14,6 +14,11 @@ $action = $_POST['action'] ?? '';
+ $added = null;
+ try {
+     $db = getDB();
++    if ($action === 'transfer' && stifinVoucherTransferEnabled()) {
++        stifinProcessVoucherTransfers($db);
++        flash('success', 'Antrean transfer diperiksa. Lihat hasil pada daftar transfer.');
++        redirect('/admin/voucher-tes');
++    }
+     if ($action === 'import') {
+         $raw = $_POST['codes'] ?? '';
+         if (!is_string($raw) || strlen($raw) > 65000) {
+diff --git a/actions/checkout/process.php b/actions/checkout/process.php
+index 04ded59..875a275 100644
+--- a/actions/checkout/process.php
++++ b/actions/checkout/process.php
+@@ -94,6 +94,15 @@ try {
+         flash('error', $message, 'error');
+         redirect('/checkout?product_id=' . $productId);
+     }
++    if ($isVoucher && stifinVoucherTransferEnabled() && stifinLinkedPromoterCode($pdo, $userId) === null) {
++        $message = 'Hubungi admin untuk menautkan akun promotor STIFIn sebelum membeli voucher.';
++        if ($isGatewayFlow) {
++            echo json_encode(['error' => $message]);
++            exit;
++        }
++        flash('error', $message, 'error');
++        redirect('/member/voucher-tes');
++    }
+ 
+     // Cek akses ganda — HANYA blokir produk SEKALI-BAYAR. Produk BERLANGGANAN
+     // (access_duration_days !== null) boleh order lagi meski masa aktif belum habis =
+diff --git a/bootstrap.php b/bootstrap.php
+index 7693954..0153962 100644
+--- a/bootstrap.php
++++ b/bootstrap.php
+@@ -115,6 +115,7 @@ $__averionCoreFiles = [
+     __DIR__ . '/helpers/pricing.php',             // Fase 4: dime sale + unique code + upsell + setup fee
+     __DIR__ . '/helpers/points.php',              // Poin Reward: ledger poin + earn/redeem/reverse
+     __DIR__ . '/helpers/stifin-vouchers.php',
++    __DIR__ . '/helpers/stifin-voucher-transfers.php',
+     __DIR__ . '/helpers/order-core.php',          // Fase 5: JANTUNG — order lifecycle + akses (17 fungsi)
+     __DIR__ . '/helpers/magic-login.php',          // Magic-link akses instan pasca-bayar (akun lama, Segmen B)
+     __DIR__ . '/helpers/landing-builder.php',     // Landing Builder: mode 'builder' Canvas (block engine no-code)
+diff --git a/compose.yaml b/compose.yaml
+index ebedcba..ee42b53 100644
+--- a/compose.yaml
++++ b/compose.yaml
+@@ -5,6 +5,8 @@ services:
+     environment:
+       STIFIN_VOUCHER_PRODUCT_ID: ${STIFIN_VOUCHER_PRODUCT_ID:-}
+       STIFIN_BRANCH_CODE: ${STIFIN_BRANCH_CODE:-}
++      STIFIN_VOUCHER_TRANSFER: ${STIFIN_VOUCHER_TRANSFER:-0}
++      STIFIN_API_USER_ID: ${STIFIN_API_USER_ID:-}
+       STIFIN_API_BASE: ${STIFIN_API_BASE:-}
+       STIFIN_API_AUTH_HEADER: ${STIFIN_API_AUTH_HEADER:-}
+       STIFIN_API_AUTH_VALUE: ${STIFIN_API_AUTH_VALUE:-}
+diff --git a/cron/process.php b/cron/process.php
+index 12bbb9f..9984790 100644
+--- a/cron/process.php
++++ b/cron/process.php
+@@ -114,6 +114,14 @@ try {
+     error_log('cron vendor_fulfillment: ' . $e->getMessage());
+ }
+ 
++if (stifinVoucherTransferEnabled()) {
++    try {
++        stifinProcessVoucherTransfers(getDB());
++    } catch (Throwable $e) {
++        error_log('[stifin-voucher] Antrean transfer belum bisa diproses.');
++    }
++}
++
+ // 5. Waitlist Launch — auto-launch produk terjadwal + blast notif ke pendaftar.
+ try {
+     $out['waitlist_launch'] = processWaitlistLaunches(100);
+diff --git a/helpers/order-core.php b/helpers/order-core.php
+index b3f325b..4db10bb 100644
+--- a/helpers/order-core.php
++++ b/helpers/order-core.php
+@@ -324,7 +324,7 @@ function onOrderPaid(PDO $pdo, array $order, array $opts = []): array
+  */
+ function onOrderPaidPostCommit(array $order, array $ctx, array $opts = []): void
+ {
+-    if (stifinVoucherProductId() > 0 && empty($ctx['is_booking'])) {
++    if (!stifinVoucherTransferEnabled() && stifinVoucherProductId() > 0 && empty($ctx['is_booking'])) {
+         try {
+             stifinDistributeVouchers(getDB());
+         } catch (Throwable $error) {
+diff --git a/helpers/stifin-promoters.php b/helpers/stifin-promoters.php
+index f0c45bb..a832d78 100644
+--- a/helpers/stifin-promoters.php
++++ b/helpers/stifin-promoters.php
+@@ -17,6 +17,11 @@ function stifinBranchPromoters(string $branchCode): array
+ }
+ 
+ function stifinPromoterApiGet(string $path): string
++{
++    return stifinPromoterApiRequest($path);
++}
++
++function stifinPromoterApiRequest(string $path, ?array $payload = null): string
+ {
+     $baseUrl = rtrim(trim((string) getenv('STIFIN_API_BASE')), '/') ?: 'https://apro.stifin.id/api';
+     $urlParts = parse_url($baseUrl);
+@@ -38,8 +43,7 @@ function stifinPromoterApiGet(string $path): string
+     }
+ 
+     $body = '';
+-    $curl = curl_init($baseUrl . $path);
+-    curl_setopt_array($curl, [
++    $options = [
+         CURLOPT_HTTPHEADER => $headers,
+         CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
+         CURLOPT_FOLLOWLOCATION => false,
+@@ -52,7 +56,14 @@ function stifinPromoterApiGet(string $path): string
+             $body .= $chunk;
+             return strlen($chunk);
+         },
+-    ]);
++    ];
++    if ($payload !== null) {
++        $options[CURLOPT_HTTPHEADER][] = 'Content-Type: application/json; charset=utf-8';
++        $options[CURLOPT_POST] = true;
++        $options[CURLOPT_POSTFIELDS] = json_encode($payload, JSON_THROW_ON_ERROR);
++    }
++    $curl = curl_init($baseUrl . $path);
++    curl_setopt_array($curl, $options);
+     $received = curl_exec($curl);
+     $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+     curl_close($curl);
+diff --git a/helpers/stifin-voucher-transfers.php b/helpers/stifin-voucher-transfers.php
+new file mode 100644
+index 0000000..27e61cd
+--- /dev/null
++++ b/helpers/stifin-voucher-transfers.php
+@@ -0,0 +1,113 @@
++<?php
++
++require_once __DIR__ . '/stifin-promoters.php';
++
++function stifinVoucherTransferEnabled(): bool
++{
++    return getenv('STIFIN_VOUCHER_TRANSFER') === '1';
++}
++
++function stifinVoucherTransferSchema(PDO $db): bool
++{
++    return (bool) $db->query("SHOW COLUMNS FROM stifin_voucher_queue LIKE 'transfer_status'")->fetchColumn();
++}
++
++function stifinVoucherTransferPayload(array $job, array $balance, string $apiUser): array
++{
++    $invoice = (string) $job['order_number'];
++    return [
++        'KodeID' => (string) $job['transfer_promoter'],
++        'Jumlah' => (string) $job['quantity'],
++        'JmlFree' => '0',
++        'SaldoJ' => (string) $balance['voucher'],
++        'SaldoF' => (string) $balance['free'],
++        'Dispos' => $invoice,
++        'Ket' => 'Pembayaran invoice ' . $invoice,
++        'UserID' => $apiUser,
++    ];
++}
++
++function stifinProcessVoucherTransfers(PDO $db): void
++{
++    if (!stifinVoucherTransferEnabled()) {
++        return;
++    }
++    $branch = stifinPromoterBranchCode();
++    $apiUser = trim((string) getenv('STIFIN_API_USER_ID'));
++    if (!preg_match('/\A[A-Z0-9]{2,12}-CAB-[A-Z0-9]{1,8}\z/', $branch)
++        || $branch === 'XXX-CAB-00' || $apiUser === '') {
++        throw new RuntimeException('Konfigurasi cabang dan UserID API STIFIn belum lengkap.');
++    }
++
++    $lock = 'stifin-transfer:' . $branch;
++    $acquire = $db->prepare('SELECT GET_LOCK(?, 0)');
++    $acquire->execute([$lock]);
++    $locked = (int) $acquire->fetchColumn() === 1;
++    $acquire->closeCursor();
++    if (!$locked) {
++        return;
++    }
++
++    try {
++        $jobs = $db->prepare("SELECT q.*, o.order_number FROM stifin_voucher_queue q
++            JOIN orders o ON o.id = q.order_id AND o.user_id = q.user_id
++            WHERE q.transfer_status = 'pending' AND o.status = 'paid'
++            ORDER BY q.transfer_checked_at, q.id LIMIT 5");
++        $jobs->execute();
++        foreach ($jobs->fetchAll(PDO::FETCH_ASSOC) as $job) {
++            stifinProcessVoucherTransfer($db, $job, $branch, $apiUser);
++        }
++    } finally {
++        $release = $db->prepare('SELECT RELEASE_LOCK(?)');
++        $release->execute([$lock]);
++        $release->closeCursor();
++    }
++}
++
++function stifinProcessVoucherTransfer(PDO $db, array $job, string $branch, string $apiUser): void
++{
++    $id = (int) $job['id'];
++    $quantity = stifinVoucherQuantity($job['quantity']);
++    $code = $job['transfer_promoter'];
++    if ($job['transfer_branch'] !== $branch || !$quantity || !$job['order_number']
++        || !$code || $code !== stifinLinkedPromoterCode($db, (int) $job['user_id'])) {
++        $db->prepare("UPDATE stifin_voucher_queue SET transfer_status = 'review',
++            transfer_note = 'Periksa cabang, akun promotor, jumlah, dan nomor invoice sebelum transfer manual.'
++            WHERE id = ? AND transfer_status = 'pending'")->execute([$id]);
++        return;
++    }
++
++    try {
++        $balance = stifinPromoterBalance($code);
++        if ($balance['free'] === null) {
++            throw new RuntimeException('Saldo Free belum tersedia.');
++        }
++    } catch (RuntimeException $error) {
++        $db->prepare("UPDATE stifin_voucher_queue SET transfer_checked_at = NOW(),
++            transfer_note = 'Saldo awal belum dapat dibaca. Akan diperiksa lagi.'
++            WHERE id = ? AND transfer_status = 'pending'")->execute([$id]);
++        return;
++    }
++
++    // Simpan status sebelum POST. Jika proses terputus, periksa mutasi di STIFIn sebelum tindakan manual.
++    $claim = $db->prepare("UPDATE stifin_voucher_queue q
++        JOIN orders o ON o.id = q.order_id AND o.user_id = q.user_id
++        SET q.transfer_status = 'review', q.transfer_note = 'Periksa mutasi STIFIn berdasarkan nomor invoice.'
++        WHERE q.id = ? AND q.transfer_status = 'pending' AND o.status = 'paid'");
++    $claim->execute([$id]);
++    if ($claim->rowCount() !== 1) {
++        return;
++    }
++
++    try {
++        stifinPromoterApiRequest('/voucherPos/editCabVoucher/' . rawurlencode($branch),
++            stifinVoucherTransferPayload($job, $balance, $apiUser));
++        $after = stifinPromoterBalance($code);
++        if ($after['voucher'] === $balance['voucher'] + $quantity && $after['free'] === $balance['free']) {
++            $db->prepare("UPDATE stifin_voucher_queue SET transfer_status = 'sent', transfer_note = NULL,
++                fulfilled_at = NOW() WHERE id = ? AND transfer_status = 'review'")->execute([$id]);
++        }
++    } catch (Throwable $error) {
++        error_log('[stifin-voucher] Hasil transfer perlu diverifikasi di STIFIn untuk antrean #' . $id . '.');
++    }
++}
+diff --git a/helpers/stifin-vouchers.php b/helpers/stifin-vouchers.php
+index cea645f..04ff6ff 100644
+--- a/helpers/stifin-vouchers.php
++++ b/helpers/stifin-vouchers.php
+@@ -27,6 +27,16 @@ function stifinQueuePaidVouchers(PDO $db, int $orderId, int $userId): void
+     if ($quantity <= 0) {
+         return;
+     }
++    if (stifinVoucherTransferEnabled()) {
++        $branch = stifinPromoterBranchCode();
++        $promoter = stifinLinkedPromoterCode($db, $userId);
++        $db->prepare("INSERT INTO stifin_voucher_queue
++            (order_id, user_id, quantity, transfer_branch, transfer_promoter, transfer_status)
++            VALUES (?, ?, ?, ?, ?, 'pending')
++            ON DUPLICATE KEY UPDATE order_id = stifin_voucher_queue.order_id")
++            ->execute([$orderId, $userId, $quantity, $branch, $promoter]);
++        return;
++    }
+     $db->prepare('INSERT INTO stifin_voucher_queue (order_id, user_id, quantity) VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE order_id = stifin_voucher_queue.order_id')->execute([$orderId, $userId, $quantity]);
+ }
+@@ -47,12 +57,13 @@ function stifinDistributeVouchers(PDO $db): void
+     }
+ 
+     try {
++        $localOnly = stifinVoucherTransferSchema($db) ? ' AND q.transfer_status IS NULL' : '';
+         for ($i = 0; $i < 100; $i++) {
+             $db->beginTransaction();
+             try {
+                 $job = $db->query("SELECT q.id, q.quantity, q.order_id, q.user_id FROM stifin_voucher_queue q
+                     JOIN orders o ON o.id = q.order_id AND o.user_id = q.user_id
+-                    WHERE q.fulfilled_at IS NULL AND o.status = 'paid' ORDER BY q.id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
++                    WHERE q.fulfilled_at IS NULL AND o.status = 'paid'{$localOnly} ORDER BY q.id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+                 if (!$job) {
+                     $db->commit();
+                     break;
+diff --git a/migrations/stifin-voucher-transfers.sql b/migrations/stifin-voucher-transfers.sql
+new file mode 100644
+index 0000000..5661559
+--- /dev/null
++++ b/migrations/stifin-voucher-transfers.sql
+@@ -0,0 +1,7 @@
++ALTER TABLE stifin_voucher_queue
++    ADD COLUMN IF NOT EXISTS transfer_branch VARCHAR(32) NULL,
++    ADD COLUMN IF NOT EXISTS transfer_promoter VARCHAR(80) NULL,
++    ADD COLUMN IF NOT EXISTS transfer_status ENUM('pending', 'review', 'sent') NULL,
++    ADD COLUMN IF NOT EXISTS transfer_note VARCHAR(255) NULL,
++    ADD COLUMN IF NOT EXISTS transfer_checked_at DATETIME NULL,
++    ADD INDEX IF NOT EXISTS stifin_transfer_pending (transfer_status, id);
+diff --git a/pages/admin/stifin-vouchers.php b/pages/admin/stifin-vouchers.php
+index 1987e31..e7fe1ac 100644
+--- a/pages/admin/stifin-vouchers.php
++++ b/pages/admin/stifin-vouchers.php
+@@ -7,6 +7,8 @@ $productId = stifinVoucherProductId();
+ $stock = $assigned = $pending = null;
+ $product = false;
+ $ready = false;
++$transfers = [];
++$transferSchema = false;
+ try {
+     if ($productId > 0) {
+         $db = getDB();
+@@ -15,9 +17,17 @@ try {
+         $product = $stmt->fetchColumn();
+         $stock = $db->query('SELECT COUNT(*) FROM stifin_voucher_stock WHERE queue_id IS NULL')->fetchColumn();
+         $assigned = $db->query('SELECT COUNT(*) FROM stifin_voucher_stock WHERE queue_id IS NOT NULL')->fetchColumn();
++        $transferSchema = stifinVoucherTransferSchema($db);
++        $localOnly = $transferSchema ? ' AND q.transfer_status IS NULL' : '';
+         $pending = $db->query("SELECT COUNT(*) FROM stifin_voucher_queue q
+             JOIN orders o ON o.id = q.order_id AND o.user_id = q.user_id
+-            WHERE q.fulfilled_at IS NULL AND o.status = 'paid'")->fetchColumn();
++            WHERE q.fulfilled_at IS NULL AND o.status = 'paid'{$localOnly}")->fetchColumn();
++        if ($transferSchema) {
++            $transfers = $db->query("SELECT o.order_number, q.transfer_promoter, q.quantity, q.transfer_status, q.transfer_note
++                FROM stifin_voucher_queue q JOIN orders o ON o.id = q.order_id
++                WHERE q.transfer_status IS NOT NULL
++                ORDER BY (q.transfer_status = 'review') DESC, q.id DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC);
++        }
+         $ready = $product !== false;
+     }
+ } catch (Throwable $error) {
+@@ -56,6 +66,37 @@ include __DIR__ . '/../../partials/head.php';
+             <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
+             <button class="px-4 py-2 border rounded-lg" name="action" value="distribute" type="submit">Periksa antrean dan distribusikan</button>
+           </form>
++          <?php if ($transfers || stifinVoucherTransferEnabled()): ?>
++            <section class="bg-white dark:bg-gray-900 border rounded-xl p-5 space-y-3">
++              <h2 class="font-semibold">Transfer ke saldo STIFIn</h2>
++              <?php if (!$transferSchema): ?>
++                <p role="alert">Pasang migrasi transfer voucher sebelum memproses pesanan.</p>
++              <?php elseif (stifinVoucherTransferEnabled()): ?>
++                <form method="post" action="<?= e(APP_URL) ?>/actions/admin/stifin-vouchers">
++                  <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
++                  <button class="px-4 py-2 border rounded-lg" name="action" value="transfer" type="submit">Proses transfer tertunda</button>
++                </form>
++              <?php endif; ?>
++              <?php if ($transfers): ?>
++                <div class="overflow-x-auto">
++                  <table class="w-full text-left text-sm">
++                    <thead><tr><th>Invoice</th><th>Promotor</th><th>Jumlah</th><th>Status</th><th>Keterangan</th></tr></thead>
++                    <tbody>
++                    <?php foreach ($transfers as $transfer): ?>
++                      <tr class="border-t">
++                        <td class="py-2"><?= e($transfer['order_number']) ?></td>
++                        <td><?= e($transfer['transfer_promoter'] ?? '—') ?></td>
++                        <td><?= (int) $transfer['quantity'] ?></td>
++                        <td><?= e(['pending' => 'Menunggu', 'review' => 'Perlu dicek', 'sent' => 'Terkirim'][$transfer['transfer_status']]) ?></td>
++                        <td><?= e($transfer['transfer_note'] ?? '') ?></td>
++                      </tr>
++                    <?php endforeach; ?>
++                    </tbody>
++                  </table>
++                </div>
++              <?php endif; ?>
++            </section>
++          <?php endif; ?>
+         <?php endif; ?>
+       </div>
+     </main>
+diff --git a/pages/public/checkout.php b/pages/public/checkout.php
+index 97b7af3..382a439 100644
+--- a/pages/public/checkout.php
++++ b/pages/public/checkout.php
+@@ -35,6 +35,10 @@ if ($isVoucher && !$voucherQuantity) {
+     flash('error', 'Masukkan jumlah voucher antara 1 dan 1.000.', 'error');
+     redirect('/checkout?product_id=' . $productId);
+ }
++if ($isVoucher && stifinVoucherTransferEnabled() && stifinLinkedPromoterCode(getDB(), (int) $_SESSION['user_id']) === null) {
++    flash('error', 'Hubungi admin untuk menautkan akun promotor STIFIn sebelum membeli voucher.', 'error');
++    redirect('/member/voucher-tes');
++}
+ if ($isVoucher) {
+     $product['setup_fee'] = 0;
+     $product['dime_enabled'] = 0;
+diff --git a/pages/user/stifin-vouchers.php b/pages/user/stifin-vouchers.php
+index 6765421..8066a5b 100644
+--- a/pages/user/stifin-vouchers.php
++++ b/pages/user/stifin-vouchers.php
+@@ -28,7 +28,8 @@ try {
+             WHERE p.id = ? AND p.status = 'active' AND c.is_active = 1");
+         $landing->execute([$productId]);
+         $voucherLanding = $landing->fetchColumn() ?: null;
+-        $stmt = getDB()->prepare("SELECT o.order_number, q.quantity, q.fulfilled_at, s.code
++        $transferStatus = stifinVoucherTransferSchema(getDB()) ? 'q.transfer_status' : 'NULL AS transfer_status';
++        $stmt = getDB()->prepare("SELECT o.order_number, q.quantity, q.fulfilled_at, s.code, {$transferStatus}
+             FROM stifin_voucher_queue q
+             JOIN orders o ON o.id = q.order_id AND o.user_id = q.user_id
+             LEFT JOIN stifin_voucher_stock s ON s.queue_id = q.id
+@@ -37,6 +38,7 @@ try {
+         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+             $number = $row['order_number'];
+             $orders[$number]['quantity'] = $row['quantity'];
++            $orders[$number]['transfer_status'] = $row['transfer_status'];
+             $orders[$number]['codes'] ??= [];
+             if ($row['fulfilled_at'] !== null && $row['code'] !== null) {
+                 $orders[$number]['codes'][] = $row['code'];
+@@ -58,7 +60,7 @@ include __DIR__ . '/../../partials/head.php';
+       <div class="max-w-4xl space-y-4">
+         <div class="p-5 rounded-xl bg-gray-900 text-white">
+           <h1 class="text-2xl font-bold">Voucher Tes STIFIn</h1>
+-          <p class="mt-2">Cek saldo STIFIn dan lihat kode voucher dari pesanan yang sudah lunas.</p>
++          <p class="mt-2">Cek saldo STIFIn dan status voucher dari pesanan yang sudah lunas.</p>
+         </div>
+         <?php if ($promoterCode !== null): ?>
+           <section class="p-5 rounded-xl bg-white dark:bg-gray-900 border">
+@@ -72,7 +74,7 @@ include __DIR__ . '/../../partials/head.php';
+             <a class="inline-block mt-3 underline" href="<?= e(APP_URL) ?>/member/voucher-tes?cek_saldo=1">Cek saldo</a>
+           </section>
+         <?php endif; ?>
+-        <?php if ($voucherLanding !== null): ?>
++        <?php if ($voucherLanding !== null && (!stifinVoucherTransferEnabled() || $promoterCode !== null)): ?>
+           <a class="inline-block rounded-lg px-4 py-2 text-white" style="background-color:var(--brand-color,#123d30)"
+              href="<?= e(rtrim(APP_URL, '/') . '/' . rawurlencode($voucherLanding) . '/') ?>">Beli voucher</a>
+         <?php endif; ?>
+@@ -86,7 +88,13 @@ include __DIR__ . '/../../partials/head.php';
+           <section class="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white">
+             <h2 class="font-semibold">Pesanan <?= e((string) $number) ?></h2>
+             <p class="mt-1"><?= (int) $order['quantity'] ?> voucher</p>
+-            <?php if (!$order['codes']): ?>
++            <?php if ($order['transfer_status'] === 'sent'): ?>
++              <p class="mt-2">Voucher sudah masuk ke saldo STIFIn.</p>
++            <?php elseif ($order['transfer_status'] === 'review'): ?>
++              <p class="mt-2">Lunas · Transfer voucher sedang diperiksa.</p>
++            <?php elseif ($order['transfer_status'] === 'pending'): ?>
++              <p class="mt-2">Lunas · Menunggu transfer ke saldo STIFIn.</p>
++            <?php elseif (!$order['codes']): ?>
+               <p class="mt-2">Lunas · Menunggu alokasi voucher.</p>
+             <?php else: ?>
+               <ul class="mt-3 space-y-2">
+diff --git a/scripts/setup-stifin-voucher.php b/scripts/setup-stifin-voucher.php
+index 03a2b0f..bc4409b 100644
+--- a/scripts/setup-stifin-voucher.php
++++ b/scripts/setup-stifin-voucher.php
+@@ -9,9 +9,11 @@ require __DIR__ . '/../db.php';
+ require __DIR__ . '/../helpers/landing-builder.php';
+ 
+ $pdo = getDB();
+-foreach (explode(';', file_get_contents(__DIR__ . '/../migrations/stifin-vouchers.sql')) as $statement) {
+-    if (trim($statement) !== '') {
+-        $pdo->exec($statement);
++foreach (['stifin-vouchers.sql', 'stifin-voucher-transfers.sql'] as $migration) {
++    foreach (explode(';', file_get_contents(__DIR__ . '/../migrations/' . $migration)) as $statement) {
++        if (trim($statement) !== '') {
++            $pdo->exec($statement);
++        }
+     }
+ }
+ 
+-- 
+2.56.1
+

@@ -1,0 +1,17 @@
+.mulia h1 {font-family:Georgia,'Times New Roman',serif;letter-spacing:-.035em;text-wrap:balance;overflow-wrap:break-word}
+.mulia :is(a,button,input,textarea,select):focus-visible {outline:3px solid #078277;outline-offset:3px}
+.mulia .hero-soft {background:linear-gradient(120deg,#fdfaf2,#e4f2ec);border:1px solid #cedbd2}
+.dark .mulia .hero-soft {background:linear-gradient(120deg,#172824,#152224);border-color:#39524b}
+.mulia .hero-soft h1 {max-width:21ch;margin-inline:auto;font-size:clamp(2.3rem,5vw,4.15rem);line-height:1.04}
+.mulia-detail h1,.mulia-sales .sp-info h1 {font-size:clamp(1.9rem,4vw,3.2rem)!important;line-height:1.08!important}
+.mulia-detail .shadow-md,.mulia-detail .bg-white.shadow-sm,.mulia .sp-media,.mulia .sp-card {border-radius:1.1rem;box-shadow:0 14px 36px -25px #19392f70}
+.mulia-sales,.mulia-lead,.mulia-access {background:#f6f5ef;background-image:linear-gradient(150deg,#e5eee7,transparent 32rem)}
+.mulia-sales .sp-hero {padding:clamp(1rem,3vw,2.5rem);background:white;border:1px solid #d5dfd8;border-radius:1.4rem}
+.mulia-sales .sp-btn {min-height:44px;border-radius:.8rem}
+.mulia .sp-card {padding:clamp(1.25rem,3vw,2rem)}
+.mulia .sp-h2 {font-family:Georgia,serif;font-size:1.45rem}
+.mulia-lead .max-w-sm {max-width:32rem}
+.mulia-lead .shadow-lg {padding:clamp(1.25rem,4vw,2rem);border-radius:1.35rem}
+.mulia-lead h1 {font-size:1.55rem;line-height:1.16}
+.mulia-access .max-w-2xl > .mb-6 {border-bottom:1px solid #c5d5cc;padding-bottom:1.2rem}
+.mulia-access .max-w-2xl h1 {font-size:clamp(1.65rem,4vw,2.45rem)}

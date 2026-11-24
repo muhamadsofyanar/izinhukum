@@ -1,0 +1,590 @@
+diff --git a/actions/checkout/process.php b/actions/checkout/process.php
+index 4107153..04ded59 100644
+--- a/actions/checkout/process.php
++++ b/actions/checkout/process.php
+@@ -83,12 +83,24 @@ try {
+         redirect('/products');
+     }
+ 
++    $isVoucher = ($product['slug'] ?? '') === 'voucher-tes-stifin';
++    $quantity = $isVoucher ? stifinVoucherQuantity($_POST['voucher_quantity'] ?? null) : 1;
++    if ($isVoucher && ($productId !== stifinVoucherProductId() || !$quantity || !empty($_SESSION['impersonating']))) {
++        $message = 'Pembelian voucher tidak tersedia atau jumlah di luar rentang 1–1.000.';
++        if ($isGatewayFlow) {
++            echo json_encode(['error' => $message]);
++            exit;
++        }
++        flash('error', $message, 'error');
++        redirect('/checkout?product_id=' . $productId);
++    }
++
+     // Cek akses ganda — HANYA blokir produk SEKALI-BAYAR. Produk BERLANGGANAN
+     // (access_duration_days !== null) boleh order lagi meski masa aktif belum habis =
+     // PERPANJANGAN (activateAccess menumpuk masa aktif dari tanggal habis, bukan reset).
+     // Konsisten dgn halaman checkout.php yang sudah menampilkan UI perpanjangan — dulu
+     // guard ini menolaknya sehingga tombol "Perpanjang" berujung "sudah memiliki akses".
+-    if ($product['access_duration_days'] === null && hasAccess($userId, $productId)) {
++    if (!$isVoucher && $product['access_duration_days'] === null && hasAccess($userId, $productId)) {
+         if ($isGatewayFlow) {
+             echo json_encode(['error' => 'Kamu sudah memiliki akses ke produk ini.']);
+             exit;
+@@ -107,7 +119,7 @@ try {
+     $price    = (float) $product['price'];
+ 
+     // ─── Bayar Fleksibel: nominal ditentukan pembeli — VALIDASI SERVER-SIDE WAJIB ──
+-    $isFlexible = ($product['pricing_type'] ?? 'fixed') === 'flexible';
++    $isFlexible = !$isVoucher && ($product['pricing_type'] ?? 'fixed') === 'flexible';
+     if ($isFlexible) {
+         $flexFloor = max((float) ($product['flexible_min'] ?? 0), 1); // Fase 1: nominal > 0
+         $flexAmt   = (float) preg_replace('/[^0-9]/', '', (string) ($_POST['flexible_amount'] ?? '0')); // digit saja (rupiah bulat)
+@@ -124,17 +136,17 @@ try {
+ 
+     // ─── Dime Sale: pakai harga TERKUNCI saat checkout dibuka (pembeli bayar yang dilihat).
+     // Fallback hitung ulang bila kunci hilang/kedaluwarsa. Dime eksklusif dgn flexible.
+-    if (!$isFlexible && !empty($product['dime_enabled'])) {
++    if (!$isVoucher && !$isFlexible && !empty($product['dime_enabled'])) {
+         $locked = dimeLockedPrice($productId);
+         $price  = $locked !== null ? $locked : dimeEffectivePrice($product);
+     }
+ 
+-    $subtotal = $price;
++    $subtotal = $price * $quantity;
+     $discount = 0.0;
+     // Biaya awal (setup fee) — hanya dibebankan pada pembelian PERTAMA produk ini
+     // (0 untuk perpanjangan; user sampai di sini berarti hasAccess sudah false).
+     // Produk fleksibel: setup fee tidak berlaku.
+-    $setupFee = $isFlexible ? 0.0 : productSetupFee($product, $userId);
++    $setupFee = ($isVoucher || $isFlexible) ? 0.0 : productSetupFee($product, $userId);
+     $isFree   = ($price + $setupFee) <= 0;
+ 
+     // ─── GUARD KEAMANAN: produk tanpa harga TIDAK boleh di-checkout gratis ─────
+@@ -153,7 +165,7 @@ try {
+     // order settlement (dibuat otomatis saat DP paid). Tanpa kupon & tanpa bump.
+     $isBooking  = false;
+     $bookingFee = 0.0;
+-    if (($_POST['payment_mode'] ?? 'full') === 'booking') {
++    if (!$isVoucher && ($_POST['payment_mode'] ?? 'full') === 'booking') {
+         $bookingFee = (float) ($product['booking_fee'] ?? 0);
+         if ((int) ($product['booking_enabled'] ?? 0) === 1
+             && $bookingFee > 0 && $bookingFee < ($price + $setupFee)) {
+@@ -182,7 +194,7 @@ try {
+     $couponCode = null;
+     $couponDiscount = 0.0;
+ 
+-    if (!$isFree && !$isBooking && !$isFlexible) {
++    if (!$isVoucher && !$isFree && !$isBooking && !$isFlexible) {
+         $rawCouponId  = (int) ($_POST['coupon_id'] ?? 0);
+         if ($rawCouponId > 0) {
+             $cStmt = $pdo->prepare(
+@@ -241,7 +253,7 @@ try {
+     // tertutup — lihat guard checkout Rp0 di atas).
+     $pointsUsed     = 0;
+     $pointsDiscount = 0.0;
+-    if (($_POST['use_points'] ?? '') === '1'
++    if (!$isVoucher && ($_POST['use_points'] ?? '') === '1'
+         && function_exists('pointsEnabled') && pointsEnabled()
+         && !$isFree && !$isBooking && !$isFlexible) {
+         try {
+@@ -350,12 +362,12 @@ try {
+     // INSERT order item — snapshot nama produk saat transaksi
+     $stmt = $pdo->prepare(
+         'INSERT INTO order_items (order_id, product_id, product_name, price, quantity)
+-         VALUES (?, ?, ?, ?, 1)'
++         VALUES (?, ?, ?, ?, ?)'
+     );
+     $stmt->execute([
+         $orderId, $productId,
+         $product['name'] . ($isBooking ? ' — Booking Fee' : ''),
+-        $isBooking ? $bookingFee : $price,
++        $isBooking ? $bookingFee : $price, $quantity,
+     ]);
+ 
+     // ─── Process Order Bumps (server-side re-validation) ─────
+@@ -365,7 +377,7 @@ try {
+     $bumpRes             = orderProcessBumps(
+         $pdo, $orderId, $productId, $userId,
+         (array) ($_POST['bump_ids'] ?? []),
+-        ($isBooking || $isFlexible || $isFree)
++        ($isVoucher || $isBooking || $isFlexible || $isFree)
+     );
+     $validBumpProductIds = $bumpRes['ids'];
+     $bumpTotal           = $bumpRes['total'];
+@@ -378,7 +390,7 @@ try {
+         $pdo, $orderId, $productId, $userId,
+         (array) ($_POST['flash_bonus_ids'] ?? []),
+         $validBumpProductIds,
+-        ($isBooking || $isFlexible)
++        ($isVoucher || $isBooking || $isFlexible)
+     );
+ 
+     $finalTotal = $total + $bumpTotal;
+diff --git a/actions/public/submit-public-checkout.php b/actions/public/submit-public-checkout.php
+index a153c9c..710eab8 100644
+--- a/actions/public/submit-public-checkout.php
++++ b/actions/public/submit-public-checkout.php
+@@ -104,7 +104,7 @@ try {
+     $stmt->execute([$productId]);
+     $product = $stmt->fetch();
+     $allowGuestSupport = $product && ($product['pricing_type'] ?? '') === 'flexible' && (int) ($product['show_on_support'] ?? 0) === 1;
+-    if (!$product || (($product['checkout_mode'] ?? 'login') !== 'public' && !$allowGuestSupport)) {
++    if (!$product || ($product['slug'] ?? '') === 'voucher-tes-stifin' || (($product['checkout_mode'] ?? 'login') !== 'public' && !$allowGuestSupport)) {
+         flash('public_checkout_error', 'Produk tidak ditemukan atau tidak tersedia.', 'error');
+         redirect('/products');
+     }
+diff --git a/checkout_templates/_partials/bump-offers.php b/checkout_templates/_partials/bump-offers.php
+index ae75735..c84f93a 100644
+--- a/checkout_templates/_partials/bump-offers.php
++++ b/checkout_templates/_partials/bump-offers.php
+@@ -1,4 +1,5 @@
+ <?php
++if (!empty($isVoucher)) return;
+ // Variables: $bumpOffers (array)
+ if (empty($bumpOffers)) return;
+ ?>
+diff --git a/checkout_templates/_partials/flash-bonus.php b/checkout_templates/_partials/flash-bonus.php
+index 56dfb00..a8afdfb 100644
+--- a/checkout_templates/_partials/flash-bonus.php
++++ b/checkout_templates/_partials/flash-bonus.php
+@@ -1,4 +1,5 @@
+ <?php
++if (!empty($isVoucher)) return;
+ // ═══ BONUS KILAT — bonus produk premium GRATIS berbatas waktu ═══
+ // Variables dari checkout.php:
+ //   $fbOffers    (array)  daftar bonus aktif (bonus_product_id, headline, description,
+diff --git a/checkout_templates/_partials/points-redeem.php b/checkout_templates/_partials/points-redeem.php
+index 47b0256..7bbaaeb 100644
+--- a/checkout_templates/_partials/points-redeem.php
++++ b/checkout_templates/_partials/points-redeem.php
+@@ -1,4 +1,5 @@
+ <?php
++if (!empty($isVoucher)) return;
+ // ─── Tukar Poin Reward jadi potongan (checkout LOGIN saja) ───────────────
+ // Variabel yang dipakai: $product, $isFree, $isFlexible.
+ // Angka di sini hanya PRATINJAU — server menghitung ulang dari saldo terkunci
+diff --git a/helpers/landing-builder.php b/helpers/landing-builder.php
+index 3cf5fe0..771c4be 100644
+--- a/helpers/landing-builder.php
++++ b/helpers/landing-builder.php
+@@ -604,7 +604,7 @@ function avLbRenderPage(array $page): string
+     $blocks = $env['blocks'];
+ 
+     $examLanding = ($page['page_type'] ?? '') === 'product_landing'
+-        && in_array($page['slug'] ?? '', ['ujian-wsl-1', 'ujian-wsl-2', 'ujian-wst-health', 'ujian-wst-learning', 'ujian-wst-tahfizh'], true);
++        && in_array($page['slug'] ?? '', ['ujian-wsl-1', 'ujian-wsl-2', 'ujian-wst-health', 'ujian-wst-learning', 'ujian-wst-tahfizh', 'beli-voucher-stifin'], true);
+     if ($examLanding) {
+         $sampleFeatures = avLbRegistry()['pricing']['defaults']['features'];
+         foreach ($blocks as &$block) {
+diff --git a/helpers/stifin-promoters.php b/helpers/stifin-promoters.php
+index cd12efa..fce9c89 100644
+--- a/helpers/stifin-promoters.php
++++ b/helpers/stifin-promoters.php
+@@ -207,3 +207,45 @@ function stifinPromoterImport(PDO $pdo, string $branch, array $promoters, array
+     }
+     return $result;
+ }
++
++function stifinLinkedPromoterCode(PDO $pdo, int $userId): ?string
++{
++    $branch = stifinPromoterBranchCode();
++    if ($userId <= 0 || $branch === '') {
++        return null;
++    }
++    try {
++        $stmt = $pdo->prepare("SELECT a.promoter_code FROM stifin_promoter_accounts a
++            JOIN users u ON u.id = a.user_id AND u.status = 'active' AND u.role = 'user'
++            WHERE a.user_id = ? AND a.branch_code = ?");
++        $stmt->execute([$userId, $branch]);
++        $code = $stmt->fetchColumn();
++        return $code === false ? null : (string) $code;
++    } catch (PDOException $error) {
++        error_log('STIFIn promoter mapping unavailable: ' . $error->getCode());
++        return null;
++    }
++}
++
++function stifinLinkExistingPromoter(PDO $pdo, string $branch, array $promoters, string $code): bool
++{
++    $row = array_column($promoters, null, 'code')[$code] ?? null;
++    $email = $row['email'] ?? '';
++    $emailCounts = array_count_values(array_column($promoters, 'email'));
++    if (($row['active'] ?? null) !== true || !filter_var($email, FILTER_VALIDATE_EMAIL)
++        || ($emailCounts[$email] ?? 0) !== 1) {
++        return false;
++    }
++
++    $stmt = $pdo->prepare("INSERT INTO stifin_promoter_accounts (branch_code, promoter_code, user_id)
++        SELECT ?, ?, id FROM users WHERE email = ? AND role = 'user' AND status = 'active'");
++    try {
++        $stmt->execute([$branch, $code, $email]);
++        return $stmt->rowCount() === 1;
++    } catch (PDOException $error) {
++        if ((int) ($error->errorInfo[1] ?? 0) === 1062) {
++            return false;
++        }
++        throw $error;
++    }
++}
+diff --git a/helpers/stifin-vouchers.php b/helpers/stifin-vouchers.php
+index e60a684..cea645f 100644
+--- a/helpers/stifin-vouchers.php
++++ b/helpers/stifin-vouchers.php
+@@ -2,7 +2,16 @@
+ 
+ function stifinVoucherProductId(): int
+ {
+-    return max(0, (int) getenv('STIFIN_VOUCHER_PRODUCT_ID'));
++    $configured = (int) getenv('STIFIN_VOUCHER_PRODUCT_ID');
++    return $configured > 0 ? $configured : max(0, (int) getSetting('stifin_voucher_product_id', '0'));
++}
++
++function stifinVoucherQuantity(mixed $value): int
++{
++    if (!is_string($value) && !is_int($value)) {
++        return 0;
++    }
++    return (int) filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 1000]]);
+ }
+ 
+ function stifinQueuePaidVouchers(PDO $db, int $orderId, int $userId): void
+diff --git a/pages/admin/stifin-promoters.php b/pages/admin/stifin-promoters.php
+index 372e6af..e2e0c12 100644
+--- a/pages/admin/stifin-promoters.php
++++ b/pages/admin/stifin-promoters.php
+@@ -27,6 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $directoryError === '') {
+             }
+             $balance = stifinPromoterBalance($code);
+             $message = $code . ' · Voucher ' . $balance['voucher'] . ' · Free ' . ($balance['free'] ?? '—');
++        } elseif (isset($_POST['link']) && is_string($_POST['link'])) {
++            $linked = stifinLinkExistingPromoter(getDB(), $branchCode, $promoters, $_POST['link']);
++            $message = $linked
++                ? 'Akun lokal berhasil ditautkan. Saldo STIFIn tersedia di menu Voucher Tes.'
++                : 'Akun tidak dapat ditautkan. Periksa apakah email unik, akun anggota aktif, dan kode belum terhubung.';
+         } elseif (isset($_POST['import'])) {
+             $codes = is_array($_POST['codes'] ?? null) ? $_POST['codes'] : [];
+             if (!$codes) {
+@@ -83,6 +88,7 @@ include __DIR__ . '/../../partials/head.php';
+                   <th scope="col" class="p-3">Status di STIFIn</th>
+                   <th scope="col" class="p-3">Email</th>
+                   <th scope="col" class="p-3">Voucher</th>
++                  <th scope="col" class="p-3">Akun lokal</th>
+                 </tr>
+               </thead>
+               <tbody>
+@@ -100,6 +106,13 @@ include __DIR__ . '/../../partials/head.php';
+                     <td class="p-3"><?= $promoter['active'] === null ? '—' : ($promoter['active'] ? 'Aktif' : 'Nonaktif') ?></td>
+                     <td class="p-3"><?= e($promoter['email'] ?: '—') ?></td>
+                     <td class="p-3"><button class="rounded-lg border px-3 py-1.5 font-medium whitespace-nowrap" type="submit" name="balance" value="<?= e($promoter['code']) ?>">Cek saldo</button></td>
++                    <td class="p-3">
++                      <?php if ($promoter['active'] === true && filter_var($promoter['email'], FILTER_VALIDATE_EMAIL)): ?>
++                        <button class="rounded-lg border px-3 py-1.5 whitespace-nowrap" type="submit" name="link"
++                                value="<?= e($promoter['code']) ?>"
++                                onclick="return confirm('Tautkan promotor ini ke akun anggota aktif dengan email yang sama?')">Tautkan akun</button>
++                      <?php endif; ?>
++                    </td>
+                   </tr>
+                 <?php endforeach; ?>
+               </tbody>
+diff --git a/pages/public/checkout.php b/pages/public/checkout.php
+index 65eeac3..97b7af3 100644
+--- a/pages/public/checkout.php
++++ b/pages/public/checkout.php
+@@ -25,6 +25,25 @@ if (!$product) {
+     redirect('/products');
+ }
+ 
++$isVoucher = ($product['slug'] ?? '') === 'voucher-tes-stifin';
++$voucherQuantity = $isVoucher ? stifinVoucherQuantity($_GET['jumlah'] ?? '1') : 1;
++if ($isVoucher && $productId !== stifinVoucherProductId()) {
++    flash('error', 'Pembelian voucher belum tersedia.', 'error');
++    redirect('/products');
++}
++if ($isVoucher && !$voucherQuantity) {
++    flash('error', 'Masukkan jumlah voucher antara 1 dan 1.000.', 'error');
++    redirect('/checkout?product_id=' . $productId);
++}
++if ($isVoucher) {
++    $product['setup_fee'] = 0;
++    $product['dime_enabled'] = 0;
++    $product['booking_enabled'] = 0;
++    $product['pricing_type'] = 'fixed';
++    $product['original_price'] = 0;
++    $product['show_coupon'] = 0;
++}
++
+ // GUARD: produk tanpa harga (price<=0, non-flexible) tak boleh di-checkout — cegah akses
+ // gratis produk berbayar (placeholder migrasi / salah konfig). Selaras guard process.php.
+ if (orderProductNotSellableFree($product)) {
+@@ -40,7 +59,7 @@ if (orderProductNotSellableFree($product)) {
+ // setelah akses telanjur mati. Produk sekali-bayar tetap ditolak (beli 2x sia-sia).
+ $isRenewal       = false;
+ $renewCurrentExp = null;
+-if (hasAccess((int) $_SESSION['user_id'], $productId)) {
++if (!$isVoucher && hasAccess((int) $_SESSION['user_id'], $productId)) {
+     if ($product['access_duration_days'] !== null) {
+         $isRenewal = true;
+         try {
+@@ -150,7 +169,7 @@ $manualTransferAvailable = $manualTransferEnabled && (count($bankAccounts) > 0 |
+ $pageTitle   = 'Checkout — ' . $product['name'];
+ $topbarTitle = 'Checkout';
+ 
+-$price     = (float) $product['price'];
++$price     = (float) $product['price'] * $voucherQuantity;
+ $origPrice = (float) $product['original_price'];
+ $discount  = ($origPrice > $price) ? ($origPrice - $price) : 0.0;
+ // Biaya awal (setup fee) — hanya pembelian pertama (user sudah lolos hasAccess di atas).
+@@ -376,6 +395,19 @@ generateCSRF();
+       </div>
+       <?php endif; ?>
+ 
++      <?php if ($isVoucher): ?>
++        <form method="get" action="<?= e(APP_URL) ?>/checkout" class="mb-4 rounded-xl border bg-white dark:bg-gray-900 p-4">
++          <input type="hidden" name="product_id" value="<?= $productId ?>">
++          <label for="voucher-quantity" class="font-semibold">Jumlah voucher</label>
++          <div class="mt-2 flex flex-wrap items-center gap-3">
++            <input id="voucher-quantity" class="rounded-lg border px-3 py-2" type="number" name="jumlah"
++                   min="1" max="1000" step="1" value="<?= $voucherQuantity ?>" required>
++            <button type="submit" class="rounded-lg border px-3 py-2 font-semibold">Perbarui jumlah</button>
++          </div>
++          <p class="mt-2 text-sm"><?= $voucherQuantity ?> voucher × <?= e(formatRupiah((float) $product['price'])) ?></p>
++        </form>
++        <input type="hidden" name="voucher_quantity" form="checkout-form" value="<?= $voucherQuantity ?>">
++      <?php endif; ?>
+       <?php include $_tplFile; ?>
+ 
+       <div class="max-w-5xl mx-auto">
+@@ -387,7 +419,7 @@ generateCSRF();
+ </div>
+ <script>
+ (function () {
+-    var basePrice    = <?= (float) $product['price'] ?>;
++    var basePrice    = <?= $isVoucher ? $price : (float) $product['price'] ?>;
+     var appliedCode  = '';
+     var couponDisc   = 0;  // live coupon discount amount
+ 
+@@ -644,7 +676,7 @@ generateCSRF();
+ 
+ // ── Bump Offers JS ────────────────────────────────────────────
+ (function () {
+-    var basePrice    = <?= (float) $product['price'] ?>;
++    var basePrice    = <?= $isVoucher ? $price : (float) $product['price'] ?>;
+     var setupFee     = <?= (float) $setupFee ?>;  // biaya awal (pembelian pertama), tak didiskon kupon
+     var totalEl      = document.getElementById('order-total-display');
+     var bumpRow      = document.getElementById('bump-summary-row');
+@@ -696,7 +728,7 @@ generateCSRF();
+ 
+ <?php
+ require_once __DIR__ . '/../../tracking/PixelHelper.php';
+-$ckPrice = (float) ($product['price'] ?? 0);
++$ckPrice = $isVoucher ? $price : (float) ($product['price'] ?? 0);
+ if (PixelHelper::metaFullFunnelEnabled() && !isAdminOrStaff()) {
+     // Corong penuh: event browser + CAPI ber-eventID stabil → Meta men-dedup.
+     // (sinkron dgn checkout_click di atas; admin dikecualikan sama seperti funnel)
+diff --git a/pages/public/public-checkout.php b/pages/public/public-checkout.php
+index d8242bf..5267d58 100644
+--- a/pages/public/public-checkout.php
++++ b/pages/public/public-checkout.php
+@@ -65,7 +65,7 @@ $isPreview = isset($_GET['preview']) && $_GET['preview'] === '1'
+ $allowGuestSupport = ($product['pricing_type'] ?? '') === 'flexible' && (int) ($product['show_on_support'] ?? 0) === 1;
+ 
+ // Produk bukan mode publik (dan bukan produk Dukung) → selalu checkout login biasa.
+-if (($product['checkout_mode'] ?? 'login') !== 'public' && !$allowGuestSupport) {
++if (($product['slug'] ?? '') === 'voucher-tes-stifin' || (($product['checkout_mode'] ?? 'login') !== 'public' && !$allowGuestSupport)) {
+     if ($EMBED) { http_response_code(404); echo 'Form embed tidak aktif untuk produk ini.'; exit; }
+     redirect('/checkout?product_id=' . (int) $product['id']);
+ }
+diff --git a/pages/user/stifin-vouchers.php b/pages/user/stifin-vouchers.php
+index 1fc754a..6765421 100644
+--- a/pages/user/stifin-vouchers.php
++++ b/pages/user/stifin-vouchers.php
+@@ -1,27 +1,46 @@
+ <?php
+ require_once __DIR__ . '/../../bootstrap.php';
+ requireLogin();
++require_once __DIR__ . '/../../helpers/stifin-promoters.php';
+ header('Cache-Control: no-store');
+ 
+-if (stifinVoucherProductId() === 0) {
++$productId = stifinVoucherProductId();
++$promoterCode = stifinLinkedPromoterCode(getDB(), (int) $_SESSION['user_id']);
++if ($productId === 0 && $promoterCode === null) {
+     redirect('/dashboard');
+ }
+ $pageTitle = $topbarTitle = 'Voucher Tes';
+ $orders = [];
+ $unavailable = false;
++$balance = null;
++$balanceError = false;
++$voucherLanding = null;
++if ($promoterCode !== null && ($_GET['cek_saldo'] ?? '') === '1') {
++    try {
++        $balance = stifinPromoterBalance($promoterCode);
++    } catch (RuntimeException $error) {
++        $balanceError = true;
++    }
++}
+ try {
+-    $stmt = getDB()->prepare("SELECT o.order_number, q.quantity, q.fulfilled_at, s.code
+-        FROM stifin_voucher_queue q
+-        JOIN orders o ON o.id = q.order_id AND o.user_id = q.user_id
+-        LEFT JOIN stifin_voucher_stock s ON s.queue_id = q.id
+-        WHERE q.user_id = ? AND o.status = 'paid' ORDER BY q.id DESC, s.id");
+-    $stmt->execute([(int) $_SESSION['user_id']]);
+-    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+-        $number = $row['order_number'];
+-        $orders[$number]['quantity'] = $row['quantity'];
+-        $orders[$number]['codes'] ??= [];
+-        if ($row['fulfilled_at'] !== null && $row['code'] !== null) {
+-            $orders[$number]['codes'][] = $row['code'];
++    if ($productId > 0) {
++        $landing = getDB()->prepare("SELECT c.slug FROM products p JOIN canvas_pages c ON c.id = p.canvas_id
++            WHERE p.id = ? AND p.status = 'active' AND c.is_active = 1");
++        $landing->execute([$productId]);
++        $voucherLanding = $landing->fetchColumn() ?: null;
++        $stmt = getDB()->prepare("SELECT o.order_number, q.quantity, q.fulfilled_at, s.code
++            FROM stifin_voucher_queue q
++            JOIN orders o ON o.id = q.order_id AND o.user_id = q.user_id
++            LEFT JOIN stifin_voucher_stock s ON s.queue_id = q.id
++            WHERE q.user_id = ? AND o.status = 'paid' ORDER BY q.id DESC, s.id");
++        $stmt->execute([(int) $_SESSION['user_id']]);
++        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
++            $number = $row['order_number'];
++            $orders[$number]['quantity'] = $row['quantity'];
++            $orders[$number]['codes'] ??= [];
++            if ($row['fulfilled_at'] !== null && $row['code'] !== null) {
++                $orders[$number]['codes'][] = $row['code'];
++            }
+         }
+     }
+ } catch (Throwable $error) {
+@@ -39,11 +58,27 @@ include __DIR__ . '/../../partials/head.php';
+       <div class="max-w-4xl space-y-4">
+         <div class="p-5 rounded-xl bg-gray-900 text-white">
+           <h1 class="text-2xl font-bold">Voucher Tes STIFIn</h1>
+-          <p class="mt-2">Lihat kode voucher dari pesanan yang sudah lunas.</p>
++          <p class="mt-2">Cek saldo STIFIn dan lihat kode voucher dari pesanan yang sudah lunas.</p>
+         </div>
++        <?php if ($promoterCode !== null): ?>
++          <section class="p-5 rounded-xl bg-white dark:bg-gray-900 border">
++            <h2 class="font-semibold">Saldo STIFIn pusat</h2>
++            <p>Kode promotor <?= e($promoterCode) ?></p>
++            <?php if ($balance !== null): ?>
++              <p class="mt-2 font-semibold">Voucher <?= (int) $balance['voucher'] ?> · Free <?= e((string) ($balance['free'] ?? '—')) ?></p>
++            <?php elseif ($balanceError): ?>
++              <p role="alert">Saldo belum bisa dimuat. Silakan coba lagi.</p>
++            <?php endif; ?>
++            <a class="inline-block mt-3 underline" href="<?= e(APP_URL) ?>/member/voucher-tes?cek_saldo=1">Cek saldo</a>
++          </section>
++        <?php endif; ?>
++        <?php if ($voucherLanding !== null): ?>
++          <a class="inline-block rounded-lg px-4 py-2 text-white" style="background-color:var(--brand-color,#123d30)"
++             href="<?= e(rtrim(APP_URL, '/') . '/' . rawurlencode($voucherLanding) . '/') ?>">Beli voucher</a>
++        <?php endif; ?>
+         <?php if ($unavailable): ?>
+           <p role="alert">Data voucher sementara tidak tersedia. Silakan coba lagi.</p>
+-        <?php elseif (!$orders): ?>
++        <?php elseif ($productId > 0 && !$orders): ?>
+           <p>Belum ada pesanan voucher yang lunas.</p>
+           <a class="underline" href="<?= e(APP_URL) ?>/katalog">Buka katalog</a>
+         <?php endif; ?>
+diff --git a/partials/sidebar-user.php b/partials/sidebar-user.php
+index dc7239c..e9d339f 100644
+--- a/partials/sidebar-user.php
++++ b/partials/sidebar-user.php
+@@ -177,7 +177,8 @@ if ($showTickets) {
+     </a>
+     <?php endif; ?>
+ 
+-    <?php if (stifinVoucherProductId() > 0): ?>
++    <?php require_once __DIR__ . '/../helpers/stifin-promoters.php';
++    if (stifinVoucherProductId() > 0 || stifinLinkedPromoterCode(getDB(), (int) ($_SESSION['user_id'] ?? 0)) !== null): ?>
+     <a href="<?= e(APP_URL) ?>/member/voucher-tes" class="<?= $navClass('/member/voucher-tes') ?>">
+       <span>Voucher Tes</span>
+     </a>
+diff --git a/scripts/setup-stifin-voucher.php b/scripts/setup-stifin-voucher.php
+new file mode 100644
+index 0000000..03a2b0f
+--- /dev/null
++++ b/scripts/setup-stifin-voucher.php
+@@ -0,0 +1,82 @@
++<?php
++if (PHP_SAPI !== 'cli') {
++    http_response_code(404);
++    exit;
++}
++
++require __DIR__ . '/../config.php';
++require __DIR__ . '/../db.php';
++require __DIR__ . '/../helpers/landing-builder.php';
++
++$pdo = getDB();
++foreach (explode(';', file_get_contents(__DIR__ . '/../migrations/stifin-vouchers.sql')) as $statement) {
++    if (trim($statement) !== '') {
++        $pdo->exec($statement);
++    }
++}
++
++$slug = 'voucher-tes-stifin';
++$landingSlug = 'beli-voucher-stifin';
++$name = 'Voucher Tes STIFIn';
++$summary = 'Beli kode voucher tes STIFIn sesuai jumlah yang Anda perlukan.';
++$description = 'Harga Rp165.000 per voucher. Pilih jumlah di checkout. Kode dapat dilihat di menu Voucher Tes setelah pembayaran dikonfirmasi dan stok dialokasikan.';
++$pdo->beginTransaction();
++try {
++    $existing = $pdo->prepare(
++        'SELECT p.id, p.external_program_code, c.slug AS canvas_slug FROM products p
++         LEFT JOIN canvas_pages c ON c.id = p.canvas_id WHERE p.slug = ?'
++    );
++    $existing->execute([$slug]);
++    $product = $existing->fetch();
++    if ($product && (($product['external_program_code'] ?? '') !== 'STIFIN-VOUCHER-CODE'
++        || ($product['canvas_slug'] ?? '') !== $landingSlug)) {
++        throw new RuntimeException('Slug voucher sudah dipakai oleh produk lain. Periksa katalog.');
++    }
++    $productId = (int) ($product['id'] ?? 0);
++    $envProduct = (int) getenv('STIFIN_VOUCHER_PRODUCT_ID');
++    $setting = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'stifin_voucher_product_id' FOR UPDATE");
++    $configured = (int) $setting->fetchColumn();
++    foreach ([$envProduct, $configured] as $currentId) {
++        if ($currentId > 0 && $currentId !== $productId) {
++            throw new RuntimeException('Distribusi voucher masih diarahkan ke produk lain. Periksa konfigurasi sebelum membuat katalog baru.');
++        }
++    }
++
++    if (!$product) {
++        $pdo->prepare(
++            "INSERT INTO products (name, slug, external_program_code, short_description, description,
++                 price, type, catalog_category, pricing_type, status, checkout_mode, show_coupon, cta_label)
++             VALUES (?, ?, 'STIFIN-VOUCHER-CODE', ?, ?, 165000, 'other', 'Voucher STIFIn', 'fixed', 'draft', 'login', 0, 'Beli Voucher')"
++        )->execute([$name, $slug, $summary, $description]);
++        $productId = (int) $pdo->lastInsertId();
++        $cta = ['cta_mode' => 'product', 'cta_product' => $productId, 'cta_label' => 'Pilih Jumlah Voucher'];
++        $content = avLbSanitizeEnvelope([
++            'theme' => ['brand' => '#123d30', 'bg' => '#f5f2e9', 'text' => '#172b24', 'font' => 'system'],
++            'blocks' => [
++                ['type' => 'hero', 'cfg' => $cta + ['headline' => $name, 'subheadline' => $summary]],
++                ['type' => 'pricing', 'cfg' => $cta + ['title' => 'Harga satuan', 'price' => 'Rp165.000', 'price_note' => 'per voucher', 'features' => '']],
++                ['type' => 'text', 'cfg' => ['heading' => 'Cara pembelian', 'body' =>
++                    "Masuk dengan akun Anda, isi jumlah voucher, lalu periksa total dan pilih metode pembayaran.\n\n"
++                    . 'Setelah pembayaran dikonfirmasi dan stok dialokasikan, buka Voucher Tes di dashboard untuk melihat kode.']],
++                ['type' => 'text', 'cfg' => ['heading' => 'Saldo promotor', 'body' =>
++                    'Promotor dengan akun yang sudah ditautkan dapat mengecek saldo Voucher dan Free dari STIFIn pusat di menu Voucher Tes. Kode yang dibeli ditampilkan di riwayat pesanan.']],
++            ],
++        ]);
++        $pdo->prepare(
++            "INSERT INTO canvas_pages (slug, title, meta_desc, mode, content, page_type, linked_product_id, is_active)
++             VALUES (?, ?, ?, 'builder', ?, 'product_landing', ?, 0)"
++        )->execute([$landingSlug, $name, $summary, $content, $productId]);
++        $pdo->prepare("UPDATE products SET lp_type = 'canvas', canvas_id = ? WHERE id = ?")
++            ->execute([(int) $pdo->lastInsertId(), $productId]);
++    }
++    $pdo->prepare(
++        "INSERT INTO settings (setting_key, setting_value, setting_group)
++         VALUES ('stifin_voucher_product_id', ?, 'general')
++         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
++    )->execute([(string) $productId]);
++    $pdo->commit();
++} catch (Throwable $error) {
++    $pdo->rollBack();
++    throw $error;
++}
++echo "Produk voucher #{$productId} tersambung ke Canvas /{$landingSlug}/ dan checkout /order/{$slug}." . PHP_EOL;

@@ -1,0 +1,133 @@
+/* Darmutiara Islamic dashboard and community pages. */
+html.darmutiara-dashboard {
+  --dmi-paper: #f4f2e8;
+  --dmi-ink: #14382e;
+  --dmi-pine: #123a30;
+  --dmi-gold: #e6c78a;
+  --dmi-border: #dedbd0;
+  --dmi-surface: #fffef9;
+}
+html.dark.darmutiara-dashboard {
+  --dmi-paper: #101c18;
+  --dmi-ink: #e4eee8;
+  --dmi-border: #35483d;
+  --dmi-surface: #192821;
+}
+html.darmutiara-dashboard body { background-color: var(--dmi-paper); }
+html.darmutiara-dashboard #sidebar.darmutiara-sidebar {
+  background: var(--dmi-pine) !important;
+  border-color: #2a5143;
+  color: #eff8f1;
+}
+html.darmutiara-dashboard #sidebar.darmutiara-sidebar a,
+html.darmutiara-dashboard #sidebar.darmutiara-sidebar .sidebar-group-toggle { color: #d5e5dc; }
+html.darmutiara-dashboard #sidebar.darmutiara-sidebar a:hover,
+html.darmutiara-dashboard #sidebar.darmutiara-sidebar .nav-item-active {
+  background: #285447;
+  color: #fff;
+}
+html.darmutiara-dashboard #sidebar.darmutiara-sidebar .nav-item-active {
+  border-left-color: var(--dmi-gold);
+}
+html.darmutiara-dashboard #sidebar.darmutiara-sidebar .nav-item-active svg,
+html.darmutiara-dashboard #sidebar.darmutiara-sidebar .nav-claude-label { color: var(--dmi-gold); }
+html.darmutiara-dashboard #sidebar .dmi-brand {
+  min-height: 5rem;
+  border-color: #2a5143;
+  color: #fff8e6;
+}
+html.darmutiara-dashboard #sidebar .dmi-brand-name {
+  font: 600 1.14rem/1.15 Georgia, serif;
+  letter-spacing: -.02em;
+  color: #fff8e6;
+}
+html.darmutiara-dashboard #sidebar .dmi-mark {
+  width: 2.25rem;
+  height: 2.6rem;
+  border: 1px solid #ceab6c;
+  border-radius: 1.25rem 1.25rem .27rem .27rem;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: #f9e2a7;
+  font: 600 1.24rem/1 Georgia, serif;
+}
+html.darmutiara-dashboard #sidebar .dmi-logout {
+  background: transparent;
+  color: #d5e5dc;
+  border-color: #2a5143;
+}
+html.darmutiara-dashboard #sidebar .dmi-logout button { color: inherit; }
+html.darmutiara-dashboard #topbar-main.dmi-topbar {
+  background: var(--dmi-surface);
+  border-bottom: 1px solid var(--dmi-border);
+  box-shadow: none;
+}
+html.darmutiara-dashboard #topbar-main .topbar-title { color: var(--dmi-ink); }
+
+.dmi-hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1.1rem;
+  padding: clamp(1.3rem, 4vw, 2.6rem);
+  color: #fdf5dc;
+  background: #143c31;
+  border: 1px solid #38604f;
+  border-radius: 1.15rem;
+}
+.dmi-hero::before, .dmi-hero::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+  width: 16rem;
+  height: 21rem;
+  border: 1px solid #e6c78a55;
+  border-radius: 8rem 8rem 0 0;
+  right: -1.8rem;
+  top: 1rem;
+  transform: rotate(14deg);
+}
+.dmi-hero::after { width: 12rem; height: 18rem; right: .35rem; top: 2rem; }
+.dmi-hero h2 {
+  margin: 0;
+  max-width: 21ch;
+  font: 500 clamp(1.7rem, 4vw, 3rem)/1.13 Georgia, serif;
+  letter-spacing: -.035em;
+}
+.dmi-hero p { margin: .55rem 0 0; font-size: .94rem; color: #d8e9db; line-height: 1.55; }
+.dmi-hero .dmi-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  background: #f0d9a2;
+  color: #20382e;
+  border: 1px solid #f8e6bb;
+  border-radius: .55rem;
+  font-weight: 700;
+  padding: .66rem 1rem;
+  text-decoration: none;
+}
+.dmi-hero .dmi-cta:hover { background: #fff0c9; }
+.dmi-hero .dmi-cta:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+html.darmutiara-dashboard .dmi-kajian-panel { background: var(--dmi-surface); border-color: var(--dmi-border); }
+.dmi-kajian-panel h2 { color: var(--dmi-ink); }
+@media (max-width: 40rem) {
+  .dmi-hero::before { right: -9rem; }
+  .dmi-hero::after { right: -7rem; }
+}
+
+/* Kantor Virtual Cabang */
+.branch-office {background:#f5f4ec;color:#19382f}
+.branch-office header {background:#163e34;color:white}
+.branch-office header p {color:#d1e6da}
+.branch-office a.block {background:#fffefa;border-color:#cddbd2;color:#18392e}
+.branch-office a.block:hover {border-color:#56816d}
+.dark .branch-office {background:#101c19;color:#eef5ef}
+.dark .branch-office a.block {background:#1a2a25;border-color:#3b5046;color:#edf5ef}
+.branch-office a:focus-visible {outline:3px solid #759d84;outline-offset:2px}

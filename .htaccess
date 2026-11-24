@@ -1,0 +1,121 @@
+Options -Indexes
+
+# ─── Blokir akses langsung ke file sensitif (dump SQL, env, log, backup) ──
+# Ditempatkan sebelum aturan rewrite & berbasis FilesMatch agar tetap berlaku
+# walau file fisik (mis. .sql) di-skip oleh aturan "lewati file fisik" di bawah.
+<FilesMatch "(?i)\.(sql|sqlite|env|log|bak|backup|dump|old)$">
+  Require all denied
+</FilesMatch>
+<IfModule !mod_authz_core.c>
+  <FilesMatch "(?i)\.(sql|sqlite|env|log|bak|backup|dump|old)$">
+    Order allow,deny
+    Deny from all
+  </FilesMatch>
+</IfModule>
+
+# ─── Blokir akses langsung ke file PHP inti (config/db/helpers/bootstrap) ──
+# Pakai FilesMatch, BUKAN RewriteRule. Aturan RewriteRule "^(config|db|...)\.php$"
+# di bawah TIDAK PERNAH kejalan karena "RewriteRule ^ - [L]" (lewati file fisik)
+# sudah menghentikan proses rewrite untuk file .php yang memang ada. FilesMatch
+# berlaku lebih dulu & tak bergantung urutan rewrite. (Tanpa ini config.php dsb
+# balas HTTP 200 alih-alih 403 — tak bocor selama PHP dieksekusi, tapi jadi
+# celah kalau eksekusi PHP mati/salah-konfig di server buyer.)
+<FilesMatch "^(config|db|helpers|bootstrap)\.php$">
+  Require all denied
+</FilesMatch>
+<IfModule !mod_authz_core.c>
+  <FilesMatch "^(config|db|helpers|bootstrap)\.php$">
+    Order allow,deny
+    Deny from all
+  </FilesMatch>
+</IfModule>
+
+# ─── Header keamanan (defense-in-depth) ───────────────────────
+# Framing (X-Frame-Options & CSP frame-ancestors) SENGAJA tidak di-set di sini —
+# dikelola PHP (bootstrap.php) supaya rute /embed/ bisa dilonggarkan per-request &
+# konsisten lintas hosting termasuk Nginx (yang mengabaikan .htaccess). Header lain tetap.
+<IfModule mod_headers.c>
+  # Cegah MIME-sniffing (browser tak menebak-nebak tipe konten).
+  Header always set X-Content-Type-Options "nosniff"
+  # Batasi kebocoran URL saat menuju situs lain.
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  # Matikan API browser sensitif yang tak dipakai.
+  Header always set Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=()"
+  # Paksa HTTPS setelah kunjungan pertama. HANYA dikirim saat koneksi HTTPS
+  # (env=HTTPS) — best practice: jangan pernah kirim HSTS via HTTP polos, agar
+  # tak memicu browser mengupgrade ke HTTPS di server yang belum punya TLS.
+  Header always set Strict-Transport-Security "max-age=15768000" env=HTTPS
+  # CSP: script/style sengaja izinkan 'unsafe-inline'+'unsafe-eval' (Tailwind CDN & inline app),
+  # tapi kunci object-src/base-uri + whitelist host embed (YouTube/Vimeo/FB/Canva) & Google Fonts.
+  # frame-ancestors DIKELOLA PHP (lihat bootstrap.php) — TIDAK di sini.
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://connect.facebook.net https://analytics.tiktok.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https:; media-src 'self' https:; frame-src 'self' https://www.youtube.com https://youtube.com https://player.vimeo.com https://www.facebook.com https://www.canva.com https://player.mediadelivery.net https://iframe.mediadelivery.net; connect-src 'self' https://www.facebook.com https://connect.facebook.net https://analytics.tiktok.com; object-src 'none'; base-uri 'self'; form-action 'self' https:"
+</IfModule>
+
+RewriteEngine On
+# TANPA "RewriteBase" hardcode → portabel di semua lokasi instalasi. Substitusi
+# "index.php" bersifat relatif terhadap folder .htaccess, sehingga otomatis benar
+# baik dipasang di root domain (public_html), subfolder, maupun subdomain. (Dulu
+# ter-hardcode ke folder dev sehingga route pembeli 404/500 — jangan diulang.)
+
+# ─── Lewati file dan folder fisik (assets, installer, uploads) ─
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# ─── Semua URL lain diarahkan ke front controller ──────────────
+RewriteRule ^ index.php [L]
+
+# ─── Proteksi akses langsung ke file PHP inti ──────────────────
+RewriteRule ^(config|db|helpers|bootstrap)\.php$ - [F,L]
+
+# ─── Proteksi sub-folder installer ─────────────────────────────
+RewriteRule ^installer/(views|partials|actions)/ - [F,L]
+RewriteRule ^installer/install\.lock$ - [F,L]
+
+# ─── Kompresi gzip (mengecilkan transfer CSS/JS/HTML/SVG) ──────
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+  AddOutputFilterByType DEFLATE application/javascript text/javascript application/json
+  AddOutputFilterByType DEFLATE application/xml image/svg+xml
+  AddOutputFilterByType DEFLATE font/ttf font/otf font/woff font/woff2 application/vnd.ms-fontobject
+</IfModule>
+
+# ─── Cache browser untuk aset statis ──────────────────────────
+# Aman dengan long-cache karena app.css/app.js sudah pakai cache-bust ?v=filemtime.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css                       "access plus 1 year"
+  ExpiresByType application/javascript         "access plus 1 year"
+  ExpiresByType text/javascript                "access plus 1 year"
+  ExpiresByType image/jpeg                     "access plus 6 months"
+  ExpiresByType image/png                      "access plus 6 months"
+  ExpiresByType image/webp                     "access plus 6 months"
+  ExpiresByType image/gif                      "access plus 6 months"
+  ExpiresByType image/svg+xml                  "access plus 6 months"
+  ExpiresByType image/x-icon                   "access plus 1 year"
+  ExpiresByType font/woff                       "access plus 1 year"
+  ExpiresByType font/woff2                      "access plus 1 year"
+  ExpiresByType application/vnd.ms-fontobject  "access plus 1 year"
+</IfModule>
+
+# ─── Fallback Cache-Control bila mod_expires tidak aktif ───────
+# Hanya untuk file statis (HTML/PHP TIDAK kena, agar konten dinamis selalu fresh).
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|js|jpe?g|png|webp|gif|svg|ico|woff2?|ttf|otf|eot)$">
+    Header set Cache-Control "public, max-age=31536000"
+  </FilesMatch>
+</IfModule>
+
+# ─── Service worker PWA (sw.js): JANGAN di-cache ───────────────
+# Harus override long-cache .js di atas, kalau tidak update service worker tak
+# pernah nyampai ke browser pembeli. Ditaruh SETELAH blok di atas agar menang.
+<IfModule mod_expires.c>
+  <Files "sw.js">
+    ExpiresActive Off
+  </Files>
+</IfModule>
+<IfModule mod_headers.c>
+  <Files "sw.js">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </Files>
+</IfModule>

@@ -1,0 +1,1005 @@
+/* Averion — Custom CSS (minimal, Tailwind handles the rest) */
+
+/* ─── Sidebar Transition ─────────────────────────────────────── */
+.sidebar {
+    transition: transform 0.2s ease, width 0.2s ease;
+}
+
+/* ─── Scrollbar Tipis ────────────────────────────────────────── */
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+}
+.dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+/* ─── Focus Ring Konsisten ───────────────────────────────────── */
+*:focus-visible {
+    outline: 2px solid var(--brand-color, #6366f1);
+    outline-offset: 2px;
+}
+/* Input global search (Ctrl+K): fokusnya sudah jelas dari konteks modal —
+   outline global justru membentuk kotak-dalam-kotak yang berantakan.
+   Caret tetap berwarna brand sebagai penanda fokus. */
+#gs-input:focus,
+#gs-input:focus-visible {
+    outline: none;
+    box-shadow: none;
+    caret-color: var(--brand-color, #6366f1);
+}
+
+/* ─── Sidebar Active Item ────────────────────────────────────── */
+.nav-item-active {
+    background-color: color-mix(in srgb, var(--brand-color, #6366f1) 10%, transparent);
+    color: var(--brand-color, #6366f1);
+}
+
+/* ─── Brand Color Utilities ──────────────────────────────────── */
+.text-brand {
+    color: var(--brand-color, #6366f1);
+}
+.bg-brand {
+    background-color: var(--brand-color, #6366f1);
+}
+.border-brand {
+    border-color: var(--brand-color, #6366f1);
+}
+.bg-brand-soft {
+    background-color: color-mix(in srgb, var(--brand-color, #6366f1) 10%, transparent);
+}
+
+/* ─── Flash Message Animasi ──────────────────────────────────── */
+[data-flash-message] {
+    animation: slideDown 0.3s ease;
+}
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Tabel Row Hover ────────────────────────────────────────── */
+.table-row-hover:hover {
+    background-color: #f8fafc;
+}
+.dark .table-row-hover:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* ─── Print Styles ───────────────────────────────────────────── */
+@media print {
+    .sidebar, .topbar, [data-no-print] {
+        display: none !important;
+    }
+    .print-full {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+/* ─── Soft Page Navigation ───────────────────────────────────── */
+
+/* Progress bar saat berpindah halaman */
+#nav-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 0;
+    z-index: 99999;
+    opacity: 0;
+    background: var(--brand-color, #6366f1);
+    box-shadow: 0 0 10px var(--brand-color, #6366f1), 0 0 4px var(--brand-color, #6366f1);
+    border-radius: 0 3px 3px 0;
+    pointer-events: none;
+    transition: width 0.18s ease, opacity 0.3s ease;
+}
+#nav-progress.active { opacity: 1; }
+
+/* ─── Hero soft (homepage) ───────────────────────────────────── */
+/* Latar terang ber-tint brand tipis; andal di light & dark tanpa
+   bergantung pada Tailwind arbitrary gradient. */
+.hero-soft {
+    background:
+        radial-gradient(60% 70% at 85% 0%, color-mix(in srgb, var(--brand-color) 16%, transparent), transparent 70%),
+        linear-gradient(135deg, color-mix(in srgb, var(--brand-color) 11%, #ffffff), #ffffff 55%, color-mix(in srgb, var(--brand-color) 5%, #ffffff));
+}
+.dark .hero-soft {
+    background:
+        radial-gradient(60% 70% at 85% 0%, color-mix(in srgb, var(--brand-color) 26%, transparent), transparent 70%),
+        linear-gradient(135deg, color-mix(in srgb, var(--brand-color) 24%, #0b1220), #0f172a 55%, #030712);
+}
+
+/* ============================================
+   UI THEME SYSTEM — Averion Appearance Engine
+   Scope: HANYA area dashboard (html.dash-themed) + sidebar (#sidebar).
+   Halaman publik tidak punya class ini → tidak terpengaruh.
+   Catatan specificity: html.dash-themed body (0,1,2) menang atas .bg-gray-50,
+   tetapi .dark .bg-gray-950 (0,2,0) tetap menang → dark mode aman.
+   ============================================ */
+
+/* --- Canvas background (light mode dashboard). Dark mode dibiarkan dark. --- */
+html.dash-themed body { background-color: var(--bg-canvas, #f9fafb); }
+
+/* --- Card base: radius + shadow dari theme variable --- */
+html.dash-themed .card-base {
+  border-radius: var(--card-radius, 0.5rem);
+  box-shadow: var(--card-shadow, 0 1px 3px rgba(0,0,0,0.10));
+}
+
+/* Sidebar full-height menempel ke tepi layar → tidak pakai border-radius
+   (radius dari theme membuat sudut menggantung aneh). Sengaja flat. */
+
+/* ===== SIDEBAR STYLE: light =====
+   Default = perilaku lama (putih di light, gelap di dark via Tailwind).
+   Tidak ada override agar dark mode tetap normal. */
+
+/* ===== SIDEBAR STYLE: dark → "Midnight Rail" (16 Jul 2026) =====
+   Bukan lagi sekadar navy gelap: latar nyaris hitam, item aktif TANPA blok
+   background — indikatornya GARIS AKSEN BRAND di tepi kiri yang menyala
+   (gaya VS Code/Linear; pasangan serasi topbar Command Deck). Aksen via
+   inset box-shadow agar jalan di sidebar admin (punya border-l-2) maupun
+   member (tidak punya). Selector ber-id (#sidebar) sengaja dipakai agar
+   specificity mengalahkan utility Tailwind tanpa menghapus class-nya. */
+html.sidebar-dark #sidebar {
+  background-color: #0a0d14 !important;
+  border-right: none;
+  color: #e2e8f0;
+}
+html.sidebar-dark #sidebar a { color: #8b93a5; border-left-color: transparent; }
+html.sidebar-dark #sidebar a:hover { background-color: rgba(255,255,255,0.04); color: #ffffff; }
+html.sidebar-dark #sidebar a svg { color: #566072; }
+html.sidebar-dark #sidebar a:hover svg { color: #aab2c5; }
+html.sidebar-dark #sidebar .nav-item-active {
+  background-color: rgba(255,255,255,0.03);
+  border-radius: 0;                              /* rail: rata, bukan pill */
+  border-left-color: transparent;
+  box-shadow: inset 2px 0 0 var(--brand-color),  /* garis aksen kiri */
+              inset 8px 0 14px -8px color-mix(in srgb, var(--brand-color) 75%, transparent); /* glow */
+  color: #ffffff;
+}
+html.sidebar-dark #sidebar .nav-item-active svg { color: var(--brand-color) !important; }
+/* Label section (KONTEN/MARKETING/...) makin kecil-renggang — hierarki rail. */
+html.sidebar-dark #sidebar .sidebar-group-toggle {
+  color: #4b5563;
+  letter-spacing: 0.16em;
+}
+html.sidebar-dark #sidebar .text-gray-900,
+html.sidebar-dark #sidebar .text-gray-700 { color: #f1f5f9; }
+html.sidebar-dark #sidebar .text-gray-600,
+html.sidebar-dark #sidebar .text-gray-500,
+html.sidebar-dark #sidebar .text-gray-400 { color: #94a3b8; }
+/* Divider internal (header border-b, footer border-t) memakai border-gray-200
+   yang tampak putih saat halaman light mode + sidebar gelap → buat halus/blend. */
+html.sidebar-dark #sidebar .border-t,
+html.sidebar-dark #sidebar .border-b,
+html.sidebar-dark #sidebar .border-r { border-color: rgba(255,255,255,0.07) !important; }
+/* Tombol Panduan (border semua-sisi) → garis halus, bukan putih stark.
+   Tanpa !important agar inline-style state aktif (brand-color) tetap menang. */
+html.sidebar-dark #sidebar .sb-guide { border-color: rgba(255,255,255,0.10); }
+/* Scrollbar nav agar tidak ada track terang di sidebar gelap. */
+html.sidebar-dark #sidebar *::-webkit-scrollbar { width: 6px; }
+html.sidebar-dark #sidebar *::-webkit-scrollbar-track { background: transparent; }
+html.sidebar-dark #sidebar *::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+/* ===== SIDEBAR STYLE: colored → "Brand Panel" (16 Jul 2026) =====
+   Bukan brand flat lagi: gradien VERTIKAL halus (brand → brand digelapkan),
+   item aktif jadi PILL FROSTED kaca putih transparan yang jelas menonjol —
+   pasangan serasi topbar Hero Brand. */
+html.sidebar-colored #sidebar {
+  background-color: var(--brand-color) !important; /* fallback tanpa gradient */
+  background-image: linear-gradient(180deg, var(--brand-color) 0%, color-mix(in srgb, var(--brand-color) 76%, #000) 100%);
+  border-right: none;
+  color: #ffffff;
+}
+html.sidebar-colored #sidebar a { color: rgba(255,255,255,0.78); border-left-color: transparent; }
+html.sidebar-colored #sidebar a:hover {
+  background-color: rgba(255,255,255,0.10);
+  color: #ffffff;
+}
+html.sidebar-colored #sidebar .nav-item-active {
+  background: rgba(255,255,255,0.18);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.30);      /* pill kaca */
+  border-radius: var(--control-radius, 0.5rem);
+  box-shadow: 0 4px 14px -6px rgba(0,0,0,0.35);
+  color: #ffffff;
+}
+html.sidebar-colored #sidebar .nav-item-active svg { color: #ffffff; }
+html.sidebar-colored #sidebar .sidebar-group-toggle { color: rgba(255,255,255,0.55); }
+html.sidebar-colored #sidebar .text-gray-900,
+html.sidebar-colored #sidebar .text-gray-700,
+html.sidebar-colored #sidebar .text-gray-600,
+html.sidebar-colored #sidebar .text-gray-500,
+html.sidebar-colored #sidebar .text-gray-400 { color: rgba(255,255,255,0.85); }
+/* Divider internal → halus, hilangkan garis terang. */
+html.sidebar-colored #sidebar .border-t,
+html.sidebar-colored #sidebar .border-b,
+html.sidebar-colored #sidebar .border-r { border-color: rgba(255,255,255,0.18) !important; }
+/* Tombol Panduan → garis halus senada divider (bukan putih stark). */
+html.sidebar-colored #sidebar .sb-guide { border-color: rgba(255,255,255,0.22); }
+html.sidebar-colored #sidebar *::-webkit-scrollbar { width: 6px; }
+html.sidebar-colored #sidebar *::-webkit-scrollbar-track { background: transparent; }
+html.sidebar-colored #sidebar *::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.28); border-radius: 3px; }
+
+/* Claude AI: label dan badge tetap terbaca di atas warna Brand Panel. */
+html.sidebar-colored #sidebar .nav-claude {
+  color:#ffffff;
+  background:rgba(255,255,255,0.06);
+  border-color:rgba(255,255,255,0.22);
+  box-shadow:none;
+}
+html.sidebar-colored #sidebar .nav-claude .nav-claude-label,
+html.sidebar-colored #sidebar .nav-claude .nav-claude-badge { color:#ffffff; }
+html.sidebar-colored #sidebar .nav-claude .nav-claude-badge {
+  border-color:rgba(255,255,255,0.4);
+  background:rgba(255,255,255,0.08);
+}
+html.sidebar-colored #sidebar .nav-claude:hover {
+  background:rgba(255,255,255,0.12);
+  border-color:rgba(255,255,255,0.4);
+  box-shadow:none;
+}
+html.sidebar-colored #sidebar .nav-claude.nav-claude-active {
+  background:rgba(255,255,255,0.18);
+  border-color:rgba(255,255,255,0.5);
+}
+html.sidebar-colored #sidebar .nav-claude:focus-visible {
+  outline:2px solid #ffffff;
+  outline-offset:2px;
+}
+
+/* Pusat Bantuan member mengikuti warna sidebar, termasuk elemen summary.
+   Selector #sidebar mengalahkan warna dasar partial dan aturan link generik. */
+html.sidebar-dark #sidebar .sb-help > summary {
+  color: #cbd5e1;
+  border-color: rgba(255,255,255,0.16);
+}
+html.sidebar-dark #sidebar .sb-help > summary:hover,
+html.sidebar-dark #sidebar .sb-help[open] > summary {
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.28);
+  background: rgba(255,255,255,0.05);
+}
+html.sidebar-dark #sidebar .sb-help-links { border-left-color: rgba(255,255,255,0.16); }
+html.sidebar-dark #sidebar .sb-help-link { color: #cbd5e1; }
+html.sidebar-dark #sidebar .sb-help-link:hover,
+html.sidebar-dark #sidebar .sb-help-link[aria-current="page"] {
+  color: #ffffff;
+  background: rgba(255,255,255,0.07);
+}
+html.sidebar-dark #sidebar .sb-help-link[aria-current="page"] { box-shadow: inset 2px 0 0 var(--brand-color); }
+html.sidebar-dark #sidebar .sb-help-link svg { color: inherit; }
+html.sidebar-dark #sidebar .sb-help-badge { color:#ffffff; background:#334155; }
+
+html.sidebar-colored #sidebar .sb-help > summary {
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.32);
+}
+html.sidebar-colored #sidebar .sb-help > summary:hover,
+html.sidebar-colored #sidebar .sb-help[open] > summary {
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.10);
+}
+html.sidebar-colored #sidebar .sb-help-links { border-left-color: rgba(255,255,255,0.3); }
+html.sidebar-colored #sidebar .sb-help-link { color: #ffffff; }
+html.sidebar-colored #sidebar .sb-help-link:hover,
+html.sidebar-colored #sidebar .sb-help-link[aria-current="page"] {
+  color: #ffffff;
+  background: rgba(255,255,255,0.14);
+}
+html.sidebar-colored #sidebar .sb-help-link[aria-current="page"] { box-shadow: inset 2px 0 0 rgba(255,255,255,0.9); }
+html.sidebar-colored #sidebar .sb-help-link svg { color: inherit; }
+html.sidebar-colored #sidebar .sb-help-badge { color:#ffffff; background:rgba(0,0,0,0.25); }
+html.sidebar-colored #sidebar .sb-help > summary:focus-visible,
+html.sidebar-colored #sidebar .sb-help-link:focus-visible { outline-color:#ffffff; }
+
+/* ===== THEME: Airy ===== */
+html.theme-airy .card-base {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f7ff 100%);
+}
+/* Dark mode: gradient putih di atas HARUS direset, kalau tidak semua .card-base
+   memutih & teks dark-mode (dark:text-gray-*) tak terbaca (bug halaman ber-card
+   intensif spt Funnel Analytics). Noir sudah punya reset serupa; Airy dulu belum.
+   #111827 = gray-900, selaras utility dark:bg-gray-900 yang dipakai kartu. */
+html.dark.theme-airy .card-base {
+  background: #111827;
+}
+/* Stat card gradient (dipakai saat --card-style = gradient). Ditaruh SETELAH
+   .card-base agar background gradient berwarna menang. */
+/* Bahasa warna KPI satu-brand (audit UI 12 Jul 2026): SATU kartu hero
+   bergradien brand, sisanya netral elegan — bukan deretan multi-hue. */
+html.theme-airy .stat-card-1 {
+  background: linear-gradient(135deg, var(--brand-color) 0%, color-mix(in srgb, var(--brand-color) 72%, #000) 100%);
+}
+html.theme-airy .stat-card-2,
+html.theme-airy .stat-card-3,
+html.theme-airy .stat-card-4 {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+html.dark.theme-airy .stat-card-2,
+html.dark.theme-airy .stat-card-3,
+html.dark.theme-airy .stat-card-4 {
+  background: #111827;
+  border-color: #1f2937;
+}
+/* Konten kartu HERO putih (mengalahkan text-gray-* utility); kartu netral
+   memakai warna teks normal + aksen brand dari .kpi-accent di bawah. */
+html.theme-airy .stat-card-1 p,
+html.theme-airy .stat-card-1 a,
+html.theme-airy .stat-card-1 svg { color: #ffffff !important; }
+html.theme-airy .stat-card-1 .stat-icon { background: rgba(255,255,255,0.22) !important; }
+
+/* Aksen KPI/navigasi dashboard mengikuti brand (bukan indigo/biru/pink acak).
+   Scope: kontainer ber-kelas .kpi-accent (stat cards, funnel live, quick
+   actions) — ikon & link menyatu dengan identitas brand tiap instalasi. */
+html.dash-themed .kpi-accent [class*="bg-"][class*="-50"],
+html.dash-themed .kpi-accent [class*="bg-"][class*="-100"] {
+  background: color-mix(in srgb, var(--brand-color) 10%, transparent) !important;
+}
+html.dark.dash-themed .kpi-accent [class*="dark:bg-"] {
+  background: color-mix(in srgb, var(--brand-color) 16%, transparent) !important;
+}
+html.dash-themed .kpi-accent svg,
+html.dash-themed .kpi-accent a { color: var(--brand-color) !important; }
+/* Kartu HERO menang atas aksen brand di atas (specificity lebih tinggi):
+   konten tetap putih agar terbaca di atas gradien brand. */
+html.dash-themed .kpi-accent .stat-card-1 p,
+html.dash-themed .kpi-accent .stat-card-1 a,
+html.dash-themed .kpi-accent .stat-card-1 svg { color: #ffffff !important; }
+html.dash-themed .kpi-accent .stat-card-1 .stat-icon { background: rgba(255,255,255,0.22) !important; }
+
+/* ===== THEME: Vivid — kartu gradient multi-warna (gaya Airy awal) =====
+   Pilihan sadar untuk nuansa ceria; ditulis SETELAH blok .kpi-accent agar
+   teks putihnya menang (specificity setara, urutan menentukan). */
+html.theme-vivid .stat-card-1 { background: linear-gradient(135deg, #6ee7f7 0%, #60a5fa 100%); }
+html.theme-vivid .stat-card-2 { background: linear-gradient(135deg, #a78bfa 0%, #818cf8 100%); }
+html.theme-vivid .stat-card-3 { background: linear-gradient(135deg, #f9a8d4 0%, #f472b6 100%); }
+html.theme-vivid .stat-card-4 { background: linear-gradient(135deg, #86efac 0%, #34d399 100%); }
+html.dash-themed.theme-vivid .kpi-accent .stat-card p,
+html.dash-themed.theme-vivid .kpi-accent .stat-card a,
+html.dash-themed.theme-vivid .kpi-accent .stat-card svg { color: #ffffff !important; }
+html.dash-themed.theme-vivid .kpi-accent .stat-card .stat-icon { background: rgba(255,255,255,0.22) !important; }
+
+/* ===== Disiplin radius KOTAK-TEGAS (12 Jul 2026) =====
+   Semua komponen dashboard mengikuti skala radius theme — menghapus campuran
+   rounded-xl/2xl hardcode. Badge/pil (rounded-full) tidak tersentuh. */
+html.dash-themed .rounded-2xl,
+html.dash-themed .rounded-xl { border-radius: var(--card-radius, 0.5rem); }
+html.dash-themed .rounded-lg { border-radius: var(--control-radius, 0.375rem); }
+
+/* ===== THEME: Corporate — sharp & dense ===== */
+html.theme-corporate .card-base {
+  border: 1px solid #e2e8f0;
+  box-shadow: none;
+}
+/* Density: tabel lebih rapat untuk power user. */
+html.theme-corporate main table th,
+html.theme-corporate main table td { padding-top: 0.45rem; padding-bottom: 0.45rem; }
+
+/* ===== THEME: Minimal — borderless & lapang ===== */
+html.theme-minimal .card-base {
+  border: 1px solid transparent;
+  box-shadow: none;
+}
+html.theme-minimal main .border-gray-200 { border-color: #f3f4f6; }
+html.dark.theme-minimal main .border-gray-200 { border-color: #1f2937; }
+
+/* ===== THEME: Noir — dark-first luxe (charcoal hangat + aura brand) =====
+   Identitas tema ada di DARK MODE; light mode = warm ivory pendamping.
+   Aksen SELALU dari var(--brand-color) — tidak hardcode oranye (white-label).
+   Pola attribute-selector [class*="dark:bg-..."] sama dgn blok .kpi-accent. */
+
+/* --- Light: warm ivory --- */
+html.theme-noir .card-base {
+  background: #fffdf8;
+  border: 1px solid #ebe4d6;
+}
+
+/* --- Kartu KPI: SELALU gelap (signature Noir) — beda dari Airy. ---
+   Di light mode deretan KPI tampil "noir ink" charcoal hangat dgn angka putih
+   di atas canvas ivory; hero tetap gradien brand ber-glow. Prefix
+   html.dash-themed.theme-noir dipakai agar menang atas blok .kpi-accent. */
+html.theme-noir .stat-card-1 {
+  background: linear-gradient(135deg, var(--brand-color) 0%, color-mix(in srgb, var(--brand-color) 55%, #17110a) 100%);
+  border: 1px solid color-mix(in srgb, var(--brand-color) 35%, transparent);
+  box-shadow: 0 16px 38px -12px color-mix(in srgb, var(--brand-color) 50%, transparent);
+}
+html.theme-noir .stat-card-2,
+html.theme-noir .stat-card-3,
+html.theme-noir .stat-card-4 {
+  background: linear-gradient(160deg, #241d15 0%, #191309 100%);
+  border: 1px solid rgba(255,234,200,0.10);
+  box-shadow: 0 14px 30px -14px rgba(28,19,8,0.45);
+}
+/* Teks & ikon di kartu gelap: angka putih, label lembut, link/ikon brand terang. */
+html.dash-themed.theme-noir .kpi-accent .stat-card p,
+html.dash-themed.theme-noir .kpi-accent .stat-card a,
+html.dash-themed.theme-noir .kpi-accent .stat-card svg,
+html.theme-noir .stat-card p,
+html.theme-noir .stat-card a,
+html.theme-noir .stat-card svg { color: #ffffff !important; }
+html.dash-themed.theme-noir .stat-card p[class*="uppercase"] { color: rgba(255,242,220,0.55) !important; }
+html.dash-themed.theme-noir .stat-card-2 a,
+html.dash-themed.theme-noir .stat-card-3 a,
+html.dash-themed.theme-noir .stat-card-4 a,
+html.dash-themed.theme-noir .stat-card-2 .stat-icon svg,
+html.dash-themed.theme-noir .stat-card-3 .stat-icon svg,
+html.dash-themed.theme-noir .stat-card-4 .stat-icon svg {
+  color: color-mix(in srgb, var(--brand-color) 55%, #ffffff) !important;
+}
+html.dash-themed.theme-noir .kpi-accent .stat-card .stat-icon,
+html.theme-noir .stat-card .stat-icon { background: rgba(255,255,255,0.10) !important; }
+
+/* --- Dark: charcoal hangat (identitas Noir) --- */
+html.dark.theme-noir body { background-color: #16120d; }
+/* Aura radial brand yang lembut di area konten — vibe "glow" dashboard fintech. */
+html.dark.theme-noir main {
+  background-image: radial-gradient(56rem 24rem at 16% -6rem,
+    color-mix(in srgb, var(--brand-color) 9%, transparent), transparent 62%);
+}
+/* Permukaan gelap standar (abu dingin gray-950/900/800) → cokelat charcoal
+   hangat. Specificity (html.dark.theme-noir + attr) menang atas utility dark. */
+html.dark.theme-noir [class*="dark:bg-gray-950"] { background-color: #16120d !important; }
+html.dark.theme-noir [class*="dark:bg-gray-900"] { background-color: #1e1811 !important; }
+html.dark.theme-noir [class*="dark:bg-gray-800"] { background-color: #292016 !important; }
+html.dark.theme-noir [class*="dark:border-gray-800"],
+html.dark.theme-noir [class*="dark:border-gray-700"] { border-color: rgba(255,234,200,0.08) !important; }
+html.dark.theme-noir .card-base {
+  background: #1e1811;
+  border: 1px solid rgba(255,234,200,0.08);
+  box-shadow: 0 18px 44px -18px rgba(0,0,0,0.55);
+}
+html.dark.theme-noir .stat-card-2,
+html.dark.theme-noir .stat-card-3,
+html.dark.theme-noir .stat-card-4 {
+  background: linear-gradient(160deg, #2a2117 0%, #1c150d 100%);
+  border: 1px solid rgba(255,234,200,0.10);
+}
+html.dark.theme-noir .stat-card-1 {
+  box-shadow: 0 16px 40px -10px color-mix(in srgb, var(--brand-color) 55%, transparent);
+}
+/* Sidebar & topbar ikut hangat — tanpa ini tersisa panel abu dingin.
+   Menang atas html.sidebar-dark #sidebar (specificity kelas lebih banyak),
+   jadi kombinasi sidebar style apa pun tetap selaras saat Noir gelap. */
+html.dark.theme-noir #sidebar {
+  background-color: #1a140d !important;
+  border-right: none;
+}
+html.dark.theme-noir #sidebar .border-t,
+html.dark.theme-noir #sidebar .border-b,
+html.dark.theme-noir #sidebar .border-r { border-color: rgba(255,234,200,0.07) !important; }
+
+/* ============================================
+   TOPBAR STYLE (Appearance V2)
+   ============================================ */
+
+/* --- Floating: melayang DI ATAS konten (fixed) agar efek kaca/transparan
+   benar-benar terlihat — konten ter-blur saat scroll di belakang topbar.
+   border radius lebih kecil + shadow lembut. --- */
+.topbar-floating {
+  position: fixed;
+  top: 12px;
+  left: 16px;
+  right: 16px;
+  margin: 0;
+  z-index: 40;
+  border-radius: 0.5rem;            /* lebih kecil, tidak terlalu bulat */
+  background: rgba(255, 255, 255, 0.62);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  /* shadow lembut & menyebar, bukan keras */
+  box-shadow: 0 10px 30px -16px rgba(15, 23, 42, 0.18),
+              0 2px 8px -4px rgba(15, 23, 42, 0.05);
+}
+/* Sisihkan ruang sidebar (w-60 = 15rem) di layar besar. */
+@media (min-width: 1024px) {
+  .topbar-floating { left: calc(15rem + 16px); }
+}
+/* Beri jarak atas pada konten agar tidak tertutup topbar yang mengambang. */
+.topbar-floating ~ main { padding-top: 80px; }
+
+/* ── Mode Pratinjau Admin (impersonate) + topbar floating ──
+   Banner #impersonate-banner berada di flow (mendorong topbar normal ke bawah),
+   TAPI topbar floating pakai position:fixed sehingga keluar dari flow dan tetap
+   menempel di top:12px — menimpa banner. Geser topbar floating ke bawah setinggi
+   banner (44px). Padding <main> tak perlu diubah: banner yang di flow sudah
+   mendorong <main> turun 44px, jadi offset topbar & konten saling meniadakan.
+   Hanya berlaku ≥768px; di mobile topbar floating dinonaktifkan jadi bar statis. */
+#impersonate-banner { height: 44px; }
+@media screen and (min-width: 768px) {
+  #impersonate-banner ~ .topbar-floating { top: calc(12px + 44px); }
+}
+
+html.dark .topbar-floating {
+  background: rgba(17, 24, 39, 0.52);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 34px -18px rgba(0, 0, 0, 0.55);
+}
+
+/* Fallback bila backdrop-filter tak didukung: naikkan opacity agar teks tetap terbaca. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .topbar-floating { background: rgba(255, 255, 255, 0.92); }
+  html.dark .topbar-floating { background: rgba(17, 24, 39, 0.92); }
+}
+
+/* --- Override warna ikon/teks untuk topbar colored & dark ---
+   :not([data-dropdown-menu] *) — isi dropdown profil DIKECUALIKAN: panel
+   dropdown tetap putih/gelap normal, tanpa ini teksnya ikut dicat putih
+   dan jadi tak terbaca di panel terang. */
+.topbar-colored :is(svg, button, span, h1):not([data-dropdown-menu] *) {
+  color: rgba(255, 255, 255, 0.92);
+}
+.topbar-dark :is(svg, button, span, h1):not([data-dropdown-menu] *) {
+  color: #e2e8f0;
+}
+
+/* --- Hover state untuk tombol di topbar colored/dark --- */
+.topbar-colored button:not([data-dropdown-menu] *):hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 0.375rem;
+}
+.topbar-dark button:not([data-dropdown-menu] *):hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 0.375rem;
+}
+
+/* ===== TOPBAR: Colored → "Hero Brand" (kalem, 16 Jul 2026) =====
+   Bukan lagi bar brand flat: gradien brand HALUS + search pill frosted yang
+   terlihat penuh + shadow brand lembut sebagai pengganti border (konten
+   terasa masuk ke bawah bar). Tinggi tetap normal — versi kalem. */
+.topbar-colored {
+  background-image: linear-gradient(120deg, var(--brand-color) 0%, color-mix(in srgb, var(--brand-color) 84%, #000) 100%);
+  border-bottom: none;
+  box-shadow: 0 10px 26px -14px color-mix(in srgb, var(--brand-color) 60%, transparent);
+}
+.topbar-colored .topbar-search {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  min-width: 11rem;
+}
+.topbar-colored .topbar-search:hover {
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.42) !important;
+  color: #ffffff !important;
+}
+.topbar-colored .topbar-search kbd {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  color: rgba(255, 255, 255, 0.85);
+}
+/* Avatar diberi ring putih halus agar menonjol di atas gradien. */
+.topbar-colored [data-dropdown-trigger] > div:first-child {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.45);
+}
+
+/* ===== TOPBAR: Dark → "Command Deck" (16 Jul 2026) =====
+   Bar RAMPING nyaris hitam; search jadi command bar di TENGAH (≥lg, ala
+   Linear/Spotlight); tepi bawah bukan border abu tapi garis gradien brand
+   yang glow; title jadi label uppercase kecil — vibe console. */
+.topbar-dark {
+  position: relative;
+  height: 3rem;              /* lebih ramping dari h-14 default */
+  background-color: #0b0e17;
+  border-bottom: none;
+}
+.topbar-dark::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--brand-color) 65%, transparent) 30%,
+    var(--brand-color) 50%,
+    color-mix(in srgb, var(--brand-color) 65%, transparent) 70%,
+    transparent 100%);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--brand-color) 55%, transparent));
+  pointer-events: none;
+}
+.topbar-dark .topbar-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #8b93a5;
+}
+.topbar-dark .topbar-search {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  color: #aab2c5 !important;
+  height: 2rem;
+}
+.topbar-dark .topbar-search:hover {
+  border-color: color-mix(in srgb, var(--brand-color) 55%, transparent) !important;
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+.topbar-dark .topbar-search kbd {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #8b93a5;
+}
+/* Search di TENGAH hanya di layar lebar — di bawahnya tetap di klaster kanan
+   agar tidak tabrakan dengan title/aksi. */
+@media (min-width: 1024px) {
+  .topbar-dark .topbar-search {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 18rem;
+    justify-content: space-between;
+  }
+}
+
+/* ============================================
+   MOBILE RESPONSIVE — Global Fixes
+   ============================================ */
+
+/* Cegah auto-zoom iOS saat focus input (font < 16px memicu zoom). */
+@media screen and (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  input[type="date"],
+  input[type="datetime-local"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Minimum tap target untuk tombol interaktif di mobile. */
+@media screen and (max-width: 767px) {
+  button,
+  a[role="button"],
+  [type="submit"],
+  [type="button"] {
+    min-height: 44px;
+  }
+  /* Kecuali tombol dalam tabel & yang ditandai .no-min-tap (toolbar padat). */
+  table button,
+  table a,
+  .no-min-tap,
+  .no-min-tap button,
+  .no-min-tap a {
+    min-height: unset;
+  }
+}
+
+/* Helper: tabel scroll horizontal (opt-in). */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Helper: modal mobile (opt-in via class). */
+@media screen and (max-width: 640px) {
+  .modal-container {
+    margin: 0 12px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-fullscreen-mobile {
+    position: fixed !important;
+    inset: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    max-height: 100vh !important;
+  }
+}
+
+/* Helper: word-break untuk teks panjang (email, URL, order number). */
+.break-words-mobile {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Mobile: sembunyikan scrollbar (touch swipe tetap jalan). */
+@media screen and (max-width: 767px) {
+  ::-webkit-scrollbar { width: 0; height: 0; }
+}
+
+/* Mobile: topbar floating dinonaktifkan → kembali jadi bar solid normal. */
+@media screen and (max-width: 767px) {
+  .topbar-floating {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  html.dark .topbar-floating { background: #111827 !important; }
+  .topbar-floating ~ main { padding-top: 0 !important; }
+}
+
+/* ============================================
+   Placeholder chip — brand-soft, transparan lembut
+   Dipakai di referensi placeholder & chip insert form notifikasi.
+   ============================================ */
+.ph-chip {
+  background-color: color-mix(in srgb, var(--brand-color) 10%, transparent);
+  color: var(--brand-color);
+  border: 1px solid color-mix(in srgb, var(--brand-color) 18%, transparent);
+  cursor: pointer;
+}
+.ph-chip:hover {
+  background-color: color-mix(in srgb, var(--brand-color) 20%, transparent);
+}
+/* Varian chip form edit yang membungkus 2 aksi (sisip + salin) */
+.ph-chip-group { line-height: 1; }
+.ph-chip-group .ph-chip-divider {
+  border-left: 1px solid color-mix(in srgb, var(--brand-color) 22%, transparent);
+}
+/* Sembunyikan segitiga default <summary> yang opt-in pakai .list-none */
+summary.list-none { list-style: none; }
+summary.list-none::-webkit-details-marker { display: none; }
+
+/* Tombol Edit compact (accordion) — chevron berputar & highlight saat terbuka */
+.notif-edit-btn .notif-edit-chevron { transition: transform .2s ease; }
+.notif-edit-btn.is-open .notif-edit-chevron { transform: rotate(180deg); }
+.notif-edit-btn.is-open {
+  border-color: color-mix(in srgb, var(--brand-color) 40%, transparent);
+  background-color: color-mix(in srgb, var(--brand-color) 10%, transparent);
+  color: var(--brand-color);
+}
+
+/* ─── Spinner pada tombol submit saat proses (data-loading) ─── */
+@keyframes averionSpin { to { transform: rotate(360deg); } }
+.btn-spinner {
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  margin-right: 0.5em;
+  vertical-align: -0.1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: averionSpin 0.6s linear infinite;
+}
+
+/* ==========================================================================
+   THEME FROST (Glassmorphism & Frosted Glass Elegance)
+   ========================================================================== */
+/* Only apply glass effect to card-base, and light/default sidebar/topbar */
+html.theme-frost .card-base,
+html.theme-frost.sidebar-light #sidebar,
+html.theme-frost .topbar:not(.topbar-colored):not(.topbar-dark) {
+  background: rgba(255, 255, 255, 0.45) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+}
+
+html.theme-frost .stat-card {
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04) !important;
+  transition: all 0.3s ease;
+}
+
+html.theme-frost .stat-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--brand-color) 35%, transparent) !important;
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.08) !important;
+}
+
+/* Dark mode support for Frost */
+html.dark.theme-frost body { background-color: #0b111e !important; }
+html.dark.theme-frost .card-base,
+html.dark.theme-frost.sidebar-light #sidebar,
+html.dark.theme-frost .topbar:not(.topbar-colored):not(.topbar-dark) {
+  background: rgba(17, 24, 39, 0.55) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+html.dark.theme-frost .stat-card {
+  background: rgba(31, 41, 55, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+html.dark.theme-frost .stat-card:hover {
+  border-color: color-mix(in srgb, var(--brand-color) 45%, transparent) !important;
+}
+
+/* ==========================================================================
+   THEME EMERALD LUXE (Executive Prestige — Emerald & Gold)
+   ========================================================================== */
+html.theme-emerald body { background-color: #f3f6f3 !important; }
+
+/* ── Stat cards: sophisticated per-card identity ── */
+/* Card 1 (hero): deep emerald gradient — teks putih terbaca */
+html.theme-emerald .stat-card-1 {
+  background: linear-gradient(135deg, #059669 0%, #065f46 100%) !important;
+  border: none !important;
+  box-shadow: 0 8px 28px rgba(5, 150, 105, 0.22) !important;
+}
+html.theme-emerald .stat-card-1 p,
+html.theme-emerald .stat-card-1 a,
+html.theme-emerald .stat-card-1 svg { color: #ffffff !important; }
+html.theme-emerald .stat-card-1 .stat-icon {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+}
+/* Override kpi-accent hero rule agar emerald hero tetap tampil benar */
+html.dash-themed.theme-emerald .kpi-accent .stat-card-1 p,
+html.dash-themed.theme-emerald .kpi-accent .stat-card-1 a,
+html.dash-themed.theme-emerald .kpi-accent .stat-card-1 svg { color: #ffffff !important; }
+html.dash-themed.theme-emerald .kpi-accent .stat-card-1 .stat-icon {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Card 2: warm gold accent (executive prestige) */
+html.theme-emerald .stat-card-2 {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+  border: 1px solid rgba(217, 119, 6, 0.12) !important;
+  border-bottom: 3px solid #d97706 !important;
+  box-shadow: 0 4px 20px rgba(217, 119, 6, 0.06) !important;
+}
+html.theme-emerald .stat-card-2 .stat-icon {
+  background: rgba(217, 119, 6, 0.12) !important;
+  color: #b45309 !important;
+}
+html.theme-emerald .stat-card-2 .stat-icon svg,
+html.theme-emerald .stat-card-2 > a,
+html.theme-emerald .stat-card-2 svg { color: #b45309 !important; }
+
+/* Card 3: emerald-tinted white — mint elegance */
+html.theme-emerald .stat-card-3 {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.15) !important;
+  border-bottom: 3px solid #10b981 !important;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.06) !important;
+}
+html.theme-emerald .stat-card-3 .stat-icon {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #059669 !important;
+}
+html.theme-emerald .stat-card-3 .stat-icon svg,
+html.theme-emerald .stat-card-3 > a,
+html.theme-emerald .stat-card-3 svg { color: #059669 !important; }
+
+/* Card 4: charcoal-emerald (dark executive) */
+html.theme-emerald .stat-card-4 {
+  background: linear-gradient(135deg, #1a2e23 0%, #0f2318 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+  border-bottom: 3px solid #10b981 !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12) !important;
+}
+html.theme-emerald .stat-card-4 p,
+html.theme-emerald .stat-card-4 a { color: rgba(255,255,255,0.9) !important; }
+html.theme-emerald .stat-card-4 svg { color: #34d399 !important; }
+html.theme-emerald .stat-card-4 .stat-icon {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+}
+
+/* Hover elevasi semua kartu */
+html.theme-emerald .stat-card { transition: all 0.3s ease; }
+html.theme-emerald .stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 36px rgba(5, 150, 105, 0.14) !important;
+}
+
+/* Emerald accenting: card-base + funnel cards memakai garis bawah zamrud halus */
+html.theme-emerald .card-base {
+  border-bottom: 2px solid rgba(16, 185, 129, 0.08) !important;
+}
+
+/* Gold/VIP level badge matching */
+html.theme-emerald .vip-badge,
+html.theme-emerald span[title*="VIP"] {
+  background-color: #fef3c7 !important;
+  color: #d97706 !important;
+  border: 1px solid #fcd34d !important;
+}
+
+/* ── Dark mode: Emerald Luxe ── */
+html.dark.theme-emerald body { background-color: #070d08 !important; }
+html.dark.theme-emerald .card-base,
+html.dark.theme-emerald.sidebar-light #sidebar,
+html.dark.theme-emerald.sidebar-dark #sidebar {
+  background-color: #0d160e !important;
+  border-color: rgba(16, 185, 129, 0.1) !important;
+}
+/* Dark hero card */
+html.dark.theme-emerald .stat-card-1 {
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%) !important;
+  box-shadow: 0 8px 28px rgba(5, 150, 105, 0.18) !important;
+}
+/* Dark gold card */
+html.dark.theme-emerald .stat-card-2 {
+  background: linear-gradient(135deg, #1c1508 0%, #151005 100%) !important;
+  border: 1px solid rgba(217, 119, 6, 0.15) !important;
+  border-bottom: 3px solid #b45309 !important;
+}
+html.dark.theme-emerald .stat-card-2 p { color: #fef3c7 !important; }
+html.dark.theme-emerald .stat-card-2 .stat-icon { background: rgba(217, 119, 6, 0.15) !important; }
+html.dark.theme-emerald .stat-card-2 .stat-icon svg { color: #f59e0b !important; }
+/* Dark mint card */
+html.dark.theme-emerald .stat-card-3 {
+  background: linear-gradient(135deg, #0e1a10 0%, #081109 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.12) !important;
+  border-bottom: 3px solid #059669 !important;
+}
+html.dark.theme-emerald .stat-card-3 p { color: #d1fae5 !important; }
+/* Dark executive card tetap charcoal */
+html.dark.theme-emerald .stat-card-4 {
+  background: linear-gradient(135deg, #111827 0%, #0a1210 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.15) !important;
+  border-bottom: 3px solid #10b981 !important;
+}
+
+/* ============================================================
+   THEME BARU (P2, 15 Agu 2026) — Rose / Slate / Ink / Sunset
+   Menambah variasi tanpa mengubah arsitektur. Aksen diturunkan dari
+   var(--brand-color) (white-label) kecuali Sunset (gradient hangat
+   pilihan-sadar, seperti Vivid). Radius/shadow/bg diambil dari preset
+   (helpers/theme-config.php). Rose/Sunset = kartu berwarna (--card-style
+   gradient → dapat hook .stat-card-N); Slate/Ink = kartu putih beraksen
+   (--card-style flat → aksen di .card-base, teks tetap gelap terbaca).
+   ============================================================ */
+
+/* ===== THEME: Rose Quartz — blush hangat, hero brand (sibling Airy) ===== */
+html.theme-rose .card-base { background: linear-gradient(135deg, #ffffff 0%, #fdf2f4 100%); }
+html.dark.theme-rose .card-base { background: #111827; }
+html.theme-rose .stat-card-1 {
+  background: linear-gradient(135deg, var(--brand-color) 0%, color-mix(in srgb, var(--brand-color) 68%, #7f1d3a) 100%);
+}
+html.theme-rose .stat-card-2,
+html.theme-rose .stat-card-3,
+html.theme-rose .stat-card-4 { background: #ffffff; border: 1px solid #f6dbe1; }
+html.dark.theme-rose .stat-card-2,
+html.dark.theme-rose .stat-card-3,
+html.dark.theme-rose .stat-card-4 { background: #111827; border-color: #1f2937; }
+html.theme-rose .stat-card-1 p,
+html.theme-rose .stat-card-1 a,
+html.theme-rose .stat-card-1 svg { color: #ffffff !important; }
+html.theme-rose .stat-card-1 .stat-icon { background: rgba(255,255,255,0.22) !important; }
+
+/* ===== THEME: Slate Pro — kartu putih beraksen garis brand kiri (flat) =====
+   --card-style 'flat' → kartu KPI = .card-base bg-white (tanpa .stat-card-N),
+   jadi aksen ditaruh di .card-base agar teks tetap gelap (tak kena aturan
+   hero-putih .kpi-accent .stat-card-1). */
+html.theme-slate .card-base { border: 1px solid #e2e8f0; }
+html.dark.theme-slate .card-base { border-color: #1f2937; }
+html.theme-slate .kpi-accent .card-base { border-left: 3px solid var(--brand-color); }
+
+/* ===== THEME: Ink Mono — editorial monokrom, aksen brand tipis di atas ===== */
+html.theme-mono .card-base { border: 1px solid #ececec; }
+html.dark.theme-mono .card-base { border-color: #262626; }
+html.theme-mono .kpi-accent .card-base { border-top: 2px solid var(--brand-color); }
+html.theme-mono main .text-2xl,
+html.theme-mono main .text-xl { letter-spacing: -0.01em; }
+
+/* ===== THEME: Sunset — gradient hangat energik (pilihan sadar, spt Vivid) ===== */
+html.theme-sunset .stat-card-1 { background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%); }
+html.theme-sunset .stat-card-2 { background: linear-gradient(135deg, #fb923c 0%, #ef4444 100%); }
+html.theme-sunset .stat-card-3 { background: linear-gradient(135deg, #f472b6 0%, #fb7185 100%); }
+html.theme-sunset .stat-card-4 { background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%); }
+html.dash-themed.theme-sunset .kpi-accent .stat-card p,
+html.dash-themed.theme-sunset .kpi-accent .stat-card a,
+html.dash-themed.theme-sunset .kpi-accent .stat-card svg { color: #ffffff !important; }
+html.dash-themed.theme-sunset .kpi-accent .stat-card .stat-icon { background: rgba(255,255,255,0.22) !important; }
